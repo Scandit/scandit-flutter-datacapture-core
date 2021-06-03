@@ -6,6 +6,7 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:meta/meta.dart';
 
@@ -17,14 +18,14 @@ import 'context_status.dart';
 import 'function_names.dart';
 
 abstract class DataCaptureContextCreationOptions {
-  String deviceName;
+  String? deviceName;
 }
 
 abstract class DataCaptureMode implements Serializable {
-  DataCaptureContext _context;
+  DataCaptureContext? _context;
   bool get isEnabled;
   set isEnabled(bool newValue);
-  DataCaptureContext get context => _context;
+  DataCaptureContext? get context => _context;
 }
 
 class DataCaptureContextSettings implements Serializable {
@@ -67,8 +68,8 @@ class LicenseInfo {
   final Expiration _expiration;
   Expiration get expiration => _expiration;
 
-  final DateTime _date;
-  DateTime get date => _date;
+  final DateTime? _date;
+  DateTime? get date => _date;
 
   LicenseInfo._(this._expiration, this._date);
 
@@ -83,37 +84,33 @@ class LicenseInfo {
 }
 
 class DataCaptureContext with PrivateDataCaptureContext implements Serializable {
-  FrameSource _frameSource;
+  FrameSource? _frameSource;
   String _licenseKey;
-  String _deviceName;
-  LicenseInfo _licenseInfo;
+  String? _deviceName;
+  LicenseInfo? _licenseInfo;
   DataCaptureContextSettings _settings;
 
-  FrameSource get frameSource => _frameSource;
+  FrameSource? get frameSource => _frameSource;
 
   Future<void> setFrameSource(FrameSource frameSource) {
-    if (_frameSource != null) {
-      _frameSource.context = null;
-    }
+    _frameSource?.context = null;
     _frameSource = frameSource;
-    if (_frameSource != null) {
-      _frameSource.context = this;
-    }
+    _frameSource?.context = this;
     return update();
   }
 
-  LicenseInfo get licenseInfo => _licenseInfo;
+  LicenseInfo? get licenseInfo => _licenseInfo;
 
   DataCaptureContext._(this._licenseKey, this._deviceName, this._settings);
 
   DataCaptureContext.forLicenseKey(String licenseKey) : this._(licenseKey, null, DataCaptureContextSettings());
 
-  factory DataCaptureContext.forLicenseKeyWithOptions(String licenseKey, DataCaptureContextCreationOptions options) {
+  factory DataCaptureContext.forLicenseKeyWithOptions(String licenseKey, DataCaptureContextCreationOptions? options) {
     var deviceName = (options == null || options.deviceName == null) ? '' : options.deviceName;
     return DataCaptureContext._(licenseKey, deviceName, DataCaptureContextSettings());
   }
 
-  factory DataCaptureContext.forLicenseKeyWithSettings(String licenseKey, DataCaptureContextSettings settings) {
+  factory DataCaptureContext.forLicenseKeyWithSettings(String licenseKey, DataCaptureContextSettings? settings) {
     return DataCaptureContext._(licenseKey, null, settings ?? DataCaptureContextSettings());
   }
 
@@ -142,7 +139,7 @@ class DataCaptureContext with PrivateDataCaptureContext implements Serializable 
 
   void addListener(DataCaptureContextListener listener) {
     if (_listeners.isEmpty) {
-      _controller.initSubscribers();
+      _controller?.initSubscribers();
     }
 
     if (_listeners.contains(listener)) {
@@ -154,7 +151,7 @@ class DataCaptureContext with PrivateDataCaptureContext implements Serializable 
   void removeListener(DataCaptureContextListener listener) {
     _listeners.remove(listener);
     if (_listeners.isEmpty) {
-      _controller.cancelSubscribers();
+      _controller?.cancelSubscribers();
     }
   }
 
@@ -169,14 +166,22 @@ class DataCaptureContext with PrivateDataCaptureContext implements Serializable 
       'licenseKey': _licenseKey,
       'deviceName': _deviceName,
       'framework': 'flutter',
-      'frameSource': _frameSource == null ? null : _frameSource.toMap(),
-      'modes': modes.map((mode) => mode.toMap()).toList()
+      'frameworkVersion': _getFrameworkVersion(),
+      'frameSource': _frameSource?.toMap(),
+      'modes': modes.map((mode) => mode.toMap()).toList(),
+      'view': view?.toMap(),
+      'settings': _settings.toMap(),
     };
-    if (view != null) {
-      json['view'] = view.toMap();
-    }
-    json['settings'] = _settings.toMap();
     return json;
+  }
+
+  String _getFrameworkVersion() {
+    try {
+      return Platform.version.split(' ').first;
+    } on Exception catch (e) {
+      print(e);
+      return 'undefined';
+    }
   }
 }
 
@@ -186,24 +191,21 @@ abstract class DataCaptureContextListener {
 }
 
 mixin PrivateDataCaptureContext {
-  _DataCaptureContextController _controller;
+  _DataCaptureContextController? _controller;
   final List<DataCaptureMode> modes = [];
   final List<DataCaptureContextListener> _listeners = [];
 
-  DataCaptureView view;
+  DataCaptureView? view;
 
   void initialize() {
     if (_controller != null) {
       return;
     }
-    _controller = _DataCaptureContextController(this, Defaults.channel);
+    _controller = _DataCaptureContextController(this as DataCaptureContext, Defaults.channel);
   }
 
-  Future<void> update() {
-    if (_controller == null) {
-      return Future<void>.value();
-    }
-    return _controller.updateContextFromJSON();
+  Future<void> update() async {
+    return _controller?.updateContextFromJSON() ?? Future<void>.value();
   }
 }
 
@@ -213,11 +215,11 @@ class _DataCaptureContextController {
 
   final EventChannel _didStartObservingContextEventChannel =
       const EventChannel('com.scandit.datacapture.core.event/datacapture_context#didStartObservingContext');
-  StreamSubscription _didStartObservingContextSubscription;
+  StreamSubscription? _didStartObservingContextSubscription;
 
   final EventChannel _contextStatusEventChannel =
       const EventChannel('com.scandit.datacapture.core.event/datacapture_context#didChangeStatus');
-  StreamSubscription _contextStatusSubscription;
+  StreamSubscription? _contextStatusSubscription;
 
   PrivateDataCaptureContext get _privateContext {
     return context;
@@ -261,7 +263,7 @@ class _DataCaptureContextController {
 
   void _notifyListenersOfObservationStarted() {
     for (var listener in _privateContext._listeners) {
-      listener.didStartObservingContext(_privateContext);
+      listener.didStartObservingContext(_privateContext as DataCaptureContext);
     }
   }
 
@@ -275,16 +277,17 @@ class _DataCaptureContextController {
     _didStartObservingContextSubscription =
         _didStartObservingContextEventChannel.receiveBroadcastStream().listen((event) {
       Map<String, dynamic> payload = jsonDecode(event);
-      Map<String, dynamic> licenseInfoJSON = jsonDecode(payload['licenseInfo']);
+      Map<String, dynamic>? licenseInfoJSON =
+          payload.containsKey('licenseInfo') ? jsonDecode(payload['licenseInfo']) : null;
       context._licenseInfo = licenseInfoJSON == null ? null : LicenseInfo.fromJSON(licenseInfoJSON);
       _notifyListenersOfObservationStarted();
     });
   }
 
   void cancelSubscribers() {
-    _didStartObservingContextSubscription.cancel();
+    _didStartObservingContextSubscription?.cancel();
     _didStartObservingContextSubscription = null;
-    _contextStatusSubscription.cancel();
+    _contextStatusSubscription?.cancel();
     _contextStatusSubscription = null;
   }
 }

@@ -10,7 +10,7 @@ import 'data_capture_context.dart';
 enum FrameSourceState { on, off, starting, stopping, standby, bootingUp, wakingUp, goingToSleep, shuttingDown }
 
 extension FrameSourceStateDeserializer on FrameSourceState {
-  static FrameSourceState fromJSON(String jsonValue) {
+  static FrameSourceState fromJSON(String? jsonValue) {
     switch (jsonValue) {
       case 'on':
         return FrameSourceState.on;
@@ -66,7 +66,7 @@ extension FrameSourceStateDeserializer on FrameSourceState {
 abstract class FrameSource implements Serializable {
   FrameSourceState get desiredState;
   Future<FrameSourceState> get currentState;
-  DataCaptureContext context;
+  DataCaptureContext? context;
 
   Future<void> switchToDesiredState(FrameSourceState state);
   void addListener(FrameSourceListener listener);

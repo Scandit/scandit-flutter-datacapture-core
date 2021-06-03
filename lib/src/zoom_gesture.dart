@@ -12,7 +12,7 @@ class SwipeToZoom extends ZoomGesture {
 }
 
 extension ZoomGestureDeserializer on ZoomGesture {
-  static ZoomGesture fromJSON(Map<String, dynamic> json) {
+  static ZoomGesture? fromJSON(Map<String, dynamic> json) {
     switch (json['type']) {
       case 'swipeToZoom':
         return SwipeToZoom();

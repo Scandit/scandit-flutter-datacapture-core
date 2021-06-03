@@ -1,4 +1,7 @@
 buildscript {
+    ext {
+        sdk_version = "6.8.0"
+    }
     repositories {
         mavenCentral()
     }
@@ -33,7 +36,7 @@ android {
 }
 
 dependencies {
-    api "com.scandit.datacapture:core:6.7.3"
+    api "com.scandit.datacapture:core:$sdk_version"
     
     implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.4.10'
     implementation 'com.squareup.okhttp3:okhttp:3.12.10'

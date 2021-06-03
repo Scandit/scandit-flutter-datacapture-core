@@ -12,7 +12,7 @@ class TapToFocus extends FocusGesture {
 }
 
 extension FocusGestureDeserializer on FocusGesture {
-  static FocusGesture fromJSON(Map<String, dynamic> json) {
+  static FocusGesture? fromJSON(Map<String, dynamic> json) {
     switch (json['type']) {
       case 'tapToFocus':
         return TapToFocus();

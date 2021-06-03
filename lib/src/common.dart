@@ -63,7 +63,10 @@ class DoubleWithUnit implements Serializable {
   DoubleWithUnit(this.value, this.unit);
 
   DoubleWithUnit.fromJSON(Map<String, dynamic> json)
-      : this((json['value'] as num).toDouble(), MesaureUnitDeserializer.fromJSON(json['unit'] as String));
+      : this(
+            (json.containsKey('value') ? json['value'] as num : throw ArgumentError('json does not containe value'))
+                .toDouble(),
+            MesaureUnitDeserializer.fromJSON(json['unit'] as String?));
 
   Map<String, dynamic> toMap() {
     return {'value': value, 'unit': unit.jsonValue};
@@ -73,7 +76,7 @@ class DoubleWithUnit implements Serializable {
 enum MeasureUnit { dip, pixel, fraction }
 
 extension MesaureUnitDeserializer on MeasureUnit {
-  static MeasureUnit fromJSON(String jsonValue) {
+  static MeasureUnit fromJSON(String? jsonValue) {
     switch (jsonValue) {
       case 'dip':
         return MeasureUnit.dip;
@@ -231,14 +234,17 @@ extension CompositeFlagDeserializer on CompositeFlag {
 }
 
 class SizeWithUnitAndAspect implements Serializable {
-  SizeWithUnit _widthAndHeight;
-  SizeWithUnit get widthAndHeight => _widthAndHeight;
+  SizeWithUnit? _widthAndHeight;
+  SizeWithUnit? get widthAndHeight => _widthAndHeight;
 
-  SizeWithAspect _widthAndAspectRatio;
-  SizeWithAspect get widthAndAspectRatio => _widthAndAspectRatio;
+  SizeWithAspect? _widthAndAspectRatio;
+  SizeWithAspect? get widthAndAspectRatio => _widthAndAspectRatio;
 
-  SizeWithAspect _heightAndAspectRatio;
-  SizeWithAspect get heightAndAspectRatio => _heightAndAspectRatio;
+  SizeWithAspect? _heightAndAspectRatio;
+  SizeWithAspect? get heightAndAspectRatio => _heightAndAspectRatio;
+
+  SizeWithAspect? _shorterDimensionAndAspectRatio;
+  SizeWithAspect? get shorterDimensionAndAspectRatio => _shorterDimensionAndAspectRatio;
 
   SizingMode get sizingMode => _sizingMode();
 
@@ -264,6 +270,10 @@ class SizeWithUnitAndAspect implements Serializable {
     _heightAndAspectRatio = SizeWithAspect(height, aspectRatio);
   }
 
+  SizeWithUnitAndAspect.shorterDimensionAndAspectRatio(double fraction, double aspectRatio) {
+    _shorterDimensionAndAspectRatio = SizeWithAspect(DoubleWithUnit(fraction, MeasureUnit.fraction), aspectRatio);
+  }
+
   factory SizeWithUnitAndAspect.fromJSON(Map<String, dynamic> json) {
     if (json.containsKey('width') && json.containsKey('height')) {
       return SizeWithUnitAndAspect.widthAndHeight(SizeWithUnit.fromJSON(json));
@@ -273,6 +283,9 @@ class SizeWithUnitAndAspect implements Serializable {
     } else if (json.containsKey('height') && json.containsKey('aspect')) {
       return SizeWithUnitAndAspect.heightAndAspectRatio(
           DoubleWithUnit.fromJSON(json['height']), (json['aspect'] as num).toDouble());
+    } else if (json.containsKey('shorterDimension') && json.containsKey('aspect')) {
+      return SizeWithUnitAndAspect.shorterDimensionAndAspectRatio(
+          (json['shorterDimension']['value'] as num).toDouble(), (json['aspect'] as num).toDouble());
     }
     throw Exception("Unable to create an instance of SizeWithUnitAndAspect from the given json");
   }
@@ -280,12 +293,18 @@ class SizeWithUnitAndAspect implements Serializable {
   @override
   Map<String, dynamic> toMap() {
     if (_widthAndAspectRatio != null) {
-      return {'width': _widthAndAspectRatio.size.toMap(), 'aspect': _widthAndAspectRatio.aspect};
+      return {'width': _widthAndAspectRatio?.size.toMap(), 'aspect': _widthAndAspectRatio?.aspect};
     }
     if (_heightAndAspectRatio != null) {
-      return {'height': _heightAndAspectRatio.size.toMap(), 'aspect': _heightAndAspectRatio.aspect};
+      return {'height': _heightAndAspectRatio?.size.toMap(), 'aspect': _heightAndAspectRatio?.aspect};
     }
-    return _widthAndHeight.toMap();
+    if (_shorterDimensionAndAspectRatio != null) {
+      return {
+        'shorterDimension': _shorterDimensionAndAspectRatio?.size.toMap(),
+        'aspect': _shorterDimensionAndAspectRatio?.aspect
+      };
+    }
+    return _widthAndHeight != null ? _widthAndHeight!.toMap() : {};
   }
 }
 
@@ -327,7 +346,7 @@ class SizeWithAspect implements Serializable {
   }
 }
 
-enum SizingMode { widthAndHeight, widthAndAspectRatio, heightAndAspectRatio }
+enum SizingMode { widthAndHeight, widthAndAspectRatio, heightAndAspectRatio, shorterDimensionAndAspectRatio }
 
 extension SizingModeDeserializer on SizingMode {
   static SizingMode fromJSON(String jsonValue) {
@@ -338,6 +357,8 @@ extension SizingModeDeserializer on SizingMode {
         return SizingMode.widthAndAspectRatio;
       case 'heightAndAspectRatio':
         return SizingMode.heightAndAspectRatio;
+      case 'shorterDimensionAndAspectRatio':
+        return SizingMode.shorterDimensionAndAspectRatio;
       default:
         throw Exception("Missing SizingMode for name '$jsonValue'");
     }
@@ -353,6 +374,8 @@ extension SizingModeDeserializer on SizingMode {
         return 'widthAndAspectRatio';
       case SizingMode.heightAndAspectRatio:
         return 'heightAndAspectRatio';
+      case SizingMode.shorterDimensionAndAspectRatio:
+        return 'shorterDimensionAndAspectRatio';
       default:
         throw Exception("Missing Json Value for '$this' sizing mode");
     }
@@ -471,5 +494,6 @@ class Size {
   Size(this._width, this._height);
 
   Size.fromJSON(Map<String, dynamic> json)
-      : this((json['width'] as num).toDouble(), (json['height'] as num).toDouble());
+      : this(json.containsKey('width') ? (json['width'] as num).toDouble() : throw ArgumentError('width'),
+            json.containsKey('height') ? (json['height'] as num).toDouble() : throw ArgumentError('height'));
 }

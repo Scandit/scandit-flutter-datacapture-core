@@ -176,6 +176,7 @@ class CameraSettings implements Serializable {
   FocusRange focusRange;
   FocusGestureStrategy focusGestureStrategy;
   double zoomGestureZoomFactor;
+  bool shouldPreferSmoothAutoFocus;
 
   void setProperty<T>(String name, T value) {
     _cameraSettingsProperties[name] = value;
@@ -185,16 +186,22 @@ class CameraSettings implements Serializable {
     return _cameraSettingsProperties[name] as T;
   }
 
-  CameraSettings(this.preferredResolution, this.zoomFactor, this.focusRange, this.focusGestureStrategy,
-      this.zoomGestureZoomFactor);
+  CameraSettings(
+      this.preferredResolution, this.zoomFactor, this.focusRange, this.focusGestureStrategy, this.zoomGestureZoomFactor,
+      {required this.shouldPreferSmoothAutoFocus});
 
   @override
   Map<String, dynamic> toMap() {
-    var json = {
+    Map<String, dynamic> json;
+    json = {
       'preferredResolution': preferredResolution.jsonValue,
       'zoomFactor': zoomFactor,
       'focusRange': focusRange.jsonValue,
-      'focus': {'range': focusRange.jsonValue, 'focusGestureStrategy': focusGestureStrategy.jsonValue},
+      'focus': {
+        'range': focusRange.jsonValue,
+        'focusGestureStrategy': focusGestureStrategy.jsonValue,
+        'shouldPreferSmoothAutoFocus': shouldPreferSmoothAutoFocus
+      },
       'zoomGestureZoomFactor': zoomGestureZoomFactor
     };
     if (_cameraSettingsProperties.isNotEmpty) {
@@ -205,15 +212,15 @@ class CameraSettings implements Serializable {
 }
 
 class Camera extends FrameSource {
-  CameraSettings _settings;
-  CameraPosition _position;
+  CameraSettings? _settings;
+  late CameraPosition _position;
   TorchState _desiredTorchState = TorchState.off;
   FrameSourceState _desiredState = FrameSourceState.off;
-  _CameraController _cameraController;
+  late _CameraController _cameraController;
   final List<FrameSourceListener> _listeners = [];
   final EventChannel _stateChangeEventChannel =
       const EventChannel('com.scandit.datacapture.core.event/camera#didChangeState');
-  StreamSubscription _stateChangeSubscription;
+  StreamSubscription? _stateChangeSubscription;
 
   CameraPosition get position => _position;
 
@@ -264,13 +271,13 @@ class Camera extends FrameSource {
       'desiredState': _desiredState.jsonValue
     };
     if (_settings != null) {
-      json['settings'] = _settings.toMap();
+      json['settings'] = _settings?.toMap();
     }
     return json;
   }
 
   @override
-  void addListener(FrameSourceListener listener) {
+  void addListener(FrameSourceListener? listener) {
     if (listener == null) return;
 
     if (_listeners.isEmpty) {
@@ -286,22 +293,19 @@ class Camera extends FrameSource {
   }
 
   @override
-  void removeListener(FrameSourceListener listener) {
+  void removeListener(FrameSourceListener? listener) {
     if (listener == null) return;
 
     _listeners.remove(listener);
 
     if (_listeners.isEmpty) {
-      _stateChangeSubscription.cancel();
+      _stateChangeSubscription?.cancel();
       _stateChangeSubscription = null;
     }
   }
 
   Future<void> _onChange() {
-    if (context != null) {
-      return context.update();
-    }
-    return Future<void>.value();
+    return context?.update() ?? Future<void>.value();
   }
 
   void _notifyCameraListeners(FrameSourceState state) {
@@ -323,7 +327,10 @@ class _CameraController {
         .then((value) => FrameSourceStateDeserializer.fromJSON(value as String));
   }
 
-  Future<bool> get isTorchAvailable {
-    return methodChannel.invokeMethod(FunctionNames.isTorchAvailableMethodName, camera.position.jsonValue);
+  Future<bool> get isTorchAvailable async {
+    var isTorchAvailableReturn =
+        await methodChannel.invokeMethod<bool>(FunctionNames.isTorchAvailableMethodName, camera.position.jsonValue);
+
+    return isTorchAvailableReturn ?? false;
   }
 }

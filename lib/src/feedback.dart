@@ -51,7 +51,7 @@ class Vibration implements Serializable {
 }
 
 class Sound implements Serializable {
-  final String _resource;
+  final String? _resource;
 
   Sound(this._resource);
 
@@ -68,9 +68,9 @@ class Sound implements Serializable {
 }
 
 class Feedback implements Serializable {
-  final Vibration _vibration;
-  final Sound _sound;
-  _FeedbackController _controller;
+  final Vibration? _vibration;
+  final Sound? _sound;
+  late _FeedbackController _controller;
 
   Feedback(this._vibration, this._sound) {
     _controller = _FeedbackController.forFeedback(this);
@@ -78,9 +78,9 @@ class Feedback implements Serializable {
 
   static Feedback get defaultFeedback => Feedback(Vibration.defaultVibration, Sound.defaultSound);
 
-  Vibration get vibration => _vibration;
+  Vibration? get vibration => _vibration;
 
-  Sound get sound => _sound;
+  Sound? get sound => _sound;
 
   void emit() {
     _controller.emit();
@@ -90,10 +90,10 @@ class Feedback implements Serializable {
   Map<String, dynamic> toMap() {
     var json = <String, dynamic>{};
     if (_vibration != null) {
-      json['vibration'] = _vibration.toMap();
+      json['vibration'] = _vibration?.toMap();
     }
     if (_sound != null) {
-      json['sound'] = _sound.toMap();
+      json['sound'] = _sound?.toMap();
     }
     return json;
   }

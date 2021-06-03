@@ -11,19 +11,21 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
+import 'control.dart';
 import 'common.dart' as common;
 import 'data_capture_context.dart';
 import 'defaults.dart';
 import 'focus_gesture.dart';
 import 'function_names.dart';
 import 'zoom_gesture.dart';
+import 'logo_style.dart';
 
 abstract class DataCaptureOverlay extends common.Serializable {
   final String _type;
 
-  DataCaptureView get view;
+  DataCaptureView? get view;
 
-  set view(DataCaptureView newValue);
+  set view(DataCaptureView? newValue);
 
   DataCaptureOverlay(this._type);
 
@@ -39,26 +41,27 @@ abstract class DataCaptureViewListener {
 
 // ignore: must_be_immutable
 class DataCaptureView extends StatefulWidget implements common.Serializable {
-  PrivateDataCaptureContext _dataCaptureContext;
-  common.MarginsWithUnit _scanAreaMargins;
-  common.PointWithUnit _pointOfInterest;
-  common.Anchor _logoAnchor;
-  common.PointWithUnit _logoOffset;
+  PrivateDataCaptureContext? _dataCaptureContext;
+  common.MarginsWithUnit _scanAreaMargins = Defaults.captureViewDefaults.scanAreaMargins;
+  common.PointWithUnit _pointOfInterest = Defaults.captureViewDefaults.pointOfInterest;
+  common.Anchor _logoAnchor = Defaults.captureViewDefaults.logoAnchor;
+  common.PointWithUnit _logoOffset = Defaults.captureViewDefaults.logoOffset;
   final List<DataCaptureOverlay> _overlays = [];
   final List<DataCaptureViewListener> _listeners = [];
-  FocusGesture _focusGesture;
-  ZoomGesture _zoomGesture;
+  final List<Control> _controls = [];
+  LogoStyle _logoStyle = Defaults.captureViewDefaults.logoStyle;
+
+  FocusGesture? _focusGesture = Defaults.captureViewDefaults.focusGesture;
+  ZoomGesture? _zoomGesture = Defaults.captureViewDefaults.zoomGesture;
 
   final EventChannel _viewDidChangeSizeEventChannel =
       const EventChannel('com.scandit.datacapture.core.event/datacapture_view#didChangeSize');
   final _DataCaptureViewController _controller = _DataCaptureViewController();
-  StreamSubscription _streamSubscription;
+  StreamSubscription? _streamSubscription;
 
   DataCaptureView._(this._dataCaptureContext) : super() {
-    if (_dataCaptureContext != null) {
-      _dataCaptureContext.view = this;
-      _dataCaptureContext.initialize();
-    }
+    _dataCaptureContext?.view = this;
+    _dataCaptureContext?.initialize();
   }
 
   factory DataCaptureView.forContext(DataCaptureContext dataCaptureContext) {
@@ -68,16 +71,15 @@ class DataCaptureView extends StatefulWidget implements common.Serializable {
   @override
   State<StatefulWidget> createState() => _DataCaptureViewState(dataCaptureContext);
 
-  DataCaptureContext get dataCaptureContext {
-    return _dataCaptureContext;
+  DataCaptureContext? get dataCaptureContext {
+    return _dataCaptureContext as DataCaptureContext?;
   }
 
-  set dataCaptureContext(DataCaptureContext newValue) {
+  set dataCaptureContext(DataCaptureContext? newValue) {
     _dataCaptureContext = newValue;
-    if (_dataCaptureContext != null) {
-      _dataCaptureContext.view = this;
-      _dataCaptureContext.initialize();
-    }
+
+    _dataCaptureContext?.view = this;
+    _dataCaptureContext?.initialize();
   }
 
   common.MarginsWithUnit get scanAreaMargins {
@@ -116,43 +118,22 @@ class DataCaptureView extends StatefulWidget implements common.Serializable {
     _updateContext();
   }
 
-  FocusGesture get focusGesture {
+  FocusGesture? get focusGesture {
     return _focusGesture;
   }
 
-  set focusGesture(FocusGesture newValue) {
+  set focusGesture(FocusGesture? newValue) {
     _focusGesture = newValue;
     _updateContext();
   }
 
-  ZoomGesture get zoomGesture {
+  ZoomGesture? get zoomGesture {
     return _zoomGesture;
   }
 
-  set zoomGesture(ZoomGesture newValue) {
+  set zoomGesture(ZoomGesture? newValue) {
     _zoomGesture = newValue;
     _updateContext();
-  }
-
-  @override
-  Map<String, dynamic> toMap() {
-    var json = <String, dynamic>{};
-    if (_scanAreaMargins != null) {
-      json['scanAreaMargins'] = _scanAreaMargins.toMap();
-    }
-    if (_pointOfInterest != null) {
-      json['pointOfInterest'] = _pointOfInterest.toMap();
-    }
-    if (_logoAnchor != null) {
-      json['logoAnchor'] = _logoAnchor.jsonValue;
-    }
-    if (_logoOffset != null) {
-      json['logoOffset'] = _logoOffset.toMap();
-    }
-    json['overlays'] = _overlays.map((overlay) => overlay.toMap()).toList();
-    json['focusGesture'] = _focusGesture != null ? _focusGesture.toMap() : null;
-    json['zoomGesture'] = _zoomGesture != null ? _zoomGesture.toMap() : null;
-    return json;
   }
 
   void addOverlay(DataCaptureOverlay overlay) {
@@ -208,9 +189,7 @@ class DataCaptureView extends StatefulWidget implements common.Serializable {
   }
 
   void _unregisterListener() {
-    if (_streamSubscription != null) {
-      _streamSubscription.cancel();
-    }
+    _streamSubscription?.cancel();
     _streamSubscription = null;
   }
 
@@ -221,7 +200,45 @@ class DataCaptureView extends StatefulWidget implements common.Serializable {
   }
 
   void _updateContext() {
-    if (_dataCaptureContext != null) _dataCaptureContext.update();
+    _dataCaptureContext?.update();
+  }
+
+  void addControl(Control control) {
+    if (!_controls.contains(control)) {
+      _controls.add(control);
+      _updateContext();
+    }
+  }
+
+  void removeControl(Control control) {
+    if (_controls.remove(control)) {
+      _updateContext();
+    }
+  }
+
+  set logoStyle(LogoStyle newValue) {
+    _logoStyle = newValue;
+    _updateContext();
+  }
+
+  LogoStyle get logoStyle => _logoStyle;
+
+  @override
+  Map<String, dynamic> toMap() {
+    var json = <String, dynamic>{};
+    json['scanAreaMargins'] = _scanAreaMargins.toMap();
+    json['pointOfInterest'] = _pointOfInterest.toMap();
+    json['logoAnchor'] = _logoAnchor.jsonValue;
+    json['logoOffset'] = _logoOffset.toMap();
+    json['overlays'] = _overlays.map((overlay) => overlay.toMap()).toList();
+    json['focusGesture'] = _focusGesture?.toMap();
+    json['zoomGesture'] = _zoomGesture?.toMap();
+    if (_controls.isNotEmpty) {
+      json['controls'] = _controls.map((e) => e.toMap()).toList();
+    }
+    json['logoStyle'] = _logoStyle.jsonValue;
+
+    return json;
   }
 }
 
@@ -244,16 +261,14 @@ class _DataCaptureViewController {
 }
 
 class _DataCaptureViewState extends State<DataCaptureView> {
-  DataCaptureContext _dataCaptureContext;
+  DataCaptureContext? _dataCaptureContext;
 
-  DataCaptureContext get dataCaptureContext => _dataCaptureContext;
+  DataCaptureContext? get dataCaptureContext => _dataCaptureContext;
 
-  set dataCaptureContext(DataCaptureContext newValue) {
+  set dataCaptureContext(DataCaptureContext? newValue) {
     _dataCaptureContext = newValue;
-    if (_dataCaptureContext != null) {
-      _dataCaptureContext.view = widget;
-      _dataCaptureContext.initialize();
-    }
+    _dataCaptureContext?.view = widget;
+    _dataCaptureContext?.initialize();
   }
 
   _DataCaptureViewState(this._dataCaptureContext);

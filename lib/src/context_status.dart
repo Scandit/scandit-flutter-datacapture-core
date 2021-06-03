@@ -4,16 +4,12 @@
  * Copyright (C) 2020- Scandit AG. All rights reserved.
  */
 
-import 'package:flutter/material.dart';
-
 class ContextStatus {
   String _message;
   int _code;
-  bool _isValid;
+  late bool _isValid;
 
-  ContextStatus._(int code, String message, {@required bool isValid}) {
-    _code = code;
-    _message = message;
+  ContextStatus._(this._code, this._message, {required bool isValid}) {
     _isValid = isValid;
   }
 

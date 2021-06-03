@@ -44,7 +44,18 @@ export 'src/defaults.dart' show BrushDefaults, CameraSettingsDefaults hide Defau
 export 'src/feedback.dart' show Feedback, Sound, Vibration;
 export 'src/frame_source.dart' show FrameSource, FrameSourceListener, FrameSourceState;
 export 'src/location_selection.dart' show LocationSelection, RadiusLocationSelection, RectangularLocationSelection;
-export 'src/viewfinder.dart' show LaserlineViewfinder, RectangularViewfinder, AimerViewfinder, Viewfinder;
+export 'src/viewfinder.dart'
+    show
+        LaserlineViewfinder,
+        RectangularViewfinder,
+        AimerViewfinder,
+        Viewfinder,
+        RectangularViewfinderStyle,
+        RectangularViewfinderLineStyle,
+        LaserlineViewfinderStyle,
+        RectangularViewfinderAnimation;
 export 'src/scandit_flutter_datacapture_core.dart' show ScanditFlutterDataCaptureCore;
 export 'src/focus_gesture.dart' show FocusGesture, TapToFocus;
 export 'src/zoom_gesture.dart' show ZoomGesture, SwipeToZoom;
+export 'src/control.dart' show Control, TorchSwitchControl;
+export 'src/logo_style.dart' show LogoStyle;
