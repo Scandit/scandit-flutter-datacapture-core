@@ -47,7 +47,7 @@ class RectangularLocationSelection extends LocationSelection {
   @override
   Map<String, dynamic> toMap() {
     var json = super.toMap();
-    json.addAll(_sizeWithUnitAndAspect.toMap());
+    json['size'] = _sizeWithUnitAndAspect.toMap();
     return json;
   }
 }
