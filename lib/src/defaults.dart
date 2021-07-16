@@ -46,14 +46,16 @@ class CameraSettingsDefaults {
 @immutable
 class CameraDefaults {
   final CameraSettingsDefaults settings;
-  final CameraPosition defaultPosition;
+  final CameraPosition? defaultPosition;
   final List<CameraPosition> availablePositions;
 
   CameraDefaults(this.settings, this.defaultPosition, this.availablePositions);
 
   factory CameraDefaults.fromJSON(Map<String, dynamic> json) {
     var cameraSettings = CameraSettingsDefaults.fromJSON(json['Settings']);
-    var position = CameraPositionDeserializer.cameraPositionFromJSON(json['defaultPosition']);
+    String? cameraPositionJSON = json['defaultPosition'];
+    var position =
+        cameraPositionJSON == null ? null : CameraPositionDeserializer.cameraPositionFromJSON(cameraPositionJSON);
     var availablePositions = (json['availablePositions'])
         // ignore: unnecessary_lambdas
         .map((position) => CameraPositionDeserializer.cameraPositionFromJSON(position))
@@ -225,11 +227,9 @@ class Defaults {
 
   static bool _isInitialized = false;
 
-  static Future<dynamic> initializeDefaults() async {
-    if (_isInitialized) return;
-
-    var result = await channel.invokeMethod('getDefaults');
-    Map<String, dynamic> defaults = jsonDecode(result as String);
+  static void initializeDefaults(String defaultsJSON) {
+    _isInitialized = false;
+    Map<String, dynamic> defaults = jsonDecode(defaultsJSON);
     cameraDefaults = CameraDefaults.fromJSON(defaults['Camera']);
     captureViewDefaults = DataCaptureViewDefaults.fromJSON(defaults['DataCaptureView']);
     rectangularViewfinderDefaults = RectangularViewfinderDefaults.fromJSON(defaults['RectangularViewfinder']);
@@ -238,7 +238,13 @@ class Defaults {
     sdkVersion = defaults['Version'] as String;
     deviceId = defaults['DeviceId'] as String;
     aimerViewfinderDefaults = AimerViewfinderDefaults.fromJSON(defaults['AimerViewfinder']);
-
     _isInitialized = true;
+  }
+
+  static Future<dynamic> initializeDefaultsAsync() async {
+    if (_isInitialized) return;
+
+    String result = await channel.invokeMethod('getDefaults');
+    initializeDefaults(result);
   }
 }

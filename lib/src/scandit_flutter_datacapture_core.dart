@@ -8,6 +8,6 @@ import '../src/defaults.dart';
 
 class ScanditFlutterDataCaptureCore {
   static Future<void> initialize() {
-    return Defaults.initializeDefaults();
+    return Defaults.initializeDefaultsAsync();
   }
 }

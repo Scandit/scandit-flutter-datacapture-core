@@ -1,6 +1,6 @@
 name: scandit_flutter_datacapture_core
 description: Scandit Data Capture SDK for Flutter. ScanditCaptureCore builds the foundation of all data capture related functionality offered by the Scandit Data Capture SDK. It contains classes and interfaces shared between the data capture modules.
-version: 6.8.1
+version: 6.9.0-beta.1
 homepage: https://scandit.com
 
 environment:

@@ -224,7 +224,12 @@ class Camera extends FrameSource {
 
   CameraPosition get position => _position;
 
-  static Camera get defaultCamera => Camera.atPosition(Defaults.cameraDefaults.defaultPosition);
+  static Camera? get defaultCamera => _defaultCamera();
+
+  static Camera? _defaultCamera() {
+    var defaultPosition = Defaults.cameraDefaults.defaultPosition;
+    return defaultPosition == null ? null : Camera.atPosition(defaultPosition);
+  }
 
   @override
   Future<FrameSourceState> get currentState => _cameraController.getCurrentState();
@@ -236,7 +241,10 @@ class Camera extends FrameSource {
     _cameraController = _CameraController(this, Defaults.channel);
   }
 
-  factory Camera.atPosition(CameraPosition cameraPosition) {
+  static Camera? atPosition(CameraPosition cameraPosition) {
+    if (Defaults.cameraDefaults.availablePositions.contains(cameraPosition) == false) {
+      return null;
+    }
     var camera = Camera._();
     camera._position = cameraPosition;
     return camera;

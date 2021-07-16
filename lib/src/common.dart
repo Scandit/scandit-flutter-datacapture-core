@@ -255,6 +255,9 @@ class SizeWithUnitAndAspect implements Serializable {
     if (_heightAndAspectRatio != null) {
       return SizingMode.heightAndAspectRatio;
     }
+    if (_shorterDimensionAndAspectRatio != null) {
+      return SizingMode.shorterDimensionAndAspectRatio;
+    }
     return SizingMode.widthAndHeight;
   }
 
