@@ -233,9 +233,7 @@ class DataCaptureView extends StatefulWidget implements common.Serializable {
     json['overlays'] = _overlays.map((overlay) => overlay.toMap()).toList();
     json['focusGesture'] = _focusGesture?.toMap();
     json['zoomGesture'] = _zoomGesture?.toMap();
-    if (_controls.isNotEmpty) {
-      json['controls'] = _controls.map((e) => e.toMap()).toList();
-    }
+    json['controls'] = _controls.map((e) => e.toMap()).toList();
     json['logoStyle'] = _logoStyle.jsonValue;
 
     return json;
