@@ -192,7 +192,7 @@ public class ScanditFlutterDataCaptureCore: NSObject, FlutterPlatformViewFactory
         SDCCameraPositionFromJSONString(positionString, &position)
         let camera = Camera(position: position)
         let isTorchAvailable = camera?.isTorchAvailable ?? false
-        reply("\(isTorchAvailable)")
+        reply(isTorchAvailable)
     }
 
     func emitFeedback(_ feedbackJSON: String, reply: FlutterResult) {
