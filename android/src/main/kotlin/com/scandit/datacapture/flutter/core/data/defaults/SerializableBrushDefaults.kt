@@ -22,13 +22,15 @@ data class SerializableBrushDefaults(
         strokeWidth = brush?.strokeWidth
     )
 
-    override fun toJson(): JSONObject = JSONObject(
-        mapOf(
+    override fun toJson(): JSONObject = JSONObject(toMap())
+
+    fun toMap(): Map<String, Any?> {
+        return mapOf(
             FIELD_FILL_COLOR to fillColor,
             FIELD_STROKE_COLOR to strokeColor,
             FIELD_STROKE_WIDTH to (strokeWidth?.toDouble() ?: 0.0)
         )
-    )
+    }
 
     companion object {
         private const val FIELD_FILL_COLOR = "fillColor"

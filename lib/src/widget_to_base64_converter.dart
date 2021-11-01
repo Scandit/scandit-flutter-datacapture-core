@@ -31,7 +31,7 @@ extension WidgetToBase64Converter on Widget {
     );
 
     final pipelineOwner = PipelineOwner();
-    final buildOwner = BuildOwner();
+    final buildOwner = BuildOwner(focusManager: FocusManager());
 
     pipelineOwner.rootNode = renderView;
     renderView.prepareInitialFrame();

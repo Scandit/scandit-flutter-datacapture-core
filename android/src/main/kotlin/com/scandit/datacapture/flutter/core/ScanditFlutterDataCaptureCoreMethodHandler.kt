@@ -8,11 +8,7 @@ package com.scandit.datacapture.flutter.core
 import android.content.Context
 import com.scandit.datacapture.core.capture.DataCaptureContext
 import com.scandit.datacapture.core.common.feedback.Feedback
-import com.scandit.datacapture.core.common.geometry.Point
-import com.scandit.datacapture.core.common.geometry.PointDeserializer
-import com.scandit.datacapture.core.common.geometry.Quadrilateral
-import com.scandit.datacapture.core.common.geometry.QuadrilateralDeserializer
-import com.scandit.datacapture.core.common.geometry.toJson
+import com.scandit.datacapture.core.common.geometry.*
 import com.scandit.datacapture.core.source.Camera
 import com.scandit.datacapture.core.source.CameraPosition
 import com.scandit.datacapture.core.source.CameraSettings
@@ -22,14 +18,8 @@ import com.scandit.datacapture.core.ui.style.Brush
 import com.scandit.datacapture.core.ui.viewfinder.AimerViewfinder
 import com.scandit.datacapture.core.ui.viewfinder.LaserlineViewfinder
 import com.scandit.datacapture.core.ui.viewfinder.RectangularViewfinder
-import com.scandit.datacapture.flutter.core.data.defaults.SerializableAimerViewfinderDefaults
-import com.scandit.datacapture.flutter.core.data.defaults.SerializableBrushDefaults
-import com.scandit.datacapture.flutter.core.data.defaults.SerializableCameraDefaults
-import com.scandit.datacapture.flutter.core.data.defaults.SerializableCameraSettingsDefaults
-import com.scandit.datacapture.flutter.core.data.defaults.SerializableCoreDefaults
-import com.scandit.datacapture.flutter.core.data.defaults.SerializableDataCaptureViewDefaults
-import com.scandit.datacapture.flutter.core.data.defaults.SerializableLaserlineViewfinderDefaults
-import com.scandit.datacapture.flutter.core.data.defaults.SerializableRectangularViewfinderDefaults
+import com.scandit.datacapture.flutter.core.data.defaults.*
+import com.scandit.datacapture.flutter.core.deserializers.DataCaptureContextLifecycleObserver
 import com.scandit.datacapture.flutter.core.deserializers.Deserializers
 import com.scandit.datacapture.flutter.core.errors.CameraNotReadyError
 import com.scandit.datacapture.flutter.core.errors.WrongCameraPositionError
@@ -69,7 +59,7 @@ class ScanditFlutterDataCaptureCoreMethodHandler(
         private val ERROR_WRONG_CAMERA_POSITION = Error(
             4,
             "CameraPosition argument does not " +
-                "match the position of the currently used camera."
+                    "match the position of the currently used camera."
         )
     }
 
@@ -115,9 +105,9 @@ class ScanditFlutterDataCaptureCoreMethodHandler(
             dataCaptureViewDefaults = SerializableDataCaptureViewDefaults(dataCaptureView),
             brushDefaults = SerializableBrushDefaults(Brush.transparent()),
             laserlineViewfinderDefaults =
-                SerializableLaserlineViewfinderDefaults(LaserlineViewfinder()),
+            SerializableLaserlineViewfinderDefaults(LaserlineViewfinder()),
             rectangularViewfinderDefaults =
-                SerializableRectangularViewfinderDefaults(RectangularViewfinder()),
+            SerializableRectangularViewfinderDefaults(RectangularViewfinder()),
             aimerViewFinderDefaults = SerializableAimerViewfinderDefaults(AimerViewfinder())
         )
     }
@@ -276,6 +266,9 @@ class ScanditFlutterDataCaptureCoreMethodHandler(
 
     private fun updateContextFromJSON(json: String, result: MethodChannel.Result) {
         dataCaptureContext?.let { dataCaptureContext ->
+            // Parsers are re-created during the update. Avoid keeping stale ones.
+            DataCaptureContextLifecycleObserver.dispatchParsersRemoved()
+
             val updateResult = deserializers.dataCaptureContextDeserializer.updateContextFromJson(
                 dataCaptureContext,
                 DataCaptureViewHandler.dataCaptureView,

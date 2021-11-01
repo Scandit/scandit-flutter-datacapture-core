@@ -111,6 +111,8 @@ class BrushDefaults {
     var strokeWidth = (json['strokeWidth'] as num).toDouble();
     return BrushDefaults(fillColor, strokeColor, strokeWidth);
   }
+
+  Brush toBrush() => Brush(fillColor, strokeColor, strokeWidth);
 }
 
 @immutable

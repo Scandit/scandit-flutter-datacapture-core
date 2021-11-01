@@ -31,6 +31,7 @@ export 'src/common.dart'
         SizeWithAspect,
         SizingMode;
 export 'src/context_status.dart' show ContextStatus;
+export 'src/data_capture_component.dart' show DataCaptureComponent;
 export 'src/data_capture_context.dart'
     show
         DataCaptureContext,
@@ -57,5 +58,5 @@ export 'src/viewfinder.dart'
 export 'src/scandit_flutter_datacapture_core.dart' show ScanditFlutterDataCaptureCore;
 export 'src/focus_gesture.dart' show FocusGesture, TapToFocus;
 export 'src/zoom_gesture.dart' show ZoomGesture, SwipeToZoom;
-export 'src/control.dart' show Control, TorchSwitchControl;
+export 'src/control.dart' show Control, TorchSwitchControl, ZoomSwitchControl;
 export 'src/logo_style.dart' show LogoStyle;

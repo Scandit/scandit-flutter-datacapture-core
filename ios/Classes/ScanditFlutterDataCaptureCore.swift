@@ -70,10 +70,11 @@ public class ScanditFlutterDataCaptureCore: NSObject, FlutterPlatformViewFactory
 
     lazy var contextDeserializer: DataCaptureContextDeserializer = {
         let modeDeserializers = ScanditFlutterDataCaptureCore.modeDeserializers
+        let componentDeserializers = ScanditFlutterDataCaptureCore.componentDeserializers
         let contextDeserializer = DataCaptureContextDeserializer(frameSourceDeserializer: frameSourceDeserializer,
                                                                  viewDeserializer: dataCaptureViewDeserializer,
                                                                  modeDeserializers: modeDeserializers,
-                                                                 componentDeserializers: [])
+                                                                 componentDeserializers: componentDeserializers)
         contextDeserializer.avoidThreadDependencies = true
         return contextDeserializer
     }()
@@ -90,8 +91,25 @@ public class ScanditFlutterDataCaptureCore: NSObject, FlutterPlatformViewFactory
 
     static var modeDeserializers: [DataCaptureModeDeserializer] = []
 
+    static var componentDeserializers: [DataCaptureComponentDeserializer] = []
+
+    static var components: [DataCaptureComponent] = []
+
+    fileprivate static var componentIds: Set<String> {
+        Set(components.compactMap { $0.componentId })
+    }
+
+    public static func hasComponent(with id: String) -> Bool {
+        return componentIds.contains(id)
+    }
+
     public static func register(modeDeserializer: DataCaptureModeDeserializer) {
+        modeDeserializers.removeAll { type(of: $0) == type(of: modeDeserializer) }
         modeDeserializers.append(modeDeserializer)
+    }
+
+    public static func register(componentDeserializer: DataCaptureComponentDeserializer) {
+        componentDeserializers.append(componentDeserializer)
     }
 
     @objc
@@ -151,6 +169,7 @@ public class ScanditFlutterDataCaptureCore: NSObject, FlutterPlatformViewFactory
             let result = try contextDeserializer.context(fromJSONString: jsonString)
             self.context = result.context
             self.dataCaptureView = result.view
+            ScanditFlutterDataCaptureCore.components = result.components
             reply(nil)
         } catch let error as NSError {
             reply(FlutterError(code: "\(error.code)",
@@ -165,12 +184,14 @@ public class ScanditFlutterDataCaptureCore: NSObject, FlutterPlatformViewFactory
             return
         }
         do {
+            let components = ScanditFlutterDataCaptureCore.components
             let result = try self.contextDeserializer.update(context,
                                                              view: self.dataCaptureView,
-                                                             components: [],
+                                                             components: components,
                                                              fromJSON: jsonString)
             self.context = result.context
             self.dataCaptureView = result.view
+            ScanditFlutterDataCaptureCore.components = result.components
             reply(nil)
         } catch let error as NSError {
             reply(FlutterError(code: "\(error.code)",

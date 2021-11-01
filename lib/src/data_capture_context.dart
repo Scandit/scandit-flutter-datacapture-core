@@ -10,11 +10,12 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:meta/meta.dart';
 
-import 'frame_source.dart';
 import 'common.dart';
-import 'defaults.dart';
-import 'data_capture_view.dart';
 import 'context_status.dart';
+import 'data_capture_component.dart';
+import 'data_capture_view.dart';
+import 'defaults.dart';
+import 'frame_source.dart';
 import 'function_names.dart';
 
 abstract class DataCaptureContextCreationOptions {
@@ -155,6 +156,14 @@ class DataCaptureContext with PrivateDataCaptureContext implements Serializable 
     }
   }
 
+  Future<void> addComponent(DataCaptureComponent component) {
+    if (_components.contains(component)) {
+      return Future.value();
+    }
+    _components.add(component);
+    return update();
+  }
+
   Future<void> applySettings(DataCaptureContextSettings settings) {
     _settings = settings;
     return update();
@@ -169,6 +178,7 @@ class DataCaptureContext with PrivateDataCaptureContext implements Serializable 
       'frameworkVersion': _getFrameworkVersion(),
       'frameSource': _frameSource?.toMap(),
       'modes': modes.map((mode) => mode.toMap()).toList(),
+      'components': _components.map((component) => component.toMap()).toList(),
       'view': view?.toMap(),
       'settings': _settings.toMap(),
     };
@@ -194,6 +204,7 @@ mixin PrivateDataCaptureContext {
   _DataCaptureContextController? _controller;
   final List<DataCaptureMode> modes = [];
   final List<DataCaptureContextListener> _listeners = [];
+  final List<DataCaptureComponent> _components = [];
 
   DataCaptureView? view;
 
