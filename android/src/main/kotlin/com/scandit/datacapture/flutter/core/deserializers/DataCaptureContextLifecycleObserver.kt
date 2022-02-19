@@ -8,6 +8,6 @@ object DataCaptureContextLifecycleObserver {
     }
 
     interface Callbacks {
-        fun onParsersRemoved() = Unit
+        fun onParsersRemoved() { }
     }
 }

@@ -16,7 +16,7 @@ class SerializableAimerViewfinderDefaults(
     override fun toJson() = JSONObject(
         mapOf(
             FIELD_VIEW_FINDER_FRAME_COLOR to viewFinder.frameColor.hexString,
-            FIELD_VIEW_FINDER_DOT_COLOR to viewFinder.dotColor.hexString,
+            FIELD_VIEW_FINDER_DOT_COLOR to viewFinder.dotColor.hexString
         )
     )
 

@@ -60,3 +60,4 @@ export 'src/focus_gesture.dart' show FocusGesture, TapToFocus;
 export 'src/zoom_gesture.dart' show ZoomGesture, SwipeToZoom;
 export 'src/control.dart' show Control, TorchSwitchControl, ZoomSwitchControl;
 export 'src/logo_style.dart' show LogoStyle;
+export 'src/direction.dart' show Direction, DirectionDeserializer;

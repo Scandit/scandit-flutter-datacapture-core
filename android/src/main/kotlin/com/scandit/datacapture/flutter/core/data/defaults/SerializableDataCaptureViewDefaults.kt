@@ -18,7 +18,7 @@ data class SerializableDataCaptureViewDefaults(
     private val logoOffset: String,
     private val logoStyle: String,
     private val focusGesture: String?,
-    private val zoomGesture: String?,
+    private val zoomGesture: String?
 ) : SerializableData {
 
     constructor(dataCaptureView: DataCaptureView) : this(
@@ -28,7 +28,7 @@ data class SerializableDataCaptureViewDefaults(
         logoOffset = dataCaptureView.logoOffset.toJson(),
         logoStyle = dataCaptureView.logoStyle.toJson(),
         focusGesture = dataCaptureView.focusGesture?.toJson(),
-        zoomGesture = dataCaptureView.zoomGesture?.toJson(),
+        zoomGesture = dataCaptureView.zoomGesture?.toJson()
     )
 
     override fun toJson(): JSONObject = JSONObject(

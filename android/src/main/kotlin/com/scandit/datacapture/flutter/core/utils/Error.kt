@@ -18,5 +18,5 @@ fun Result.reject(error: Error) {
 }
 
 fun Result.reject(error: Error, vararg messageArgs: Any?) {
-    error(error.code.toString(), error.message.format(messageArgs), null)
+    error(error.code.toString(), error.message.format(messageArgs.joinToString(" ")), null)
 }

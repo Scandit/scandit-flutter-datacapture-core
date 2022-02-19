@@ -98,6 +98,7 @@ class RectangularViewfinder extends Viewfinder {
   RectangularViewfinderStyle get style => _style;
 
   double dimming;
+  double disabledDimming;
 
   RectangularViewfinderLineStyle _lineStyle;
   RectangularViewfinderLineStyle get lineStyle => _lineStyle;
@@ -118,8 +119,8 @@ class RectangularViewfinder extends Viewfinder {
     _sizeWithUnitAndAspect = SizeWithUnitAndAspect.shorterDimensionAndAspectRatio(fraction, aspectRatio);
   }
 
-  RectangularViewfinder._(
-      this._style, this._lineStyle, this._sizeWithUnitAndAspect, this.color, this.dimming, this.animation)
+  RectangularViewfinder._(this._style, this._lineStyle, this._sizeWithUnitAndAspect, this.color, this.dimming,
+      this.animation, this.disabledDimming)
       : super('rectangular');
 
   RectangularViewfinder()
@@ -129,7 +130,8 @@ class RectangularViewfinder extends Viewfinder {
             Defaults.rectangularViewfinderDefaults.defaultStyle.size,
             Defaults.rectangularViewfinderDefaults.defaultStyle.color,
             Defaults.rectangularViewfinderDefaults.defaultStyle.dimming,
-            Defaults.rectangularViewfinderDefaults.defaultStyle.animation);
+            Defaults.rectangularViewfinderDefaults.defaultStyle.animation,
+            Defaults.rectangularViewfinderDefaults.defaultStyle.disabledDimming);
 
   factory RectangularViewfinder.withStyle(RectangularViewfinderStyle style) {
     var styleDefaults = Defaults.rectangularViewfinderDefaults.styles[style];
@@ -137,7 +139,7 @@ class RectangularViewfinder extends Viewfinder {
       throw Exception("RectangularViewfinderDefaults does not contain any defaults for ${style.jsonValue}");
     }
     return RectangularViewfinder._(style, styleDefaults.lineStyle, styleDefaults.size, styleDefaults.color,
-        styleDefaults.dimming, styleDefaults.animation);
+        styleDefaults.dimming, styleDefaults.animation, styleDefaults.disabledDimming);
   }
 
   factory RectangularViewfinder.withStyleAndLineStyle(
@@ -147,8 +149,8 @@ class RectangularViewfinder extends Viewfinder {
       throw Exception("RectangularViewfinderDefaults does not contain any defaults for ${style.jsonValue}");
     }
 
-    return RectangularViewfinder._(
-        style, lineStyle, styleDefaults.size, styleDefaults.color, styleDefaults.dimming, styleDefaults.animation);
+    return RectangularViewfinder._(style, lineStyle, styleDefaults.size, styleDefaults.color, styleDefaults.dimming,
+        styleDefaults.animation, styleDefaults.disabledDimming);
   }
 
   @override

@@ -39,7 +39,7 @@ import org.json.JSONException
 
 class ScanditFlutterDataCaptureCoreMethodHandler(
     private val context: Context,
-    binaryMessenger: BinaryMessenger,
+    binaryMessenger: BinaryMessenger
 ) : MethodChannel.MethodCallHandler {
 
     companion object {
@@ -59,7 +59,7 @@ class ScanditFlutterDataCaptureCoreMethodHandler(
         private val ERROR_WRONG_CAMERA_POSITION = Error(
             4,
             "CameraPosition argument does not " +
-                    "match the position of the currently used camera."
+                "match the position of the currently used camera."
         )
     }
 
@@ -173,6 +173,7 @@ class ScanditFlutterDataCaptureCoreMethodHandler(
             ).densityIndependent
             result.success(mappedPoint.toJson())
         } catch (e: RuntimeException) {
+            println(e)
             result.reject(ERROR_DESERIALIZATION_FAILED)
         }
     }
@@ -195,6 +196,7 @@ class ScanditFlutterDataCaptureCoreMethodHandler(
             ).densityIndependent
             result.success(mappedQuadrilateral.toJson())
         } catch (e: RuntimeException) {
+            println(e)
             result.reject(ERROR_DESERIALIZATION_FAILED)
         }
     }

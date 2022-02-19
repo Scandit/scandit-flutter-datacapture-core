@@ -6,8 +6,8 @@
 package com.scandit.datacapture.flutter.core.utils
 
 import io.flutter.plugin.common.EventChannel
-import java.util.concurrent.atomic.AtomicReference
 import org.json.JSONObject
+import java.util.concurrent.atomic.AtomicReference
 
 class EventHandler(private val channel: EventChannel, autoEnableListener: Boolean = true) :
     EventChannel.StreamHandler {

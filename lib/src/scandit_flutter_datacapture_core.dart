@@ -6,6 +6,7 @@
 
 import '../src/defaults.dart';
 
+// ignore: avoid_classes_with_only_static_members
 class ScanditFlutterDataCaptureCore {
   static Future<void> initialize() {
     return Defaults.initializeDefaultsAsync();

@@ -182,8 +182,10 @@ class RectangularViewfinderStyleDefaults {
   final double dimming;
   final RectangularViewfinderLineStyle lineStyle;
   final RectangularViewfinderAnimation? animation;
+  final double disabledDimming;
 
-  RectangularViewfinderStyleDefaults(this.style, this.size, this.color, this.dimming, this.lineStyle, this.animation);
+  RectangularViewfinderStyleDefaults(
+      this.style, this.size, this.color, this.dimming, this.lineStyle, this.animation, this.disabledDimming);
 
   factory RectangularViewfinderStyleDefaults.fromJSON(Map<String, dynamic> json) {
     var size = SizeWithUnitAndAspect.fromJSON(jsonDecode(json['size']) as Map<String, dynamic>);
@@ -196,8 +198,9 @@ class RectangularViewfinderStyleDefaults {
       var animationJson = jsonDecode(json['animation']);
       animation = RectangularViewfinderAnimation(isLooping: animationJson['looping'] as bool);
     }
+    var disabledDimming = (json['disabledDimming'] as num).toDouble();
 
-    return RectangularViewfinderStyleDefaults(style, size, color, dimming, lineStyle, animation);
+    return RectangularViewfinderStyleDefaults(style, size, color, dimming, lineStyle, animation, disabledDimming);
   }
 }
 

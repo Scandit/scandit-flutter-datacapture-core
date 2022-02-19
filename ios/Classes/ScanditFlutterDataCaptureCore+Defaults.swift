@@ -81,7 +81,8 @@ extension ScanditFlutterDataCaptureCore {
                 "lineStyle": viewfinder.lineStyle.jsonString,
                 "dimming": viewfinder.dimming,
                 "animation": viewfinder.animation?.jsonString as Any,
-                "style": viewfinder.style.jsonString
+                "style": viewfinder.style.jsonString,
+                "disabledDimming": viewfinder.disabledDimming,
             ]
             return defaults
         }
