@@ -5,6 +5,7 @@
  */
 
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
@@ -14,9 +15,9 @@ import 'dart:ui' as ui;
 extension WidgetToBase64Converter on Widget {
   Future<String> get base64String => _createImageFromWidget(this);
 
-  /// Creates an image from the given widget by first spinning up a element and render tree,
-  /// and then creating an image via a [RepaintBoundary].
-  Future<String> _createImageFromWidget(Widget widget) async {
+  Future<Uint8List?> get toImage => _getImageBytesFromWidget(this);
+
+  Future<Uint8List?> _getImageBytesFromWidget(Widget widget) async {
     final repaintBoundary = RenderRepaintBoundary();
 
     var logicalSize = ui.window.physicalSize / ui.window.devicePixelRatio;
@@ -74,7 +75,13 @@ extension WidgetToBase64Converter on Widget {
 
     final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
 
-    var imageBytes = byteData?.buffer.asUint8List();
+    return byteData?.buffer.asUint8List();
+  }
+
+  /// Creates an image from the given widget by first spinning up a element and render tree,
+  /// and then creating an image via a [RepaintBoundary].
+  Future<String> _createImageFromWidget(Widget widget) async {
+    var imageBytes = await _getImageBytesFromWidget(widget);
     return imageBytes != null ? base64Encode(imageBytes) : '';
   }
 }

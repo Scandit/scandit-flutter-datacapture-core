@@ -6,9 +6,13 @@
 
 import Foundation
 
-extension ScanditFlutterDataCaptureCore: FrameSourceDeserializerDelegate, FrameSourceListener {
+extension ScanditFlutterDataCaptureCore: FrameSourceDeserializerDelegate, FrameSourceListener, TorchListener {
     public func frameSource(_ source: FrameSource, didChange newState: FrameSourceState) {
         guard send(on: cameraStateEventSink, body: ["state": newState.jsonString]) else { return }
+    }
+    
+    public func didChangeTorch(to torchState: TorchState) {
+        guard send(on: cameraTorchStateEventSink, body: ["state": torchState.jsonString]) else { return }
     }
 
     public func frameSource(_ source: FrameSource, didOutputFrame frame: FrameData) {}
@@ -22,6 +26,7 @@ extension ScanditFlutterDataCaptureCore: FrameSourceDeserializerDelegate, FrameS
                                         from JSONValue: JSONValue) {
         guard let camera = frameSource as? Camera else { return }
         camera.addListener(self)
+        camera.addTorchListener(self)
 
         if JSONValue.containsKey("desiredState") {
             let desiredStateJSON = JSONValue.string(forKey: "desiredState")

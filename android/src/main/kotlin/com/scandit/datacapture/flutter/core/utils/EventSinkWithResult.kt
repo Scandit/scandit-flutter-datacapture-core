@@ -30,15 +30,15 @@ class EventSinkWithResult<T>(
             val pendingResult: PendingResult? =
                 resultHolder.poll(timeoutMillis, TimeUnit.MILLISECONDS)
         ) {
-            null -> {
-                Log.info("Callback `$name` not finished after $timeoutMillis milliseconds.")
-                timeoutResult
-            }
             is Cancellation -> {
                 Log.info("Callback `$name` not finished, because onCancel was called.")
                 timeoutResult
             }
             is Result<*> -> pendingResult.value as T
+            else -> {
+                Log.info("Callback `$name` not finished after $timeoutMillis milliseconds.")
+                timeoutResult
+            }
         }
     }
 

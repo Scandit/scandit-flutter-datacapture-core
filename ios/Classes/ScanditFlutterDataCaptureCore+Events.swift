@@ -8,7 +8,6 @@ import Foundation
 
 extension ScanditFlutterDataCaptureCore {
     func send(on sink: BaseEventSink, body: [String: Any]? = nil) -> Bool {
-        guard hasListeners else { return false }
         sink.send(body: body)
         return true
     }

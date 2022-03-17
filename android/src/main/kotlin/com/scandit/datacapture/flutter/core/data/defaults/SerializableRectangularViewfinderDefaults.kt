@@ -40,7 +40,8 @@ class SerializableRectangularViewfinderDefaults(
                 FIELD_VIEW_FINDER_LINE_STYLE to lineStyle.toJson(),
                 FIELD_VIEW_FINDER_DIMMING to dimming,
                 FIELD_VIEW_FINDER_ANIMATION to animation?.toJson(),
-                FIELD_VIEW_FINDER_DISABLED_DIMMING to disabledDimming
+                FIELD_VIEW_FINDER_DISABLED_DIMMING to disabledDimming,
+                FIELD_VIEW_FINDER_DISABLED_COLOR to disabledColor.hexString
             )
         }
     }
@@ -55,5 +56,6 @@ class SerializableRectangularViewfinderDefaults(
         private const val FIELD_VIEW_FINDER_DIMMING = "dimming"
         private const val FIELD_VIEW_FINDER_ANIMATION = "animation"
         private const val FIELD_VIEW_FINDER_DISABLED_DIMMING = "disabledDimming"
+        private const val FIELD_VIEW_FINDER_DISABLED_COLOR = "disabledColor"
     }
 }

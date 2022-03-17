@@ -13,6 +13,8 @@ import com.scandit.datacapture.core.source.FrameSource
 import com.scandit.datacapture.core.source.FrameSourceListener
 import com.scandit.datacapture.core.source.FrameSourceState
 import com.scandit.datacapture.core.source.FrameSourceStateDeserializer
+import com.scandit.datacapture.core.source.TorchListener
+import com.scandit.datacapture.core.source.TorchState
 import com.scandit.datacapture.core.source.TorchStateDeserializer
 import com.scandit.datacapture.core.source.serialization.FrameSourceDeserializer
 import com.scandit.datacapture.core.source.serialization.FrameSourceDeserializerListener
@@ -25,19 +27,27 @@ import io.flutter.plugin.common.EventChannel
 import org.json.JSONObject
 
 class ScanditFlutterFrameSourceListener(binaryMessenger: BinaryMessenger) :
-    FrameSourceListener, FrameSourceDeserializerListener {
+    FrameSourceListener, FrameSourceDeserializerListener, TorchListener {
 
     companion object {
         private const val DESIRED_TORCH_STATE = "desiredTorchState"
         private const val DESIRED_STATE = "desiredState"
         private const val ON_STATE_CHANGED_EVENT_NAME = "didChangeState"
+        private const val ON_TORCH_STATE_CHANGED_EVENT_NAME = "didChangeTorchState"
         private const val FIELD_EVENT = "event"
         private const val FIELD_STATE = "state"
-        private const val CHANNEL_NAME = "com.scandit.datacapture.core.event/camera#didChangeState"
+        private const val DID_CHANGE_STATE_CHANNEL_NAME =
+            "com.scandit.datacapture.core.event/camera#$ON_STATE_CHANGED_EVENT_NAME"
+        private const val DID_CHANGE_TORCH_STATE_CHANNEL_NAME =
+            "com.scandit.datacapture.core.event/camera#$ON_TORCH_STATE_CHANGED_EVENT_NAME"
     }
 
-    private val didChangeStateEventHandler = EventHandler(
-        EventChannel(binaryMessenger, CHANNEL_NAME)
+    private val frameStateChangeEventHandler = EventHandler(
+        EventChannel(binaryMessenger, DID_CHANGE_STATE_CHANNEL_NAME)
+    )
+
+    private val torchStateChangeEventHandler = EventHandler(
+        EventChannel(binaryMessenger, DID_CHANGE_TORCH_STATE_CHANNEL_NAME)
     )
 
     fun getCameraState(cameraPositionAsJson: String): String =
@@ -89,11 +99,22 @@ class ScanditFlutterFrameSourceListener(binaryMessenger: BinaryMessenger) :
     }
 
     override fun onStateChanged(frameSource: FrameSource, newState: FrameSourceState) {
-        didChangeStateEventHandler.send(
+        frameStateChangeEventHandler.send(
             JSONObject(
                 mapOf(
                     FIELD_EVENT to ON_STATE_CHANGED_EVENT_NAME,
                     FIELD_STATE to newState.toJson()
+                )
+            )
+        )
+    }
+
+    override fun onTorchStateChanged(state: TorchState) {
+        torchStateChangeEventHandler.send(
+            JSONObject(
+                mapOf(
+                    FIELD_EVENT to ON_TORCH_STATE_CHANGED_EVENT_NAME,
+                    FIELD_STATE to state.toJson()
                 )
             )
         )
@@ -106,7 +127,11 @@ class ScanditFlutterFrameSourceListener(binaryMessenger: BinaryMessenger) :
     private var camera: Camera? = null
         private set(value) {
             field?.removeListener(this)
-            field = value?.also { it.addListener(this) }
+            field?.removeTorchListener(this)
+            field = value?.also {
+                it.addListener(this)
+                it.addTorchListener(this)
+            }
         }
 
     private fun getCameraPositionFromJson(json: String): CameraPosition =

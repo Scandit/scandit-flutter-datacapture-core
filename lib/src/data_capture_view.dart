@@ -8,6 +8,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
@@ -273,13 +276,36 @@ class _DataCaptureViewState extends State<DataCaptureView> {
 
   @override
   Widget build(BuildContext context) {
+    const viewType = 'com.scandit.DataCaptureView';
+
     if (Platform.isAndroid) {
-      return AndroidView(
-        viewType: 'com.scandit.DataCaptureView',
+      return PlatformViewLink(
+        viewType: viewType,
+        surfaceFactory: (context, controller) {
+          return AndroidViewSurface(
+            controller: controller as AndroidViewController,
+            gestureRecognizers: const <Factory<OneSequenceGestureRecognizer>>{},
+            hitTestBehavior: PlatformViewHitTestBehavior.opaque,
+          );
+        },
+        onCreatePlatformView: (params) {
+          return PlatformViewsService.initSurfaceAndroidView(
+            id: params.id,
+            viewType: viewType,
+            layoutDirection: TextDirection.ltr,
+            creationParams: <String, dynamic>{},
+            creationParamsCodec: const StandardMessageCodec(),
+            onFocus: () {
+              params.onFocusChanged(true);
+            },
+          )
+            ..addOnPlatformViewCreatedListener(params.onPlatformViewCreated)
+            ..create();
+        },
       );
     } else {
       return UiKitView(
-        viewType: 'com.scandit.DataCaptureView',
+        viewType: viewType,
       );
     }
   }

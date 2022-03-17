@@ -9,8 +9,8 @@ import 'dart:convert';
 import 'package:flutter/services.dart';
 
 import 'common.dart';
-import 'frame_source.dart';
 import 'defaults.dart';
+import 'frame_source.dart';
 import 'function_names.dart';
 
 enum CameraPosition { worldFacing, userFacing, unspecified }
@@ -60,6 +60,19 @@ extension TorchStateDeserializer on TorchState {
         return 'auto';
       default:
         throw Exception("Missing Json Value for '$this' torch state");
+    }
+  }
+
+  static TorchState fromJSON(String jsonValue) {
+    switch (jsonValue) {
+      case 'on':
+        return TorchState.on;
+      case 'off':
+        return TorchState.off;
+      case 'auto':
+        return TorchState.auto;
+      default:
+        throw Exception("Missing TorchState for '$jsonValue'");
     }
   }
 }
@@ -217,10 +230,8 @@ class Camera extends FrameSource {
   TorchState _desiredTorchState = TorchState.off;
   FrameSourceState _desiredState = FrameSourceState.off;
   late _CameraController _cameraController;
-  final List<FrameSourceListener> _listeners = [];
-  final EventChannel _stateChangeEventChannel =
-      const EventChannel('com.scandit.datacapture.core.event/camera#didChangeState');
-  StreamSubscription? _stateChangeSubscription;
+  final List<FrameSourceListener> _frameSourceListeners = [];
+  final List<TorchListener> _torchStateListeners = [];
 
   CameraPosition get position => _position;
 
@@ -271,6 +282,52 @@ class Camera extends FrameSource {
   Future<bool> get isTorchAvailable => _cameraController.isTorchAvailable;
 
   @override
+  void addListener(FrameSourceListener? listener) {
+    if (listener == null) return;
+
+    if (_frameSourceListeners.isEmpty) {
+      _cameraController.subscribeFrameSourceListener();
+    }
+
+    if (!_frameSourceListeners.contains(listener)) {
+      _frameSourceListeners.add(listener);
+    }
+  }
+
+  @override
+  void removeListener(FrameSourceListener? listener) {
+    if (listener == null) return;
+
+    _frameSourceListeners.remove(listener);
+
+    if (_frameSourceListeners.isEmpty) {
+      _cameraController.unsubscribeFrameSourceListener();
+    }
+  }
+
+  void addTorchListener(TorchListener listener) {
+    if (_torchStateListeners.isEmpty) {
+      _cameraController.subscribeTorchListener();
+    }
+
+    if (!_torchStateListeners.contains(listener)) {
+      _torchStateListeners.add(listener);
+    }
+  }
+
+  void removeTorchListener(TorchListener listener) {
+    _torchStateListeners.remove(listener);
+
+    if (_torchStateListeners.isEmpty) {
+      _cameraController.unsubscribTorchListener();
+    }
+  }
+
+  Future<void> _onChange() {
+    return context?.update() ?? Future<void>.value();
+  }
+
+  @override
   Map<String, dynamic> toMap() {
     var json = <String, dynamic>{
       'type': 'camera',
@@ -283,51 +340,48 @@ class Camera extends FrameSource {
     }
     return json;
   }
-
-  @override
-  void addListener(FrameSourceListener? listener) {
-    if (listener == null) return;
-
-    if (_listeners.isEmpty) {
-      _stateChangeSubscription = _stateChangeEventChannel.receiveBroadcastStream().listen((event) {
-        var state = FrameSourceStateDeserializer.fromJSON(jsonDecode(event)['state'] as String);
-        _notifyCameraListeners(state);
-      });
-    }
-
-    if (!_listeners.contains(listener)) {
-      _listeners.add(listener);
-    }
-  }
-
-  @override
-  void removeListener(FrameSourceListener? listener) {
-    if (listener == null) return;
-
-    _listeners.remove(listener);
-
-    if (_listeners.isEmpty) {
-      _stateChangeSubscription?.cancel();
-      _stateChangeSubscription = null;
-    }
-  }
-
-  Future<void> _onChange() {
-    return context?.update() ?? Future<void>.value();
-  }
-
-  void _notifyCameraListeners(FrameSourceState state) {
-    for (var listener in _listeners) {
-      listener.didChangeState(this, state);
-    }
-  }
 }
 
 class _CameraController {
   final Camera camera;
   final MethodChannel methodChannel;
 
+  final EventChannel _stateChangeEventChannel =
+      const EventChannel('com.scandit.datacapture.core.event/camera#didChangeState');
+  StreamSubscription? _stateChangeSubscription;
+
+  final EventChannel _torchStateChangeEventChannel =
+      const EventChannel('com.scandit.datacapture.core.event/camera#didChangeTorchState');
+
+  StreamSubscription? _torchStateChangeSubscription;
+
   _CameraController(this.camera, this.methodChannel);
+
+  void subscribeFrameSourceListener() {
+    if (_stateChangeSubscription != null) return;
+    _stateChangeSubscription = _stateChangeEventChannel.receiveBroadcastStream().listen((event) {
+      var state = FrameSourceStateDeserializer.fromJSON(jsonDecode(event)['state'] as String);
+      _notifyCameraListeners(state);
+    });
+  }
+
+  void unsubscribeFrameSourceListener() {
+    _stateChangeSubscription?.cancel();
+    _stateChangeSubscription = null;
+  }
+
+  void subscribeTorchListener() {
+    if (_torchStateChangeSubscription != null) return;
+    _torchStateChangeSubscription = _torchStateChangeEventChannel.receiveBroadcastStream().listen((event) {
+      var state = TorchStateDeserializer.fromJSON(jsonDecode(event)['state'] as String);
+      _notifyTorchListeners(state);
+    });
+  }
+
+  void unsubscribTorchListener() {
+    _torchStateChangeSubscription?.cancel();
+    _torchStateChangeSubscription = null;
+  }
 
   Future<FrameSourceState> getCurrentState() {
     return methodChannel
@@ -340,5 +394,17 @@ class _CameraController {
         await methodChannel.invokeMethod<bool>(FunctionNames.isTorchAvailableMethodName, camera.position.jsonValue);
 
     return isTorchAvailableReturn ?? false;
+  }
+
+  void _notifyCameraListeners(FrameSourceState state) {
+    for (var listener in camera._frameSourceListeners) {
+      listener.didChangeState(camera, state);
+    }
+  }
+
+  void _notifyTorchListeners(TorchState state) {
+    for (var listener in camera._torchStateListeners) {
+      listener.didChangeTorchToState(state);
+    }
   }
 }

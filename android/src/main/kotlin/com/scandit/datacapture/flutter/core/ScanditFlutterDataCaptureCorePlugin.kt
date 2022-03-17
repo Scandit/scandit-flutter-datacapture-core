@@ -10,10 +10,11 @@ import com.scandit.datacapture.flutter.core.ui.FlutterDataCaptureView
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.FlutterPlugin.FlutterPluginBinding
 import io.flutter.plugin.common.MethodChannel
-import io.flutter.plugin.common.PluginRegistry
 import io.flutter.plugin.common.StandardMessageCodec
 import io.flutter.plugin.platform.PlatformView
 import io.flutter.plugin.platform.PlatformViewFactory
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 /** ScanditFlutterDataCaptureCorePlugin. */
 class ScanditFlutterDataCaptureCorePlugin :
@@ -21,27 +22,11 @@ class ScanditFlutterDataCaptureCorePlugin :
     PlatformViewFactory(StandardMessageCodec.INSTANCE) {
 
     companion object {
-        @Suppress("unused")
         @JvmStatic
-        fun registerWith(registrar: PluginRegistry.Registrar) {
-            val plugin = ScanditFlutterDataCaptureCorePlugin()
-            registrar
-                .platformViewRegistry()
-                .registerViewFactory("com.scandit.DataCaptureView", plugin)
+        private val lock = ReentrantLock()
 
-            val channel = MethodChannel(
-                registrar.messenger(),
-                "com.scandit.datacapture.core.method/datacapture_defaults"
-            )
-
-            plugin.scanditFlutterDataCaptureCoreMethodHandler =
-                ScanditFlutterDataCaptureCoreMethodHandler(
-                    registrar.context(),
-                    registrar.messenger()
-                )
-
-            channel.setMethodCallHandler(plugin.scanditFlutterDataCaptureCoreMethodHandler)
-        }
+        @JvmStatic
+        private var isPluginAttached = false
     }
 
     private lateinit var methodChannel: MethodChannel
@@ -53,27 +38,34 @@ class ScanditFlutterDataCaptureCorePlugin :
         FlutterDataCaptureView(context)
 
     override fun onAttachedToEngine(binding: FlutterPluginBinding) {
-        scanditFlutterDataCaptureCoreMethodHandler =
-            ScanditFlutterDataCaptureCoreMethodHandler(
-                binding.applicationContext,
-                binding.binaryMessenger
-            )
+        lock.withLock {
+            if (isPluginAttached) return
 
-        binding.platformViewRegistry.registerViewFactory(
-            "com.scandit.DataCaptureView",
-            this
-        )
-        methodChannel = MethodChannel(
-            binding.binaryMessenger,
-            "com.scandit.datacapture.core.method/datacapture_defaults"
-        )
-        methodChannel.setMethodCallHandler(scanditFlutterDataCaptureCoreMethodHandler)
+            scanditFlutterDataCaptureCoreMethodHandler =
+                ScanditFlutterDataCaptureCoreMethodHandler(
+                    binding.applicationContext,
+                    binding.binaryMessenger
+                )
+
+            binding.platformViewRegistry.registerViewFactory(
+                "com.scandit.DataCaptureView",
+                this
+            )
+            methodChannel = MethodChannel(
+                binding.binaryMessenger,
+                "com.scandit.datacapture.core.method/datacapture_defaults"
+            )
+            methodChannel.setMethodCallHandler(scanditFlutterDataCaptureCoreMethodHandler)
+            isPluginAttached = true
+        }
     }
 
     override fun onDetachedFromEngine(binding: FlutterPluginBinding) {
-        methodChannel.setMethodCallHandler(null)
-
-        dispose()
+        lock.withLock {
+            methodChannel.setMethodCallHandler(null)
+            dispose()
+            isPluginAttached = false
+        }
     }
 
     private fun dispose() {

@@ -42,8 +42,6 @@ public class ScanditFlutterDataCaptureCore: NSObject, FlutterPlatformViewFactory
             }
         }
 
-    var hasListeners = false
-
     let coreQueue = DispatchQueue(label: "com.scandit.flutter.datacapture-core")
 
     let contextStatusEventChannel: FlutterEventChannel
@@ -57,6 +55,9 @@ public class ScanditFlutterDataCaptureCore: NSObject, FlutterPlatformViewFactory
 
     let cameraStateEventChannel: FlutterEventChannel
     let cameraStateEventSink = BaseEventSink()
+    
+    let cameraTorchStateEventChannel: FlutterEventChannel
+    let cameraTorchStateEventSink = BaseEventSink()
 
     var dataCaptureView: DataCaptureView? {
         didSet {
@@ -130,6 +131,9 @@ public class ScanditFlutterDataCaptureCore: NSObject, FlutterPlatformViewFactory
         cameraStateEventChannel = FlutterEventChannel(name: "com.scandit.datacapture.core.event/camera#didChangeState",
                                                       binaryMessenger: messenger)
         cameraStateEventChannel.setStreamHandler(cameraStateEventSink)
+        cameraTorchStateEventChannel = FlutterEventChannel(name: "com.scandit.datacapture.core.event/camera#didChangeTorchState",
+                                                      binaryMessenger: messenger)
+        cameraTorchStateEventChannel.setStreamHandler(cameraTorchStateEventSink)
         super.init()
     }
 
@@ -143,6 +147,7 @@ public class ScanditFlutterDataCaptureCore: NSObject, FlutterPlatformViewFactory
         didStartObservingContextEventChannel.setStreamHandler(nil)
         viewDidChangeEventChannel.setStreamHandler(nil)
         cameraStateEventChannel.setStreamHandler(nil)
+        cameraTorchStateEventChannel.setStreamHandler(nil)
         context?.removeListener(self)
         context?.dispose()
     }

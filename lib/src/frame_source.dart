@@ -4,6 +4,7 @@
  * Copyright (C) 2020- Scandit AG. All rights reserved.
  */
 
+import 'camera.dart';
 import 'common.dart';
 import 'data_capture_context.dart';
 
@@ -75,4 +76,8 @@ abstract class FrameSource implements Serializable {
 
 abstract class FrameSourceListener {
   void didChangeState(FrameSource frameSource, FrameSourceState newState);
+}
+
+abstract class TorchListener {
+  void didChangeTorchToState(TorchState state);
 }

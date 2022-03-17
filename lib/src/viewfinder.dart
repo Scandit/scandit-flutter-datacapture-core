@@ -91,6 +91,7 @@ class RectangularViewfinder extends Viewfinder {
   SizeWithUnitAndAspect get sizeWithUnitAndAspect => _sizeWithUnitAndAspect;
 
   Color color;
+  Color disabledColor;
 
   RectangularViewfinderAnimation? animation;
 
@@ -120,7 +121,7 @@ class RectangularViewfinder extends Viewfinder {
   }
 
   RectangularViewfinder._(this._style, this._lineStyle, this._sizeWithUnitAndAspect, this.color, this.dimming,
-      this.animation, this.disabledDimming)
+      this.animation, this.disabledDimming, this.disabledColor)
       : super('rectangular');
 
   RectangularViewfinder()
@@ -131,7 +132,8 @@ class RectangularViewfinder extends Viewfinder {
             Defaults.rectangularViewfinderDefaults.defaultStyle.color,
             Defaults.rectangularViewfinderDefaults.defaultStyle.dimming,
             Defaults.rectangularViewfinderDefaults.defaultStyle.animation,
-            Defaults.rectangularViewfinderDefaults.defaultStyle.disabledDimming);
+            Defaults.rectangularViewfinderDefaults.defaultStyle.disabledDimming,
+            Defaults.rectangularViewfinderDefaults.defaultStyle.disabledColor);
 
   factory RectangularViewfinder.withStyle(RectangularViewfinderStyle style) {
     var styleDefaults = Defaults.rectangularViewfinderDefaults.styles[style];
@@ -139,7 +141,7 @@ class RectangularViewfinder extends Viewfinder {
       throw Exception("RectangularViewfinderDefaults does not contain any defaults for ${style.jsonValue}");
     }
     return RectangularViewfinder._(style, styleDefaults.lineStyle, styleDefaults.size, styleDefaults.color,
-        styleDefaults.dimming, styleDefaults.animation, styleDefaults.disabledDimming);
+        styleDefaults.dimming, styleDefaults.animation, styleDefaults.disabledDimming, styleDefaults.disabledColor);
   }
 
   factory RectangularViewfinder.withStyleAndLineStyle(
@@ -150,7 +152,7 @@ class RectangularViewfinder extends Viewfinder {
     }
 
     return RectangularViewfinder._(style, lineStyle, styleDefaults.size, styleDefaults.color, styleDefaults.dimming,
-        styleDefaults.animation, styleDefaults.disabledDimming);
+        styleDefaults.animation, styleDefaults.disabledDimming, styleDefaults.disabledColor);
   }
 
   @override
@@ -163,6 +165,7 @@ class RectangularViewfinder extends Viewfinder {
       'style': _style.jsonValue,
       'dimming': dimming,
       'lineStyle': _lineStyle.jsonValue,
+      'disabledColor': disabledColor.jsonValue
     });
     return json;
   }

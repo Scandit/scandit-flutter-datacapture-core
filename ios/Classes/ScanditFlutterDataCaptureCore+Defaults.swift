@@ -78,6 +78,7 @@ extension ScanditFlutterDataCaptureCore {
             let defaults = [
                 "size": viewfinder.sizeWithUnitAndAspect.jsonString,
                 "color": viewfinder.color.sdcHexString,
+                "disabledColor": viewfinder.disabledColor.sdcHexString,
                 "lineStyle": viewfinder.lineStyle.jsonString,
                 "dimming": viewfinder.dimming,
                 "animation": viewfinder.animation?.jsonString as Any,
