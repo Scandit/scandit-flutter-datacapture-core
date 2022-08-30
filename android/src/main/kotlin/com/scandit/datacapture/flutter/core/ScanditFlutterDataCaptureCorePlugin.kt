@@ -5,21 +5,15 @@
  */
 package com.scandit.datacapture.flutter.core
 
-import android.content.Context
-import com.scandit.datacapture.flutter.core.ui.FlutterDataCaptureView
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.FlutterPlugin.FlutterPluginBinding
 import io.flutter.plugin.common.MethodChannel
-import io.flutter.plugin.common.StandardMessageCodec
-import io.flutter.plugin.platform.PlatformView
-import io.flutter.plugin.platform.PlatformViewFactory
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
 /** ScanditFlutterDataCaptureCorePlugin. */
 class ScanditFlutterDataCaptureCorePlugin :
-    FlutterPlugin,
-    PlatformViewFactory(StandardMessageCodec.INSTANCE) {
+    FlutterPlugin {
 
     companion object {
         @JvmStatic
@@ -34,9 +28,6 @@ class ScanditFlutterDataCaptureCorePlugin :
     var scanditFlutterDataCaptureCoreMethodHandler:
         ScanditFlutterDataCaptureCoreMethodHandler? = null
 
-    override fun create(context: Context, viewId: Int, args: Any?): PlatformView =
-        FlutterDataCaptureView(context)
-
     override fun onAttachedToEngine(binding: FlutterPluginBinding) {
         lock.withLock {
             if (isPluginAttached) return
@@ -49,7 +40,7 @@ class ScanditFlutterDataCaptureCorePlugin :
 
             binding.platformViewRegistry.registerViewFactory(
                 "com.scandit.DataCaptureView",
-                this
+                ScanditPlatformViewFactory()
             )
             methodChannel = MethodChannel(
                 binding.binaryMessenger,

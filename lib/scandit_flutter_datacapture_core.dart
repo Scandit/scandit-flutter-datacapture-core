@@ -61,3 +61,5 @@ export 'src/zoom_gesture.dart' show ZoomGesture, SwipeToZoom;
 export 'src/control.dart' show Control, TorchSwitchControl, ZoomSwitchControl;
 export 'src/logo_style.dart' show LogoStyle;
 export 'src/direction.dart' show Direction, DirectionDeserializer;
+export 'src/image_buffer.dart' show ImageBuffer;
+export 'src/frame_data.dart' show FrameData, DefaultFrameData;
