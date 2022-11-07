@@ -5,6 +5,7 @@
  */
 package com.scandit.datacapture.flutter.core
 
+import com.scandit.datacapture.flutter.core.common.LastFrameDataHolder
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.FlutterPlugin.FlutterPluginBinding
 import io.flutter.plugin.common.MethodChannel
@@ -54,6 +55,7 @@ class ScanditFlutterDataCaptureCorePlugin :
     override fun onDetachedFromEngine(binding: FlutterPluginBinding) {
         lock.withLock {
             methodChannel.setMethodCallHandler(null)
+            LastFrameDataHolder.release()
             dispose()
             isPluginAttached = false
         }

@@ -183,6 +183,8 @@ extension FocusGestureStrategyDeserializer on FocusGestureStrategy {
 
 class CameraSettings implements Serializable {
   final Map<String, dynamic> _cameraSettingsProperties = <String, dynamic>{};
+  final Map<String, dynamic> _cameraFocusHiddenProperties = <String, dynamic>{};
+  final _focusHiddenProperties = ['manualLensPosition', 'focusStrategy'];
 
   VideoResolution preferredResolution;
   double zoomFactor;
@@ -192,10 +194,17 @@ class CameraSettings implements Serializable {
   bool shouldPreferSmoothAutoFocus;
 
   void setProperty<T>(String name, T value) {
+    if (_focusHiddenProperties.contains(name)) {
+      _cameraFocusHiddenProperties[name] = value;
+      return;
+    }
     _cameraSettingsProperties[name] = value;
   }
 
   T getProperty<T>(String name) {
+    if (_focusHiddenProperties.contains(name)) {
+      return _cameraFocusHiddenProperties[name] as T;
+    }
     return _cameraSettingsProperties[name] as T;
   }
 
@@ -217,6 +226,9 @@ class CameraSettings implements Serializable {
       },
       'zoomGestureZoomFactor': zoomGestureZoomFactor
     };
+    _cameraFocusHiddenProperties.forEach((key, value) {
+      json['focus'][key] = value;
+    });
     if (_cameraSettingsProperties.isNotEmpty) {
       json.addAll(_cameraSettingsProperties);
     }
