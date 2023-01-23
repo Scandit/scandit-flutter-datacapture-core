@@ -6,6 +6,7 @@
 package com.scandit.datacapture.flutter.core.listeners
 
 import com.scandit.datacapture.core.json.JsonValue
+import com.scandit.datacapture.core.source.BitmapFrameSource
 import com.scandit.datacapture.core.source.Camera
 import com.scandit.datacapture.core.source.CameraPosition
 import com.scandit.datacapture.core.source.CameraPositionDeserializer
@@ -50,16 +51,17 @@ class ScanditFlutterFrameSourceListener(binaryMessenger: BinaryMessenger) :
         EventChannel(binaryMessenger, DID_CHANGE_TORCH_STATE_CHANNEL_NAME)
     )
 
-    fun getCameraState(cameraPositionAsJson: String): String =
+    fun getCameraState(cameraPositionAsJson: String): String {
         try {
             val positionCamera = this.camera.takeIf {
                 it?.position == getCameraPositionFromJson(cameraPositionAsJson)
             } ?: throw CameraNotReadyError()
 
-            positionCamera.currentState.toJson()
+            return positionCamera.currentState.toJson()
         } catch (_: IllegalStateException) {
             throw CameraNotReadyError()
         }
+    }
 
     fun isTorchAvailable(cameraPositionAsJson: String): Boolean {
         try {
@@ -79,7 +81,7 @@ class ScanditFlutterFrameSourceListener(binaryMessenger: BinaryMessenger) :
         frameSource: FrameSource,
         json: JsonValue
     ) {
-        camera = frameSource as? Camera ?: return
+        camera = frameSource as? Camera
 
         camera?.let {
             if (json.contains(DESIRED_TORCH_STATE)) {
@@ -92,6 +94,18 @@ class ScanditFlutterFrameSourceListener(binaryMessenger: BinaryMessenger) :
                 it.switchToDesiredState(
                     FrameSourceStateDeserializer.fromJson(
                         json.requireByKeyAsString(DESIRED_STATE)
+                    )
+                )
+            }
+        }
+
+        imageFrameSource = frameSource as? BitmapFrameSource
+
+        imageFrameSource?.let {
+            if (json.contains("desiredState")) {
+                it.switchToDesiredState(
+                    FrameSourceStateDeserializer.fromJson(
+                        json.requireByKeyAsString("desiredState")
                     )
                 )
             }
@@ -122,6 +136,7 @@ class ScanditFlutterFrameSourceListener(binaryMessenger: BinaryMessenger) :
 
     fun dispose() {
         camera = null
+        imageFrameSource = null
     }
 
     private var camera: Camera? = null
@@ -132,6 +147,12 @@ class ScanditFlutterFrameSourceListener(binaryMessenger: BinaryMessenger) :
                 it.addListener(this)
                 it.addTorchListener(this)
             }
+        }
+
+    private var imageFrameSource: BitmapFrameSource? = null
+        private set(value) {
+            field?.removeListener(this)
+            field = value?.also { it.addListener(this) }
         }
 
     private fun getCameraPositionFromJson(json: String): CameraPosition =
