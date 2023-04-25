@@ -7,11 +7,17 @@
 import Foundation
 
 extension ScanditFlutterDataCaptureCore: DataCaptureContextListener {
-    public func context(_ context: DataCaptureContext, didChange frameSource: FrameSource?) {}
+    public func context(_ context: DataCaptureContext, didChange frameSource: FrameSource?) {
+        // not used in frameworks
+    }
 
-    public func context(_ context: DataCaptureContext, didAdd mode: DataCaptureMode) {}
+    public func context(_ context: DataCaptureContext, didAdd mode: DataCaptureMode) {
+        // not used in frameworks
+    }
 
-    public func context(_ context: DataCaptureContext, didRemove mode: DataCaptureMode) {}
+    public func context(_ context: DataCaptureContext, didRemove mode: DataCaptureMode) {
+        // not used in frameworks
+    }
 
     public func context(_ context: DataCaptureContext, didChange contextStatus: ContextStatus) {
         guard send(on: contextStatusEventSink, body: ["status": contextStatus.jsonString]) else { return }

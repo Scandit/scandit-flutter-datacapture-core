@@ -55,13 +55,13 @@ extension ScanditFlutterDataCaptureCore {
     var laserlineViewfinderDefaults: [String: Any] {
         func createViewfinderDefaults(style: LaserlineViewfinderStyle) -> [String: Any] {
             let viewfinder = LaserlineViewfinder(style: style)
-            let defaults = [
+            let laserlineDefaults = [
                 "width": viewfinder.width.jsonString,
                 "enabledColor": viewfinder.enabledColor.sdcHexString,
                 "disabledColor": viewfinder.disabledColor.sdcHexString,
                 "style": viewfinder.style.jsonString
             ]
-            return defaults
+            return laserlineDefaults
         }
         return [
             "defaultStyle": LaserlineViewfinder().style.jsonString,
@@ -75,7 +75,7 @@ extension ScanditFlutterDataCaptureCore {
     var rectangularViewfinderDefaults: [String: Any] {
         func createViewfinderDefaults(style: RectangularViewfinderStyle) -> [String: Any] {
             let viewfinder = RectangularViewfinder(style: style)
-            let defaults = [
+            let rectangularDefaults = [
                 "size": viewfinder.sizeWithUnitAndAspect.jsonString,
                 "color": viewfinder.color.sdcHexString,
                 "disabledColor": viewfinder.disabledColor.sdcHexString,
@@ -83,9 +83,9 @@ extension ScanditFlutterDataCaptureCore {
                 "dimming": viewfinder.dimming,
                 "animation": viewfinder.animation?.jsonString as Any,
                 "style": viewfinder.style.jsonString,
-                "disabledDimming": viewfinder.disabledDimming,
+                "disabledDimming": viewfinder.disabledDimming
             ]
-            return defaults
+            return rectangularDefaults
         }
         return [
             "defaultStyle": RectangularViewfinder().style.jsonString,

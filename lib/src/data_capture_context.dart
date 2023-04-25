@@ -102,7 +102,9 @@ class DataCaptureContext with PrivateDataCaptureContext implements Serializable 
 
   LicenseInfo? get licenseInfo => _licenseInfo;
 
-  DataCaptureContext._(this._licenseKey, this._deviceName, this._settings);
+  DataCaptureContext._(this._licenseKey, this._deviceName, this._settings) {
+    _controller = _DataCaptureContextController(this, Defaults.channel);
+  }
 
   DataCaptureContext.forLicenseKey(String licenseKey) : this._(licenseKey, null, DataCaptureContextSettings());
 
@@ -140,7 +142,7 @@ class DataCaptureContext with PrivateDataCaptureContext implements Serializable 
 
   void addListener(DataCaptureContextListener listener) {
     if (_listeners.isEmpty) {
-      _controller?.initSubscribers();
+      _controller.initSubscribers();
     }
 
     if (_listeners.contains(listener)) {
@@ -152,7 +154,7 @@ class DataCaptureContext with PrivateDataCaptureContext implements Serializable 
   void removeListener(DataCaptureContextListener listener) {
     _listeners.remove(listener);
     if (_listeners.isEmpty) {
-      _controller?.cancelSubscribers();
+      _controller.cancelSubscribers();
     }
   }
 
@@ -201,22 +203,15 @@ abstract class DataCaptureContextListener {
 }
 
 mixin PrivateDataCaptureContext {
-  _DataCaptureContextController? _controller;
+  late _DataCaptureContextController _controller;
   final List<DataCaptureMode> modes = [];
   final List<DataCaptureContextListener> _listeners = [];
   final List<DataCaptureComponent> _components = [];
 
   DataCaptureView? view;
 
-  void initialize() {
-    if (_controller != null) {
-      return;
-    }
-    _controller = _DataCaptureContextController(this as DataCaptureContext, Defaults.channel);
-  }
-
   Future<void> update() async {
-    return _controller?.updateContextFromJSON() ?? Future<void>.value();
+    return _controller.updateContextFromJSON();
   }
 }
 

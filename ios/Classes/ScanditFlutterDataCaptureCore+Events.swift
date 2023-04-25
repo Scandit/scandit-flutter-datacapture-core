@@ -27,8 +27,12 @@ class BaseEventSink: NSObject, FlutterStreamHandler {
     }
 
     func send(body: [String: Any]?) {
-        let payload = String(data: try! JSONSerialization.data(withJSONObject: body ?? [:], options: []),
-                             encoding: .utf8)
-        sink?(payload)
+        do {
+            let payload = String(data: try JSONSerialization.data(withJSONObject: body ?? [:], options: []),
+                                 encoding: .utf8)
+            sink?(payload)
+        } catch {
+            print(error)
+        }
     }
 }

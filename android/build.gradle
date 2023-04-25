@@ -1,7 +1,7 @@
 buildscript {
     ext {
-        sdk_version = "6.16.2"
-        kotlin_version = "1.5.31"
+        sdk_version = "6.17.0"
+        kotlin_version = "1.6.21"
         agp_version = "7.2.1"
     }
 
@@ -36,6 +36,6 @@ android {
 
 dependencies {
     api "com.scandit.datacapture:core:$sdk_version"
-
+    
     implementation 'com.squareup.okhttp3:okhttp:4.9.2'
 }

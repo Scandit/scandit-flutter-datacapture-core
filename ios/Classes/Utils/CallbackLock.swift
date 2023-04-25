@@ -23,11 +23,9 @@ public class CallbackLock<ResultType> {
         self.name = name
     }
 
-    public func wait(default: ResultType? = nil, afterDoing block: () -> Bool) -> ResultType? {
+    public func wait(afterDoing block: () -> Bool) -> ResultType? {
         let timeout = 2.0
         let timeoutDate = Date(timeIntervalSinceNow: timeout)
-
-        result = `default`
 
         isCallbackFinished = false
 

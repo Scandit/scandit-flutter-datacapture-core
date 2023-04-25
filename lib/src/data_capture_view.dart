@@ -64,7 +64,7 @@ class DataCaptureView extends StatefulWidget implements common.Serializable {
 
   DataCaptureView._(this._dataCaptureContext) : super() {
     _dataCaptureContext?.view = this;
-    _dataCaptureContext?.initialize();
+    _dataCaptureContext?.update();
   }
 
   factory DataCaptureView.forContext(DataCaptureContext dataCaptureContext) {
@@ -82,7 +82,7 @@ class DataCaptureView extends StatefulWidget implements common.Serializable {
     _dataCaptureContext = newValue;
 
     _dataCaptureContext?.view = this;
-    _dataCaptureContext?.initialize();
+    _dataCaptureContext?.update();
   }
 
   common.MarginsWithUnit get scanAreaMargins {
@@ -269,7 +269,7 @@ class _DataCaptureViewState extends State<DataCaptureView> {
   set dataCaptureContext(DataCaptureContext? newValue) {
     _dataCaptureContext = newValue;
     _dataCaptureContext?.view = widget;
-    _dataCaptureContext?.initialize();
+    _dataCaptureContext?.update();
   }
 
   _DataCaptureViewState(this._dataCaptureContext);

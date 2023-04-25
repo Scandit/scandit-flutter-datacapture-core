@@ -17,7 +17,9 @@ import com.scandit.datacapture.core.ui.DataCaptureView
 import com.scandit.datacapture.core.ui.style.Brush
 import com.scandit.datacapture.core.ui.viewfinder.AimerViewfinder
 import com.scandit.datacapture.core.ui.viewfinder.LaserlineViewfinder
+import com.scandit.datacapture.core.ui.viewfinder.LaserlineViewfinderStyle
 import com.scandit.datacapture.core.ui.viewfinder.RectangularViewfinder
+import com.scandit.datacapture.core.ui.viewfinder.RectangularViewfinderStyle
 import com.scandit.datacapture.flutter.core.data.defaults.*
 import com.scandit.datacapture.flutter.core.deserializers.DataCaptureContextLifecycleObserver
 import com.scandit.datacapture.flutter.core.deserializers.Deserializers
@@ -105,9 +107,13 @@ class ScanditFlutterDataCaptureCoreMethodHandler(
             dataCaptureViewDefaults = SerializableDataCaptureViewDefaults(dataCaptureView),
             brushDefaults = SerializableBrushDefaults(Brush.transparent()),
             laserlineViewfinderDefaults =
-            SerializableLaserlineViewfinderDefaults(LaserlineViewfinder()),
+            SerializableLaserlineViewfinderDefaults(
+                LaserlineViewfinder(LaserlineViewfinderStyle.LEGACY)
+            ),
             rectangularViewfinderDefaults =
-            SerializableRectangularViewfinderDefaults(RectangularViewfinder()),
+            SerializableRectangularViewfinderDefaults(
+                RectangularViewfinder(RectangularViewfinderStyle.LEGACY)
+            ),
             aimerViewFinderDefaults = SerializableAimerViewfinderDefaults(AimerViewfinder())
         )
     }
@@ -252,6 +258,8 @@ class ScanditFlutterDataCaptureCoreMethodHandler(
 
             dataCaptureContext = deserializerResult.dataCaptureContext
 
+            DataCaptureContextLifecycleObserver.dispatchDataCaptureContextUpdate(dataCaptureContext)
+
             DataCaptureViewHandler.dataCaptureView = deserializerResult.view?.also {
                 it.addListener(datacaptureViewListener)
             }
@@ -283,6 +291,8 @@ class ScanditFlutterDataCaptureCoreMethodHandler(
             DataCaptureViewHandler.dataCaptureView = updateResult.view?.also {
                 it.addListener(datacaptureViewListener)
             }
+
+            DataCaptureContextLifecycleObserver.dispatchDataCaptureContextUpdate(dataCaptureContext)
 
             result.success(null)
             return

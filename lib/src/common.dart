@@ -231,6 +231,27 @@ extension CompositeFlagDeserializer on CompositeFlag {
         throw Exception("Missing CompositeFlag for '$jsonValue'");
     }
   }
+
+  String get jsonValue => _jsonValue();
+
+  String _jsonValue() {
+    switch (this) {
+      case CompositeFlag.none:
+        return 'none';
+      case CompositeFlag.unknown:
+        return 'unknown';
+      case CompositeFlag.linked:
+        return 'linked';
+      case CompositeFlag.gs1TypeA:
+        return 'gs1TypeA';
+      case CompositeFlag.gs1TypeB:
+        return 'gs1TypeB';
+      case CompositeFlag.gs1TypeC:
+        return 'gs1TypeC';
+      default:
+        throw Exception("Missing JsonValue for '$this' composite flag");
+    }
+  }
 }
 
 class SizeWithUnitAndAspect implements Serializable {
