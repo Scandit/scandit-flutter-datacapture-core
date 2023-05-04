@@ -24,9 +24,9 @@ class ScanditFlutterDataCaptureCorePlugin :
         private var isPluginAttached = false
     }
 
-    private lateinit var methodChannel: MethodChannel
+    private var methodChannel: MethodChannel? = null
 
-    var scanditFlutterDataCaptureCoreMethodHandler:
+    private var scanditFlutterDataCaptureCoreMethodHandler:
         ScanditFlutterDataCaptureCoreMethodHandler? = null
 
     override fun onAttachedToEngine(binding: FlutterPluginBinding) {
@@ -46,15 +46,18 @@ class ScanditFlutterDataCaptureCorePlugin :
             methodChannel = MethodChannel(
                 binding.binaryMessenger,
                 "com.scandit.datacapture.core.method/datacapture_defaults"
-            )
-            methodChannel.setMethodCallHandler(scanditFlutterDataCaptureCoreMethodHandler)
+            ).also {
+                it.setMethodCallHandler(scanditFlutterDataCaptureCoreMethodHandler)
+            }
+
             isPluginAttached = true
         }
     }
 
     override fun onDetachedFromEngine(binding: FlutterPluginBinding) {
         lock.withLock {
-            methodChannel.setMethodCallHandler(null)
+            methodChannel?.setMethodCallHandler(null)
+            methodChannel = null
             LastFrameDataHolder.release()
             dispose()
             isPluginAttached = false
