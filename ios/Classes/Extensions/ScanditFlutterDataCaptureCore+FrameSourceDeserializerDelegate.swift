@@ -8,11 +8,11 @@ import Foundation
 
 extension ScanditFlutterDataCaptureCore: FrameSourceDeserializerDelegate, FrameSourceListener, TorchListener {
     public func frameSource(_ source: FrameSource, didChange newState: FrameSourceState) {
-        guard send(on: cameraStateEventSink, body: ["state": newState.jsonString]) else { return }
+        guard send(on: coreEventSink, body: ["state": newState.jsonString, "event": "FrameSourceListener.onStateChanged",]) else { return }
     }
 
     public func didChangeTorch(to torchState: TorchState) {
-        guard send(on: cameraTorchStateEventSink, body: ["state": torchState.jsonString]) else { return }
+        guard send(on: coreEventSink, body: ["state": torchState.jsonString, "event": "TorchListener.onTorchStateChanged",]) else { return }
     }
 
     public func frameSource(_ source: FrameSource, didOutputFrame frame: FrameData) {

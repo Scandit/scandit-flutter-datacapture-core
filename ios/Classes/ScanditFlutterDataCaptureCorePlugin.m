@@ -19,7 +19,7 @@
 @implementation ScanditFlutterDataCaptureCorePlugin
 + (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar> *)registrar {
     FlutterMethodChannel *channel = [FlutterMethodChannel
-        methodChannelWithName:@"com.scandit.datacapture.core.method/datacapture_defaults"
+        methodChannelWithName:@"com.scandit.datacapture.core/method_channel"
               binaryMessenger:registrar.messenger];
     ScanditFlutterDataCaptureCore *coreInstance = [[ScanditFlutterDataCaptureCore alloc]
         initWithMethodChannel:channel

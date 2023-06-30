@@ -13,4 +13,12 @@ class FunctionNames {
   static const String viewPointForFramePoint = 'viewPointForFramePoint';
   static const String viewQuadrilateralForFrameQuadrilateral = 'viewQuadrilateralForFrameQuadrilateral';
   static const String isTorchAvailableMethodName = 'isTorchAvailable';
+
+  static const String eventsChannelName = 'com.scandit.datacapture.core/event_channel';
+  static const String methodsChannelName = 'com.scandit.datacapture.core/method_channel';
+  static const String eventFrameSourceStateChanged = 'FrameSourceListener.onStateChanged';
+  static const String eventTorchStateChanged = 'TorchListener.onTorchStateChanged';
+  static const String eventDataCaptureContextObservationStarted = 'DataCaptureContextListener.onObservationStarted';
+  static const String eventDataCaptureContextOnStatusChanged = 'DataCaptureContextListener.onStatusChanged';
+  static const String eventDataCaptureViewSizeChanged = 'DataCaptureViewListener.onSizeChanged';
 }

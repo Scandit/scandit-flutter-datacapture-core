@@ -5,8 +5,8 @@
  */
 
 import 'dart:convert';
-// ignore: unnecessary_import
-import 'dart:ui';
+
+import 'package:scandit_flutter_datacapture_core/src/function_names.dart';
 
 import 'camera.dart';
 import 'common.dart';
@@ -224,7 +224,7 @@ class AimerViewfinderDefaults {
 
 // ignore: avoid_classes_with_only_static_members
 class Defaults {
-  static MethodChannel channel = MethodChannel('com.scandit.datacapture.core.method/datacapture_defaults');
+  static MethodChannel channel = MethodChannel(FunctionNames.methodsChannelName);
   static late CameraDefaults cameraDefaults;
   static late DataCaptureViewDefaults captureViewDefaults;
   static late LaserlineViewfinderDefaults laserlineViewfinderDefaults;
@@ -245,7 +245,7 @@ class Defaults {
     laserlineViewfinderDefaults = LaserlineViewfinderDefaults.fromJSON(defaults['LaserlineViewfinder']);
     brushDefaults = BrushDefaults.fromJSON(defaults['Brush']);
     sdkVersion = defaults['Version'] as String;
-    deviceId = defaults['DeviceId'] as String;
+    deviceId = defaults['deviceID'] as String;
     aimerViewfinderDefaults = AimerViewfinderDefaults.fromJSON(defaults['AimerViewfinder']);
     _isInitialized = true;
   }

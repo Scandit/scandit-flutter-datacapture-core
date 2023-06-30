@@ -15,7 +15,7 @@ extension ScanditFlutterDataCaptureCore {
             "LaserlineViewfinder": laserlineViewfinderDefaults,
             "RectangularViewfinder": rectangularViewfinderDefaults,
             "Brush": brushDefaults,
-            "DeviceId": DataCaptureContext.deviceID,
+            "deviceID": DataCaptureContext.deviceID,
             "AimerViewfinder": aimerViewfinderDefaults
         ]
     }

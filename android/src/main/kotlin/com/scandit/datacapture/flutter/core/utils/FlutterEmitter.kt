@@ -5,12 +5,13 @@
  */
 package com.scandit.datacapture.flutter.core.utils
 
+import com.scandit.datacapture.frameworks.core.events.Emitter
 import io.flutter.plugin.common.EventChannel
 import org.json.JSONObject
 import java.util.concurrent.atomic.AtomicReference
 
-class EventHandler(private val channel: EventChannel, autoEnableListener: Boolean = true) :
-    EventChannel.StreamHandler {
+class FlutterEmitter(private val channel: EventChannel, autoEnableListener: Boolean = true) :
+    EventChannel.StreamHandler, Emitter {
 
     private var atomicEventSink: AtomicReference<EventChannel.EventSink?> = AtomicReference(null)
 
@@ -18,10 +19,11 @@ class EventHandler(private val channel: EventChannel, autoEnableListener: Boolea
         if (autoEnableListener) enableListener()
     }
 
-    fun send(data: JSONObject) {
+    override fun emit(eventName: String, payload: MutableMap<String, Any?>) {
+        payload[FIELD_EVENT_NAME] = eventName
         atomicEventSink.get()?.let {
             MainThreadUtil.runOnMainThread {
-                it.success(data.toString())
+                it.success(JSONObject(payload).toString())
             }
         }
     }
@@ -43,5 +45,9 @@ class EventHandler(private val channel: EventChannel, autoEnableListener: Boolea
 
     override fun onCancel(arguments: Any?) {
         atomicEventSink.set(null)
+    }
+
+    companion object {
+        internal const val FIELD_EVENT_NAME = "event"
     }
 }

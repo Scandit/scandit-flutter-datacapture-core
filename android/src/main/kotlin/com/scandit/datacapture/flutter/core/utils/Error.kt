@@ -9,10 +9,6 @@ import io.flutter.plugin.common.MethodChannel.Result
 
 data class Error(val code: Int, val message: String)
 
-fun Result.reject(throwable: Throwable) {
-    error("0", throwable.message, null)
-}
-
 fun Result.reject(error: Error) {
     error(error.code.toString(), error.message, null)
 }

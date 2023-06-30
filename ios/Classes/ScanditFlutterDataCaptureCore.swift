@@ -80,20 +80,8 @@ public class ScanditFlutterDataCaptureCore: NSObject, FlutterPlatformViewFactory
 
     let coreQueue = DispatchQueue(label: "com.scandit.flutter.datacapture-core")
 
-    let contextStatusEventChannel: FlutterEventChannel
-    let contextStatusEventSink = BaseEventSink()
-
-    let didStartObservingContextEventChannel: FlutterEventChannel
-    let didStartObservingContextEventSink = BaseEventSink()
-
-    let viewDidChangeEventChannel: FlutterEventChannel
-    let viewDidChangeEventSink = BaseEventSink()
-
-    let cameraStateEventChannel: FlutterEventChannel
-    let cameraStateEventSink = BaseEventSink()
-
-    let cameraTorchStateEventChannel: FlutterEventChannel
-    let cameraTorchStateEventSink = BaseEventSink()
+    let coreEventChannel: FlutterEventChannel
+    let coreEventSink = BaseEventSink()
 
     public static var lastFrame: FrameData?
 
@@ -154,24 +142,10 @@ public class ScanditFlutterDataCaptureCore: NSObject, FlutterPlatformViewFactory
     @objc
     public init(methodChannel: FlutterMethodChannel, messenger: FlutterBinaryMessenger) {
         self.methodChannel = methodChannel
-        let didChangeStatusChannelName = "com.scandit.datacapture.core.event/datacapture_context#didChangeStatus"
-        contextStatusEventChannel = FlutterEventChannel(name: didChangeStatusChannelName,
+        let coreEventChannelName = "com.scandit.datacapture.core/event_channel"
+        coreEventChannel = FlutterEventChannel(name: coreEventChannelName,
                                                         binaryMessenger: messenger)
-        contextStatusEventChannel.setStreamHandler(contextStatusEventSink)
-        let observingContextName = "com.scandit.datacapture.core.event/datacapture_context#didStartObservingContext"
-        didStartObservingContextEventChannel = FlutterEventChannel(name: observingContextName,
-                                                                   binaryMessenger: messenger)
-        didStartObservingContextEventChannel.setStreamHandler(didStartObservingContextEventSink)
-        let viewChangeSizeChannelName = "com.scandit.datacapture.core.event/datacapture_view#didChangeSize"
-        viewDidChangeEventChannel = FlutterEventChannel(name: viewChangeSizeChannelName,
-                                                        binaryMessenger: messenger)
-        viewDidChangeEventChannel.setStreamHandler(viewDidChangeEventSink)
-        cameraStateEventChannel = FlutterEventChannel(name: "com.scandit.datacapture.core.event/camera#didChangeState",
-                                                      binaryMessenger: messenger)
-        cameraStateEventChannel.setStreamHandler(cameraStateEventSink)
-        cameraTorchStateEventChannel = FlutterEventChannel(name: "com.scandit.datacapture.core.event/camera#didChangeTorchState",
-                                                           binaryMessenger: messenger)
-        cameraTorchStateEventChannel.setStreamHandler(cameraTorchStateEventSink)
+        coreEventChannel.setStreamHandler(coreEventSink)
         super.init()
     }
 
@@ -181,11 +155,7 @@ public class ScanditFlutterDataCaptureCore: NSObject, FlutterPlatformViewFactory
         dataCaptureView?.removeFromSuperview()
         dataCaptureView?.removeListener(self)
         methodChannel.setMethodCallHandler(nil)
-        contextStatusEventChannel.setStreamHandler(nil)
-        didStartObservingContextEventChannel.setStreamHandler(nil)
-        viewDidChangeEventChannel.setStreamHandler(nil)
-        cameraStateEventChannel.setStreamHandler(nil)
-        cameraTorchStateEventChannel.setStreamHandler(nil)
+        coreEventChannel.setStreamHandler(nil)
         context?.removeListener(self)
         context?.dispose()
     }
@@ -241,6 +211,11 @@ public class ScanditFlutterDataCaptureCore: NSObject, FlutterPlatformViewFactory
             ScanditFlutterDataCaptureCore.components = result.components
             reply(nil)
         } catch let error as NSError {
+            if (error.localizedDescription.contains("The mode cannot be updated: already initialized but")) {
+                self.contextFromJSON(jsonString: jsonString, reply: reply)
+                return
+            }
+            
             reply(FlutterError(code: "\(error.code)",
                                message: error.domain,
                                details: error.localizedDescription))

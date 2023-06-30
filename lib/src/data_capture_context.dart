@@ -102,6 +102,8 @@ class DataCaptureContext with PrivateDataCaptureContext implements Serializable 
 
   LicenseInfo? get licenseInfo => _licenseInfo;
 
+  static String get deviceId => Defaults.deviceId;
+
   DataCaptureContext._(this._licenseKey, this._deviceName, this._settings) {
     _controller = _DataCaptureContextController(this, Defaults.channel);
   }
@@ -219,13 +221,8 @@ class _DataCaptureContextController {
   final DataCaptureContext context;
   final MethodChannel methodChannel;
 
-  final EventChannel _didStartObservingContextEventChannel =
-      const EventChannel('com.scandit.datacapture.core.event/datacapture_context#didStartObservingContext');
-  StreamSubscription? _didStartObservingContextSubscription;
-
-  final EventChannel _contextStatusEventChannel =
-      const EventChannel('com.scandit.datacapture.core.event/datacapture_context#didChangeStatus');
-  StreamSubscription? _contextStatusSubscription;
+  final EventChannel _contextEventsChannel = const EventChannel(FunctionNames.eventsChannelName);
+  StreamSubscription? _contextEventsSubscription;
 
   PrivateDataCaptureContext get _privateContext {
     return context;
@@ -240,7 +237,7 @@ class _DataCaptureContextController {
     try {
       return methodChannel.invokeMethod(FunctionNames.createContextFromJSONMethodName, encoded);
     } on PlatformException catch (e) {
-      _notifyListenersOfDeserializationError(e);
+      _notifyListenersOfDeserializationError(e, "Init - " + encoded);
     }
     return Future.value();
   }
@@ -250,7 +247,9 @@ class _DataCaptureContextController {
     return methodChannel
         .invokeMethod(FunctionNames.updateContextFromJSONMethodName, encoded)
         // ignore: unnecessary_lambdas
-        .catchError((error) => _notifyListenersOfDeserializationError(error));
+        .catchError((error) {
+      _notifyListenersOfDeserializationError(error, "Update - " + encoded);
+    });
   }
 
   void _notifyListenersOfDidChangeStatus(ContextStatus contextStatus) {
@@ -259,7 +258,7 @@ class _DataCaptureContextController {
     }
   }
 
-  void _notifyListenersOfDeserializationError(PlatformException error) {
+  void _notifyListenersOfDeserializationError(PlatformException error, String json) {
     _notifyListenersOfDidChangeStatus(ContextStatus.fromJSON({
       "message": error.message,
       "code": int.parse(error.code),
@@ -274,26 +273,27 @@ class _DataCaptureContextController {
   }
 
   void initSubscribers() {
-    _contextStatusSubscription = _contextStatusEventChannel.receiveBroadcastStream().listen((statusJSON) {
-      Map<String, dynamic> payload = jsonDecode(statusJSON as String);
-      Map<String, dynamic> statusInfo = jsonDecode(payload['status']);
-      var status = ContextStatus.fromJSON(statusInfo);
-      _notifyListenersOfDidChangeStatus(status);
-    });
-    _didStartObservingContextSubscription =
-        _didStartObservingContextEventChannel.receiveBroadcastStream().listen((event) {
-      Map<String, dynamic> payload = jsonDecode(event);
-      Map<String, dynamic>? licenseInfoJSON =
-          payload.containsKey('licenseInfo') ? jsonDecode(payload['licenseInfo']) : null;
-      context._licenseInfo = licenseInfoJSON == null ? null : LicenseInfo.fromJSON(licenseInfoJSON);
-      _notifyListenersOfObservationStarted();
+    _contextEventsSubscription = _contextEventsChannel.receiveBroadcastStream().listen((event) {
+      var eventJSON = jsonDecode(event);
+      var eventName = eventJSON['event'] as String;
+
+      if (eventName == FunctionNames.eventDataCaptureContextObservationStarted) {
+        Map<String, dynamic>? licenseInfoJSON =
+            eventJSON.containsKey('licenseInfo') ? jsonDecode(eventJSON['licenseInfo']) : null;
+        context._licenseInfo = licenseInfoJSON == null ? null : LicenseInfo.fromJSON(licenseInfoJSON);
+        _notifyListenersOfObservationStarted();
+      }
+
+      if (eventName == FunctionNames.eventDataCaptureContextOnStatusChanged) {
+        Map<String, dynamic> statusInfo = jsonDecode(eventJSON['status']);
+        var status = ContextStatus.fromJSON(statusInfo);
+        _notifyListenersOfDidChangeStatus(status);
+      }
     });
   }
 
   void cancelSubscribers() {
-    _didStartObservingContextSubscription?.cancel();
-    _didStartObservingContextSubscription = null;
-    _contextStatusSubscription?.cancel();
-    _contextStatusSubscription = null;
+    _contextEventsSubscription?.cancel();
+    _contextEventsSubscription = null;
   }
 }

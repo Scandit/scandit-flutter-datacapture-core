@@ -10,12 +10,13 @@ extension ScanditFlutterDataCaptureCore: DataCaptureViewListener {
     public func dataCaptureView(_ view: DataCaptureView,
                                 didChange size: CGSize,
                                 orientation: UIInterfaceOrientation) {
-        guard send(on: viewDidChangeEventSink, body: [
+        guard send(on: coreEventSink, body: [
             "size": [
                 "width": size.width,
                 "height": size.height
             ],
-            "orientation": orientation.jsonString
+            "orientation": orientation.jsonString,
+            "event": "DataCaptureViewListener.onSizeChanged",
         ]) else { return }
     }
 }

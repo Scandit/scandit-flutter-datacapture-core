@@ -297,7 +297,7 @@ class Camera extends FrameSource {
   void addListener(FrameSourceListener? listener) {
     if (listener == null) return;
 
-    if (_frameSourceListeners.isEmpty) {
+    if (_frameSourceListeners.isEmpty && _torchStateListeners.isEmpty) {
       _cameraController.subscribeFrameSourceListener();
     }
 
@@ -312,14 +312,14 @@ class Camera extends FrameSource {
 
     _frameSourceListeners.remove(listener);
 
-    if (_frameSourceListeners.isEmpty) {
+    if (_frameSourceListeners.isEmpty && _torchStateListeners.isEmpty) {
       _cameraController.unsubscribeFrameSourceListener();
     }
   }
 
   void addTorchListener(TorchListener listener) {
-    if (_torchStateListeners.isEmpty) {
-      _cameraController.subscribeTorchListener();
+    if (_frameSourceListeners.isEmpty && _torchStateListeners.isEmpty) {
+      _cameraController.subscribeFrameSourceListener();
     }
 
     if (!_torchStateListeners.contains(listener)) {
@@ -330,8 +330,8 @@ class Camera extends FrameSource {
   void removeTorchListener(TorchListener listener) {
     _torchStateListeners.remove(listener);
 
-    if (_torchStateListeners.isEmpty) {
-      _cameraController.unsubscribTorchListener();
+    if (_frameSourceListeners.isEmpty && _torchStateListeners.isEmpty) {
+      _cameraController.unsubscribeFrameSourceListener();
     }
   }
 
@@ -358,41 +358,32 @@ class _CameraController {
   final Camera camera;
   final MethodChannel methodChannel;
 
-  final EventChannel _stateChangeEventChannel =
-      const EventChannel('com.scandit.datacapture.core.event/camera#didChangeState');
+  final EventChannel _cameraEventChannel = const EventChannel(FunctionNames.eventsChannelName);
   StreamSubscription? _stateChangeSubscription;
-
-  final EventChannel _torchStateChangeEventChannel =
-      const EventChannel('com.scandit.datacapture.core.event/camera#didChangeTorchState');
-
-  StreamSubscription? _torchStateChangeSubscription;
 
   _CameraController(this.camera, this.methodChannel);
 
   void subscribeFrameSourceListener() {
     if (_stateChangeSubscription != null) return;
-    _stateChangeSubscription = _stateChangeEventChannel.receiveBroadcastStream().listen((event) {
-      var state = FrameSourceStateDeserializer.fromJSON(jsonDecode(event)['state'] as String);
-      _notifyCameraListeners(state);
+    _stateChangeSubscription = _cameraEventChannel.receiveBroadcastStream().listen((event) {
+      var eventJSON = jsonDecode(event);
+      var eventName = eventJSON['event'] as String;
+
+      if (eventName == FunctionNames.eventFrameSourceStateChanged) {
+        var state = FrameSourceStateDeserializer.fromJSON(jsonDecode(event)['state'] as String);
+        _notifyCameraListeners(state);
+      }
+
+      if (eventName == FunctionNames.eventTorchStateChanged) {
+        var state = TorchStateDeserializer.fromJSON(jsonDecode(event)['state'] as String);
+        _notifyTorchListeners(state);
+      }
     });
   }
 
   void unsubscribeFrameSourceListener() {
     _stateChangeSubscription?.cancel();
     _stateChangeSubscription = null;
-  }
-
-  void subscribeTorchListener() {
-    if (_torchStateChangeSubscription != null) return;
-    _torchStateChangeSubscription = _torchStateChangeEventChannel.receiveBroadcastStream().listen((event) {
-      var state = TorchStateDeserializer.fromJSON(jsonDecode(event)['state'] as String);
-      _notifyTorchListeners(state);
-    });
-  }
-
-  void unsubscribTorchListener() {
-    _torchStateChangeSubscription?.cancel();
-    _torchStateChangeSubscription = null;
   }
 
   Future<FrameSourceState> getCurrentState() {

@@ -57,8 +57,7 @@ class DataCaptureView extends StatefulWidget implements common.Serializable {
   FocusGesture? _focusGesture = Defaults.captureViewDefaults.focusGesture;
   ZoomGesture? _zoomGesture = Defaults.captureViewDefaults.zoomGesture;
 
-  final EventChannel _viewDidChangeSizeEventChannel =
-      const EventChannel('com.scandit.datacapture.core.event/datacapture_view#didChangeSize');
+  final EventChannel _viewDidChangeSizeEventChannel = const EventChannel(FunctionNames.eventsChannelName);
   final _DataCaptureViewController _controller = _DataCaptureViewController();
   StreamSubscription? _streamSubscription;
 
@@ -184,10 +183,14 @@ class DataCaptureView extends StatefulWidget implements common.Serializable {
   void _registerListener() {
     _unregisterListener();
     _streamSubscription = _viewDidChangeSizeEventChannel.receiveBroadcastStream().listen((event) {
-      var json = jsonDecode(event as String);
-      var size = common.Size.fromJSON(json['size']);
-      var orientation = common.OrientationDeserializer.fromJSON(json['orientation']);
-      _notifyListenersOfViewDidChangeSize(size, orientation);
+      var eventJSON = jsonDecode(event as String);
+      var eventName = eventJSON['event'] as String;
+
+      if (eventName == FunctionNames.eventDataCaptureViewSizeChanged) {
+        var size = common.Size.fromJSON(eventJSON['size']);
+        var orientation = common.OrientationDeserializer.fromJSON(eventJSON['orientation']);
+        _notifyListenersOfViewDidChangeSize(size, orientation);
+      }
     });
   }
 
