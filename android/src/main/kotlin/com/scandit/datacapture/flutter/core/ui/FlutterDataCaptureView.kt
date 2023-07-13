@@ -60,6 +60,12 @@ class FlutterDataCaptureView(
         dataCaptureView: DataCaptureView,
         platformView: FrameLayout
     ) {
+        if (platformView.childCount > 0 && platformView.getChildAt(0) === dataCaptureView) {
+            // Same instance already attached. No need to detach and attach it again because it will
+            // trigger some overlay cleanup that we don't want.
+            return
+        }
+
         dataCaptureView.parent?.let {
             (it as ViewGroup).removeView(dataCaptureView)
         }
