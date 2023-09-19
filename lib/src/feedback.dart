@@ -12,29 +12,23 @@ import 'common.dart';
 import 'defaults.dart';
 import 'function_names.dart';
 
-enum _VibrationType { defaultVibration, selectionHaptic, successHaptic }
+enum _VibrationType {
+  defaultVibration('default'),
+  selectionHaptic('selectionHaptic'),
+  successHaptic('successHaptic');
 
-extension _VibrationTypeSerializer on _VibrationType {
-  String get jsonValue => _jsonValue();
+  const _VibrationType(this._name);
 
-  String _jsonValue() {
-    switch (this) {
-      case _VibrationType.defaultVibration:
-        return 'default';
-      case _VibrationType.selectionHaptic:
-        return 'selectionHaptic';
-      case _VibrationType.successHaptic:
-        return 'successHaptic';
-      default:
-        throw Exception("Missing Json Value for '$this' vibration type");
-    }
-  }
+  @override
+  String toString() => _name;
+
+  final String _name;
 }
 
 class Vibration implements Serializable {
   final String _type;
 
-  Vibration._(_VibrationType type) : _type = type.jsonValue;
+  Vibration._(_VibrationType type) : _type = type.toString();
 
   Vibration() : this._(_VibrationType.defaultVibration);
 
