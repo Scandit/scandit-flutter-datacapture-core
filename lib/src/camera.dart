@@ -112,8 +112,15 @@ extension FocusGestureStrategyDeserializer on FocusGestureStrategy {
 
 class CameraSettings implements Serializable {
   final Map<String, dynamic> _cameraSettingsProperties = <String, dynamic>{};
+
   final Map<String, dynamic> _cameraFocusHiddenProperties = <String, dynamic>{};
-  final _focusHiddenProperties = ['manualLensPosition', 'focusStrategy'];
+  final _focusHiddenProperties = [
+    'range',
+    'manualLensPosition',
+    'shouldPreferSmoothAutoFocus',
+    'focusStrategy',
+    'focusGestureStrategy'
+  ];
 
   VideoResolution preferredResolution;
   double zoomFactor;
@@ -139,7 +146,11 @@ class CameraSettings implements Serializable {
 
   CameraSettings(
       this.preferredResolution, this.zoomFactor, this.focusRange, this.focusGestureStrategy, this.zoomGestureZoomFactor,
-      {required this.shouldPreferSmoothAutoFocus});
+      {required this.shouldPreferSmoothAutoFocus, Map<String, dynamic> properties = const <String, dynamic>{}}) {
+    for (var hiddenProperty in properties.entries) {
+      setProperty(hiddenProperty.key, hiddenProperty.value);
+    }
+  }
 
   @override
   Map<String, dynamic> toMap() {
