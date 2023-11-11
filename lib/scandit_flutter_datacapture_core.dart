@@ -7,15 +7,7 @@
 library scandit_flutter_datacapture_core;
 
 export 'src/camera.dart'
-    show
-        Camera,
-        CameraPosition,
-        CameraSettings,
-        FocusRange,
-        TorchState,
-        VideoResolution,
-        FocusGestureStrategy,
-        TorchStateDeserializer;
+    show Camera, CameraPosition, CameraSettings, FocusRange, TorchState, VideoResolution, FocusGestureStrategy;
 export 'src/common.dart'
     show
         Anchor,

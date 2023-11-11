@@ -29,19 +29,3 @@ public class FlutterFrameworkResult: FrameworksResult {
                             details: error.userInfo))
     }
 }
-
-public class FlutterLogInsteadOfResult: FrameworksResult {
-    public init() { }
-
-    public func success(result: Any?) {
-        // nop
-    }
-
-    public func reject(code: String, message: String?, details: Any?) {
-        print("ErrorCode: \(code); ErrorMessage: \(String(describing: message)); ErrorDetails:\(String(describing: details))")
-    }
-
-    public func reject(error: Error) {
-        print(error)
-    }
-}

@@ -215,15 +215,6 @@ mixin PrivateDataCaptureContext {
 
   PrivateDataCaptureView? view;
 
-  bool _isInitialized = false;
-
-  void initialize() {
-    if (!_isInitialized) {
-      _controller = _DataCaptureContextController(this as DataCaptureContext, Defaults.channel);
-      _isInitialized = true;
-    }
-  }
-
   Future<void> update() async {
     return _controller.updateContextFromJSON();
   }
