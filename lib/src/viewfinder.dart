@@ -40,7 +40,7 @@ class LaserlineViewfinder extends Viewfinder {
   factory LaserlineViewfinder.withStyle(LaserlineViewfinderStyle style) {
     var styleDefaults = Defaults.laserlineViewfinderDefaults.styles[style];
     if (styleDefaults == null) {
-      throw Exception("LaserlineViewfinderDefaults does not contain any defaults for ${style.toString()}");
+      throw Exception("LaserlineViewfinderDefaults does not contain any defaults for ${style.jsonValue}");
     }
     return LaserlineViewfinder._(style, styleDefaults.width, styleDefaults.enabledColor, styleDefaults.disabledColor);
   }
@@ -52,27 +52,37 @@ class LaserlineViewfinder extends Viewfinder {
       'width': width.toMap(),
       'enabledColor': enabledColor.jsonValue,
       'disabledColor': disabledColor.jsonValue,
-      'style': style.toString()
+      'style': style.jsonValue
     });
     return json;
   }
 }
 
-enum LaserlineViewfinderStyle {
-  legacy('legacy'),
-  animated('animated');
-
-  const LaserlineViewfinderStyle(this._name);
-
-  @override
-  String toString() => _name;
-
-  final String _name;
-}
+enum LaserlineViewfinderStyle { legacy, animated }
 
 extension LaserlineViewfinderStyleDeserializer on LaserlineViewfinderStyle {
   static LaserlineViewfinderStyle fromJSON(String jsonValue) {
-    return LaserlineViewfinderStyle.values.firstWhere((element) => element.toString() == jsonValue);
+    switch (jsonValue) {
+      case 'legacy':
+        return LaserlineViewfinderStyle.legacy;
+      case 'animated':
+        return LaserlineViewfinderStyle.animated;
+      default:
+        throw Exception("Missing LaserlineViewfinderStyle for '$jsonValue'");
+    }
+  }
+
+  String get jsonValue => _jsonValue();
+
+  String _jsonValue() {
+    switch (this) {
+      case LaserlineViewfinderStyle.legacy:
+        return 'legacy';
+      case LaserlineViewfinderStyle.animated:
+        return 'animated';
+      default:
+        throw Exception("Missing Json Value for '$this' laserline viewfinder style");
+    }
   }
 }
 
@@ -128,7 +138,7 @@ class RectangularViewfinder extends Viewfinder {
   factory RectangularViewfinder.withStyle(RectangularViewfinderStyle style) {
     var styleDefaults = Defaults.rectangularViewfinderDefaults.styles[style];
     if (styleDefaults == null) {
-      throw Exception("RectangularViewfinderDefaults does not contain any defaults for ${style.toString()}");
+      throw Exception("RectangularViewfinderDefaults does not contain any defaults for ${style.jsonValue}");
     }
     return RectangularViewfinder._(style, styleDefaults.lineStyle, styleDefaults.size, styleDefaults.color,
         styleDefaults.dimming, styleDefaults.animation, styleDefaults.disabledDimming, styleDefaults.disabledColor);
@@ -138,7 +148,7 @@ class RectangularViewfinder extends Viewfinder {
       RectangularViewfinderStyle style, RectangularViewfinderLineStyle lineStyle) {
     var styleDefaults = Defaults.rectangularViewfinderDefaults.styles[style];
     if (styleDefaults == null) {
-      throw Exception("RectangularViewfinderDefaults does not contain any defaults for ${style.toString()}");
+      throw Exception("RectangularViewfinderDefaults does not contain any defaults for ${style.jsonValue}");
     }
 
     return RectangularViewfinder._(style, lineStyle, styleDefaults.size, styleDefaults.color, styleDefaults.dimming,
@@ -152,9 +162,9 @@ class RectangularViewfinder extends Viewfinder {
       'color': color.jsonValue,
       'size': _sizeWithUnitAndAspect.toMap(),
       'animation': animation?.toMap(),
-      'style': _style.toString(),
+      'style': _style.jsonValue,
       'dimming': dimming,
-      'lineStyle': _lineStyle.toString(),
+      'lineStyle': _lineStyle.jsonValue,
       'disabledColor': disabledColor.jsonValue
     });
     return json;
@@ -176,40 +186,63 @@ class RectangularViewfinderAnimation extends Serializable {
   }
 }
 
-enum RectangularViewfinderStyle {
-  legacy('legacy'),
-  rounded('rounded'),
-  square('square');
-
-  const RectangularViewfinderStyle(this._name);
-
-  @override
-  String toString() => _name;
-
-  final String _name;
-}
+enum RectangularViewfinderStyle { legacy, rounded, square }
 
 extension RectangularViewfinderStyleDeserializer on RectangularViewfinderStyle {
   static RectangularViewfinderStyle fromJSON(String jsonValue) {
-    return RectangularViewfinderStyle.values.firstWhere((element) => element.toString() == jsonValue);
+    switch (jsonValue) {
+      case 'legacy':
+        return RectangularViewfinderStyle.legacy;
+      case 'rounded':
+        return RectangularViewfinderStyle.rounded;
+      case 'square':
+        return RectangularViewfinderStyle.square;
+      default:
+        throw Exception("Missing RectangularViewfinderStyle for '$jsonValue'");
+    }
+  }
+
+  String get jsonValue => _jsonValue();
+
+  String _jsonValue() {
+    switch (this) {
+      case RectangularViewfinderStyle.legacy:
+        return 'legacy';
+      case RectangularViewfinderStyle.rounded:
+        return 'rounded';
+      case RectangularViewfinderStyle.square:
+        return 'square';
+      default:
+        throw Exception("Missing Json Value for '$this' rectangular viewfinder style");
+    }
   }
 }
 
-enum RectangularViewfinderLineStyle {
-  light('light'),
-  bold('bold');
-
-  const RectangularViewfinderLineStyle(this._name);
-
-  @override
-  String toString() => _name;
-
-  final String _name;
-}
+enum RectangularViewfinderLineStyle { light, bold }
 
 extension RectangularViewfinderLineStyleDeserializer on RectangularViewfinderLineStyle {
   static RectangularViewfinderLineStyle fromJSON(String jsonValue) {
-    return RectangularViewfinderLineStyle.values.firstWhere((element) => element.toString() == jsonValue);
+    switch (jsonValue) {
+      case 'light':
+        return RectangularViewfinderLineStyle.light;
+      case 'bold':
+        return RectangularViewfinderLineStyle.bold;
+      default:
+        throw Exception("Missing RectangularViewfinderLineStyle for '$jsonValue'");
+    }
+  }
+
+  String get jsonValue => _jsonValue();
+
+  String _jsonValue() {
+    switch (this) {
+      case RectangularViewfinderLineStyle.light:
+        return 'light';
+      case RectangularViewfinderLineStyle.bold:
+        return 'bold';
+      default:
+        throw Exception("Missing Json Value for '$this' rectangular viewfinder style");
+    }
   }
 }
 

@@ -11,30 +11,37 @@ import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.TimeUnit
 
 class EventSinkWithResult<T>(
-    private val name: String,
-    private val timeoutMillis: Long = DEFAULT_TIMEOUT_MILLIS
+    private val name: String
 ) {
     companion object {
-        private const val DEFAULT_TIMEOUT_MILLIS = 2000L
+        const val DEFAULT_TIMEOUT_MILLIS = 2000L
     }
 
     private val resultHolder: ArrayBlockingQueue<PendingResult> = ArrayBlockingQueue(1)
 
-    fun emitForResult(sink: EventSink, data: Any?, timeoutResult: T): T {
+    fun emitForResult(
+        sink: EventSink,
+        data: Any?,
+        timeoutResult: T,
+        timeoutMillis: Long = DEFAULT_TIMEOUT_MILLIS
+    ): T {
         resultHolder.clear()
         MainThreadUtil.runOnMainThread {
             sink.success(data)
         }
 
+        val pendingResult: PendingResult? = if (timeoutMillis > 0) resultHolder.poll(
+            timeoutMillis,
+            TimeUnit.MILLISECONDS
+        ) else resultHolder.take()
+
         @Suppress("UNCHECKED_CAST")
-        return when (
-            val pendingResult: PendingResult? =
-                resultHolder.poll(timeoutMillis, TimeUnit.MILLISECONDS)
-        ) {
+        return when (pendingResult) {
             is Cancellation -> {
                 FrameworksLog.info("Callback `$name` not finished, because onCancel was called.")
                 timeoutResult
             }
+
             is Result<*> -> pendingResult.value as T
             else -> {
                 FrameworksLog.info(

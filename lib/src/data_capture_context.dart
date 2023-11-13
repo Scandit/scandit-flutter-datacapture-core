@@ -48,22 +48,20 @@ class DataCaptureContextSettings implements Serializable {
   }
 }
 
-enum Expiration {
-  available('available'),
-  perpetual('perpetual'),
-  notAvailable('notAvailable');
-
-  const Expiration(this._name);
-
-  @override
-  String toString() => _name;
-
-  final String _name;
-}
+enum Expiration { available, perpetual, notAvailable }
 
 extension ExpirationDeserializer on Expiration {
   static Expiration expirationFromJSON(String jsonValue) {
-    return Expiration.values.firstWhere((element) => element.toString() == jsonValue);
+    switch (jsonValue) {
+      case 'available':
+        return Expiration.available;
+      case 'perpetual':
+        return Expiration.perpetual;
+      case 'notAvailable':
+        return Expiration.notAvailable;
+      default:
+        throw Exception("Missing Expiration for '$jsonValue'");
+    }
   }
 }
 
@@ -141,7 +139,6 @@ class DataCaptureContext with PrivateDataCaptureContext implements Serializable 
       element._context = null;
     }
     modes.clear();
-    view?.removeAllOverlays();
     update();
   }
 
@@ -213,7 +210,7 @@ mixin PrivateDataCaptureContext {
   final List<DataCaptureContextListener> _listeners = [];
   final List<DataCaptureComponent> _components = [];
 
-  PrivateDataCaptureView? view;
+  DataCaptureView? view;
 
   Future<void> update() async {
     return _controller.updateContextFromJSON();

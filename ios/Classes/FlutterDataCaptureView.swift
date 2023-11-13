@@ -4,19 +4,23 @@
  * Copyright (C) 2020- Scandit AG. All rights reserved.
  */
 
-import Flutter
-
 class FlutterDataCaptureView: UIView, FlutterPlatformView {
-    weak var factory: FlutterCaptureViewFactory?
-
-    func view() -> UIView {
-        self
+    var dataCaptureView: DataCaptureView? {
+        didSet {
+            if let captureView = dataCaptureView {
+                addSubview(captureView)
+                captureView.frame = frame
+            }
+        }
     }
 
-    override func removeFromSuperview() {
-        super.removeFromSuperview()
-        guard let index = factory?.views.firstIndex(of: self) else { return }
-        factory?.views.remove(at: index)
-        factory?.addCaptureViewToLastContainer()
+    override var frame: CGRect {
+        didSet {
+            dataCaptureView?.frame = frame
+        }
+    }
+
+    func view() -> UIView {
+        return self
     }
 }

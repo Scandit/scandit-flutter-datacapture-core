@@ -13,114 +13,178 @@ import 'defaults.dart';
 import 'frame_source.dart';
 import 'function_names.dart';
 
-enum CameraPosition {
-  worldFacing('worldFacing'),
-  userFacing('userFacing'),
-  unspecified('unspecified');
-
-  const CameraPosition(this._name);
-
-  @override
-  String toString() => _name;
-
-  final String _name;
-}
+enum CameraPosition { worldFacing, userFacing, unspecified }
 
 extension CameraPositionDeserializer on CameraPosition {
   static CameraPosition cameraPositionFromJSON(String jsonValue) {
-    return CameraPosition.values.firstWhere((element) => element.toString() == jsonValue);
+    switch (jsonValue) {
+      case 'worldFacing':
+        return CameraPosition.worldFacing;
+      case 'userFacing':
+        return CameraPosition.userFacing;
+      case 'unspecified':
+        return CameraPosition.unspecified;
+      default:
+        throw Exception("Missing CameraPosition for '$jsonValue'");
+    }
+  }
+
+  String get jsonValue => _jsonValue();
+
+  String _jsonValue() {
+    switch (this) {
+      case CameraPosition.worldFacing:
+        return 'worldFacing';
+      case CameraPosition.userFacing:
+        return 'userFacing';
+      case CameraPosition.unspecified:
+        return 'unspecified';
+      default:
+        throw Exception("Missing Json Value for '$this' camera position");
+    }
   }
 }
 
-enum TorchState {
-  on('on'),
-  off('off'),
-  auto('auto');
-
-  const TorchState(this._name);
-
-  @override
-  String toString() => _name;
-
-  final String _name;
-}
+enum TorchState { on, off, auto }
 
 extension TorchStateDeserializer on TorchState {
+  String get jsonValue => _jsonValue();
+
+  String _jsonValue() {
+    switch (this) {
+      case TorchState.on:
+        return 'on';
+      case TorchState.off:
+        return 'off';
+      case TorchState.auto:
+        return 'auto';
+      default:
+        throw Exception("Missing Json Value for '$this' torch state");
+    }
+  }
+
   static TorchState fromJSON(String jsonValue) {
-    return TorchState.values.firstWhere((element) => element.toString() == jsonValue);
+    switch (jsonValue) {
+      case 'on':
+        return TorchState.on;
+      case 'off':
+        return TorchState.off;
+      case 'auto':
+        return TorchState.auto;
+      default:
+        throw Exception("Missing TorchState for '$jsonValue'");
+    }
   }
 }
 
-enum VideoResolution {
-  auto('auto'),
-  hd('hd'),
-  fullHd('fullHd'),
-  uhd4k('uhd4k');
-
-  const VideoResolution(this._name);
-
-  @override
-  String toString() => _name;
-
-  final String _name;
-}
+enum VideoResolution { auto, hd, fullHd, uhd4k }
 
 extension VideoResolutionDeserializer on VideoResolution {
   static VideoResolution videoResolutionFromJSON(String jsonValue) {
-    return VideoResolution.values.firstWhere((element) => element.toString() == jsonValue);
+    switch (jsonValue) {
+      case 'auto':
+        return VideoResolution.auto;
+      case 'hd':
+        return VideoResolution.hd;
+      case 'fullHd':
+        return VideoResolution.fullHd;
+      case 'uhd4k':
+        return VideoResolution.uhd4k;
+      default:
+        throw Exception("Missing VideoResolution for '$jsonValue'");
+    }
+  }
+
+  String get jsonValue => _jsonValue();
+
+  String _jsonValue() {
+    switch (this) {
+      case VideoResolution.auto:
+        return 'auto';
+      case VideoResolution.hd:
+        return 'hd';
+      case VideoResolution.fullHd:
+        return 'fullHd';
+      case VideoResolution.uhd4k:
+        return 'uhd4k';
+      default:
+        throw Exception("Missing Json Value for '$this' video resolution");
+    }
   }
 }
 
-enum FocusRange {
-  full('full'),
-  near('near'),
-  far('far');
-
-  const FocusRange(this._name);
-
-  @override
-  String toString() => _name;
-
-  final String _name;
-}
+enum FocusRange { full, near, far }
 
 extension FocusRangeDeserializer on FocusRange {
   static FocusRange focusRangeFromJSON(String jsonValue) {
-    return FocusRange.values.firstWhere((element) => element.toString() == jsonValue);
+    switch (jsonValue) {
+      case 'full':
+        return FocusRange.full;
+      case 'near':
+        return FocusRange.near;
+      case 'far':
+        return FocusRange.far;
+      default:
+        throw Exception("Missing FocusRange for '$jsonValue'");
+    }
+  }
+
+  String get jsonValue => _jsonValue();
+
+  String _jsonValue() {
+    switch (this) {
+      case FocusRange.full:
+        return 'full';
+      case FocusRange.near:
+        return 'near';
+      case FocusRange.far:
+        return 'far';
+      default:
+        throw Exception("Missing Json value for '$this' focus range");
+    }
   }
 }
 
-enum FocusGestureStrategy {
-  none('none'),
-  manual('manual'),
-  manualUntilCapture('manualUntilCapture'),
-  autoOnLocation('autoOnLocation');
-
-  const FocusGestureStrategy(this._name);
-
-  @override
-  String toString() => _name;
-
-  final String _name;
-}
+enum FocusGestureStrategy { none, manual, manualUntilCapture, autoOnLocation }
 
 extension FocusGestureStrategyDeserializer on FocusGestureStrategy {
   static FocusGestureStrategy focusGestureStrategyFromJSON(String jsonValue) {
-    return FocusGestureStrategy.values.firstWhere((element) => element.toString() == jsonValue);
+    switch (jsonValue) {
+      case 'none':
+        return FocusGestureStrategy.none;
+      case 'manual':
+        return FocusGestureStrategy.manual;
+      case 'manualUntilCapture':
+        return FocusGestureStrategy.manualUntilCapture;
+      case 'autoOnLocation':
+        return FocusGestureStrategy.autoOnLocation;
+      default:
+        throw Exception("Missing FocusGestureStrategy for '$jsonValue'");
+    }
+  }
+
+  String get jsonValue => _jsonValue();
+
+  String _jsonValue() {
+    switch (this) {
+      case FocusGestureStrategy.none:
+        return 'none';
+      case FocusGestureStrategy.manual:
+        return 'manual';
+      case FocusGestureStrategy.manualUntilCapture:
+        return 'manualUntilCapture';
+      case FocusGestureStrategy.autoOnLocation:
+        return 'autoOnLocation';
+      default:
+        throw Exception("Missing Json value for '$this' focus gesture strategy");
+    }
   }
 }
 
 class CameraSettings implements Serializable {
   final Map<String, dynamic> _cameraSettingsProperties = <String, dynamic>{};
-
   final Map<String, dynamic> _cameraFocusHiddenProperties = <String, dynamic>{};
-  final _focusHiddenProperties = [
-    'range',
-    'manualLensPosition',
-    'shouldPreferSmoothAutoFocus',
-    'focusStrategy',
-    'focusGestureStrategy'
-  ];
+  final _focusHiddenProperties = ['manualLensPosition', 'focusStrategy'];
 
   VideoResolution preferredResolution;
   double zoomFactor;
@@ -146,22 +210,18 @@ class CameraSettings implements Serializable {
 
   CameraSettings(
       this.preferredResolution, this.zoomFactor, this.focusRange, this.focusGestureStrategy, this.zoomGestureZoomFactor,
-      {required this.shouldPreferSmoothAutoFocus, Map<String, dynamic> properties = const <String, dynamic>{}}) {
-    for (var hiddenProperty in properties.entries) {
-      setProperty(hiddenProperty.key, hiddenProperty.value);
-    }
-  }
+      {required this.shouldPreferSmoothAutoFocus});
 
   @override
   Map<String, dynamic> toMap() {
     Map<String, dynamic> json;
     json = {
-      'preferredResolution': preferredResolution.toString(),
+      'preferredResolution': preferredResolution.jsonValue,
       'zoomFactor': zoomFactor,
-      'focusRange': focusRange.toString(),
+      'focusRange': focusRange.jsonValue,
       'focus': {
-        'range': focusRange.toString(),
-        'focusGestureStrategy': focusGestureStrategy.toString(),
+        'range': focusRange.jsonValue,
+        'focusGestureStrategy': focusGestureStrategy.jsonValue,
         'shouldPreferSmoothAutoFocus': shouldPreferSmoothAutoFocus
       },
       'zoomGestureZoomFactor': zoomGestureZoomFactor
@@ -283,9 +343,9 @@ class Camera extends FrameSource {
   Map<String, dynamic> toMap() {
     var json = <String, dynamic>{
       'type': 'camera',
-      'position': _position.toString(),
-      'desiredTorchState': _desiredTorchState.toString(),
-      'desiredState': _desiredState.toString()
+      'position': _position.jsonValue,
+      'desiredTorchState': _desiredTorchState.jsonValue,
+      'desiredState': _desiredState.jsonValue
     };
     if (_settings != null) {
       json['settings'] = _settings?.toMap();
@@ -328,13 +388,13 @@ class _CameraController {
 
   Future<FrameSourceState> getCurrentState() {
     return methodChannel
-        .invokeMethod(FunctionNames.getCameraStateMethodName, camera.position.toString())
+        .invokeMethod(FunctionNames.getCameraStateMethodName, camera.position.jsonValue)
         .then((value) => FrameSourceStateDeserializer.fromJSON(value as String));
   }
 
   Future<bool> get isTorchAvailable async {
     var isTorchAvailableReturn =
-        await methodChannel.invokeMethod<bool>(FunctionNames.isTorchAvailableMethodName, camera.position.toString());
+        await methodChannel.invokeMethod<bool>(FunctionNames.isTorchAvailableMethodName, camera.position.jsonValue);
 
     return isTorchAvailableReturn ?? false;
   }

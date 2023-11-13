@@ -16,7 +16,3 @@ fun Result.reject(error: Error) {
 fun Result.reject(error: Error, vararg messageArgs: Any?) {
     error(error.code.toString(), error.message.format(messageArgs.joinToString(" ")), null)
 }
-
-fun Result.rejectKotlinError(error: kotlin.Error) {
-    error("-1", error.message, error.cause)
-}
