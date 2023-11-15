@@ -69,95 +69,51 @@ class DoubleWithUnit implements Serializable {
             MesaureUnitDeserializer.fromJSON(json['unit'] as String?));
 
   Map<String, dynamic> toMap() {
-    return {'value': value, 'unit': unit.jsonValue};
+    return {'value': value, 'unit': unit.toString()};
   }
 }
 
-enum MeasureUnit { dip, pixel, fraction }
+enum MeasureUnit {
+  dip('dip'),
+  pixel('pixel'),
+  fraction('fraction');
+
+  const MeasureUnit(this._name);
+
+  @override
+  String toString() => _name;
+
+  final String _name;
+}
 
 extension MesaureUnitDeserializer on MeasureUnit {
   static MeasureUnit fromJSON(String? jsonValue) {
-    switch (jsonValue) {
-      case 'dip':
-        return MeasureUnit.dip;
-      case 'pixel':
-        return MeasureUnit.pixel;
-      case 'fraction':
-        return MeasureUnit.fraction;
-      default:
-        throw Exception("Missing MeasureUnit for '$jsonValue'");
-    }
-  }
-
-  String get jsonValue => _jsonValue();
-
-  String _jsonValue() {
-    switch (this) {
-      case MeasureUnit.dip:
-        return 'dip';
-      case MeasureUnit.pixel:
-        return 'pixel';
-      case MeasureUnit.fraction:
-        return 'fraction';
-      default:
-        throw Exception("Missing Json Value for '$this' measure unit");
-    }
+    return MeasureUnit.values.firstWhere((element) => element.toString() == jsonValue);
   }
 }
 
-enum Anchor { topLeft, topCenter, topRight, centerLeft, center, centerRight, bottomLeft, bottomCenter, bottomRight }
+enum Anchor {
+  topLeft('topLeft'),
+  topCenter('topCenter'),
+  topRight('topRight'),
+  centerLeft('centerLeft'),
+  center('center'),
+  centerRight('centerRight'),
+  bottomLeft('bottomLeft'),
+  bottomCenter('bottomCenter'),
+  bottomRight('bottomRight');
+
+  const Anchor(this._name);
+
+  @override
+  String toString() => _name;
+
+  final String _name;
+}
 
 extension AnchorDeserializer on Anchor {
   static Anchor fromJSON(String jsonValue) {
-    switch (jsonValue) {
-      case 'topLeft':
-        return Anchor.topLeft;
-      case 'topCenter':
-        return Anchor.topCenter;
-      case 'topRight':
-        return Anchor.topRight;
-      case 'centerLeft':
-        return Anchor.centerLeft;
-      case 'center':
-        return Anchor.center;
-      case 'centerRight':
-        return Anchor.centerRight;
-      case 'bottomLeft':
-        return Anchor.bottomLeft;
-      case 'bottomCenter':
-        return Anchor.bottomCenter;
-      case 'bottomRight':
-        return Anchor.bottomRight;
-      default:
-        throw Exception("Missing Anchor for '$jsonValue'");
-    }
-  }
-
-  String get jsonValue => _jsonValue();
-
-  String _jsonValue() {
-    switch (this) {
-      case Anchor.topLeft:
-        return 'topLeft';
-      case Anchor.topCenter:
-        return 'topCenter';
-      case Anchor.topRight:
-        return 'topRight';
-      case Anchor.centerLeft:
-        return 'centerLeft';
-      case Anchor.center:
-        return 'center';
-      case Anchor.centerRight:
-        return 'centerRight';
-      case Anchor.bottomLeft:
-        return 'bottomLeft';
-      case Anchor.bottomCenter:
-        return 'bottomCenter';
-      case Anchor.bottomRight:
-        return 'bottomRight';
-      default:
-        throw Exception("Missing Json Value for '$this' anchor");
-    }
+    return Anchor.values.firstWhere((element) => element.toString() == jsonValue);
   }
 }
 
@@ -210,47 +166,25 @@ class Quadrilateral implements Serializable {
   }
 }
 
-enum CompositeFlag { none, unknown, linked, gs1TypeA, gs1TypeB, gs1TypeC }
+enum CompositeFlag {
+  none('none'),
+  unknown('unknown'),
+  linked('linked'),
+  gs1TypeA('gs1TypeA'),
+  gs1TypeB('gs1TypeB'),
+  gs1TypeC('gs1TypeC');
+
+  const CompositeFlag(this._name);
+
+  @override
+  String toString() => _name;
+
+  final String _name;
+}
 
 extension CompositeFlagDeserializer on CompositeFlag {
   static CompositeFlag fromJSON(String jsonValue) {
-    switch (jsonValue) {
-      case 'none':
-        return CompositeFlag.none;
-      case 'unknown':
-        return CompositeFlag.unknown;
-      case 'linked':
-        return CompositeFlag.linked;
-      case 'gs1TypeA':
-        return CompositeFlag.gs1TypeA;
-      case 'gs1TypeB':
-        return CompositeFlag.gs1TypeB;
-      case 'gs1TypeC':
-        return CompositeFlag.gs1TypeC;
-      default:
-        throw Exception("Missing CompositeFlag for '$jsonValue'");
-    }
-  }
-
-  String get jsonValue => _jsonValue();
-
-  String _jsonValue() {
-    switch (this) {
-      case CompositeFlag.none:
-        return 'none';
-      case CompositeFlag.unknown:
-        return 'unknown';
-      case CompositeFlag.linked:
-        return 'linked';
-      case CompositeFlag.gs1TypeA:
-        return 'gs1TypeA';
-      case CompositeFlag.gs1TypeB:
-        return 'gs1TypeB';
-      case CompositeFlag.gs1TypeC:
-        return 'gs1TypeC';
-      default:
-        throw Exception("Missing JsonValue for '$this' composite flag");
-    }
+    return CompositeFlag.values.firstWhere((element) => element.toString() == jsonValue);
   }
 }
 
@@ -370,39 +304,23 @@ class SizeWithAspect implements Serializable {
   }
 }
 
-enum SizingMode { widthAndHeight, widthAndAspectRatio, heightAndAspectRatio, shorterDimensionAndAspectRatio }
+enum SizingMode {
+  widthAndHeight('widthAndHeight'),
+  widthAndAspectRatio('widthAndAspectRatio'),
+  heightAndAspectRatio('heightAndAspectRatio'),
+  shorterDimensionAndAspectRatio('shorterDimensionAndAspectRatio');
+
+  const SizingMode(this._name);
+
+  @override
+  String toString() => _name;
+
+  final String _name;
+}
 
 extension SizingModeDeserializer on SizingMode {
   static SizingMode fromJSON(String jsonValue) {
-    switch (jsonValue) {
-      case 'widthAndHeight':
-        return SizingMode.widthAndHeight;
-      case 'widthAndAspectRatio':
-        return SizingMode.widthAndAspectRatio;
-      case 'heightAndAspectRatio':
-        return SizingMode.heightAndAspectRatio;
-      case 'shorterDimensionAndAspectRatio':
-        return SizingMode.shorterDimensionAndAspectRatio;
-      default:
-        throw Exception("Missing SizingMode for name '$jsonValue'");
-    }
-  }
-
-  String get jsonValue => _jsonValue();
-
-  String _jsonValue() {
-    switch (this) {
-      case SizingMode.widthAndHeight:
-        return 'widthAndHeight';
-      case SizingMode.widthAndAspectRatio:
-        return 'widthAndAspectRatio';
-      case SizingMode.heightAndAspectRatio:
-        return 'heightAndAspectRatio';
-      case SizingMode.shorterDimensionAndAspectRatio:
-        return 'shorterDimensionAndAspectRatio';
-      default:
-        throw Exception("Missing Json Value for '$this' sizing mode");
-    }
+    return SizingMode.values.firstWhere((element) => element.toString() == jsonValue);
   }
 }
 
@@ -467,43 +385,24 @@ extension ColorDeserializer on Color {
   }
 }
 
-enum Orientation { unknown, portrait, portraitUpsideDown, landscapeRight, landscapeLeft }
+enum Orientation {
+  unknown('unknown'),
+  portrait('portrait'),
+  portraitUpsideDown('portraitUpsideDown'),
+  landscapeRight('landscapeRight'),
+  landscapeLeft('landscapeLeft');
+
+  const Orientation(this._name);
+
+  @override
+  String toString() => _name;
+
+  final String _name;
+}
 
 extension OrientationDeserializer on Orientation {
   static Orientation fromJSON(String jsonValue) {
-    switch (jsonValue) {
-      case 'unknown':
-        return Orientation.unknown;
-      case 'portrait':
-        return Orientation.portrait;
-      case 'portraitUpsideDown':
-        return Orientation.portraitUpsideDown;
-      case 'landscapeRight':
-        return Orientation.landscapeRight;
-      case 'landscapeLeft':
-        return Orientation.landscapeLeft;
-      default:
-        throw Exception("Missing Orientation for name '$jsonValue'");
-    }
-  }
-
-  String get jsonValue => _jsonValue();
-
-  String _jsonValue() {
-    switch (this) {
-      case Orientation.unknown:
-        return 'unknown';
-      case Orientation.portrait:
-        return 'portrait';
-      case Orientation.portraitUpsideDown:
-        return 'portraitUpsideDown';
-      case Orientation.landscapeRight:
-        return 'landscapeRight';
-      case Orientation.landscapeLeft:
-        return 'landscapeLeft';
-      default:
-        throw Exception("Missing Json Value for '$this' orientation");
-    }
+    return Orientation.values.firstWhere((element) => element.toString() == jsonValue);
   }
 }
 

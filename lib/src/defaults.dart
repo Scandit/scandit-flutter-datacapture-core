@@ -26,9 +26,10 @@ class CameraSettingsDefaults {
   final FocusGestureStrategy focusGestureStrategy;
   final double zoomGestureZoomFactor;
   final bool shouldPreferSmoothAutoFocus;
+  final Map<String, dynamic> properties;
 
-  CameraSettingsDefaults(
-      this.preferredResolution, this.zoomFactor, this.focusRange, this.focusGestureStrategy, this.zoomGestureZoomFactor,
+  CameraSettingsDefaults(this.preferredResolution, this.zoomFactor, this.focusRange, this.focusGestureStrategy,
+      this.zoomGestureZoomFactor, this.properties,
       {required this.shouldPreferSmoothAutoFocus});
 
   factory CameraSettingsDefaults.fromJSON(Map<String, dynamic> json) {
@@ -39,7 +40,13 @@ class CameraSettingsDefaults {
         FocusGestureStrategyDeserializer.focusGestureStrategyFromJSON(json['focusGestureStrategy']);
     var zoomGestureZoomFactor = (json['zoomGestureZoomFactor'] as num).toDouble();
     var shouldPreferSmoothAutoFocus = json['shouldPreferSmoothAutoFocus'] as bool?;
-    return CameraSettingsDefaults(resolution, zoomFactor, focusRange, focusGestureStrategy, zoomGestureZoomFactor,
+    var properties = <String, dynamic>{};
+
+    if (json.containsKey('properties')) {
+      properties = json['properties'] as Map<String, dynamic>;
+    }
+    return CameraSettingsDefaults(
+        resolution, zoomFactor, focusRange, focusGestureStrategy, zoomGestureZoomFactor, properties,
         shouldPreferSmoothAutoFocus: shouldPreferSmoothAutoFocus ?? false);
   }
 }

@@ -43,19 +43,8 @@ abstract class DataCaptureViewListener {
 }
 
 // ignore: must_be_immutable
-class DataCaptureView extends StatefulWidget implements common.Serializable {
+class DataCaptureView extends StatefulWidget with PrivateDataCaptureView {
   PrivateDataCaptureContext? _dataCaptureContext;
-  common.MarginsWithUnit _scanAreaMargins = Defaults.captureViewDefaults.scanAreaMargins;
-  common.PointWithUnit _pointOfInterest = Defaults.captureViewDefaults.pointOfInterest;
-  common.Anchor _logoAnchor = Defaults.captureViewDefaults.logoAnchor;
-  common.PointWithUnit _logoOffset = Defaults.captureViewDefaults.logoOffset;
-  final List<DataCaptureOverlay> _overlays = [];
-  final List<DataCaptureViewListener> _listeners = [];
-  final List<Control> _controls = [];
-  LogoStyle _logoStyle = Defaults.captureViewDefaults.logoStyle;
-
-  FocusGesture? _focusGesture = Defaults.captureViewDefaults.focusGesture;
-  ZoomGesture? _zoomGesture = Defaults.captureViewDefaults.zoomGesture;
 
   final EventChannel _viewDidChangeSizeEventChannel = const EventChannel(FunctionNames.eventsChannelName);
   final _DataCaptureViewController _controller = _DataCaptureViewController();
@@ -228,22 +217,6 @@ class DataCaptureView extends StatefulWidget implements common.Serializable {
   }
 
   LogoStyle get logoStyle => _logoStyle;
-
-  @override
-  Map<String, dynamic> toMap() {
-    var json = <String, dynamic>{};
-    json['scanAreaMargins'] = _scanAreaMargins.toMap();
-    json['pointOfInterest'] = _pointOfInterest.toMap();
-    json['logoAnchor'] = _logoAnchor.jsonValue;
-    json['logoOffset'] = _logoOffset.toMap();
-    json['overlays'] = _overlays.map((overlay) => overlay.toMap()).toList();
-    json['focusGesture'] = _focusGesture?.toMap();
-    json['zoomGesture'] = _zoomGesture?.toMap();
-    json['controls'] = _controls.map((e) => e.toMap()).toList();
-    json['logoStyle'] = _logoStyle.jsonValue;
-
-    return json;
-  }
 }
 
 class _DataCaptureViewController {
@@ -261,6 +234,40 @@ class _DataCaptureViewController {
     return _methodChannel
         .invokeMethod(FunctionNames.viewQuadrilateralForFrameQuadrilateral, args)
         .then((value) => common.Quadrilateral.fromJSON(jsonDecode(value)));
+  }
+}
+
+mixin PrivateDataCaptureView implements common.Serializable {
+  common.MarginsWithUnit _scanAreaMargins = Defaults.captureViewDefaults.scanAreaMargins;
+  common.PointWithUnit _pointOfInterest = Defaults.captureViewDefaults.pointOfInterest;
+  common.Anchor _logoAnchor = Defaults.captureViewDefaults.logoAnchor;
+  common.PointWithUnit _logoOffset = Defaults.captureViewDefaults.logoOffset;
+  final List<DataCaptureViewListener> _listeners = [];
+  final List<Control> _controls = [];
+  LogoStyle _logoStyle = Defaults.captureViewDefaults.logoStyle;
+
+  FocusGesture? _focusGesture = Defaults.captureViewDefaults.focusGesture;
+  ZoomGesture? _zoomGesture = Defaults.captureViewDefaults.zoomGesture;
+  final List<DataCaptureOverlay> _overlays = [];
+
+  void removeAllOverlays() {
+    _overlays.clear();
+  }
+
+  @override
+  Map<String, dynamic> toMap() {
+    var json = <String, dynamic>{};
+    json['scanAreaMargins'] = _scanAreaMargins.toMap();
+    json['pointOfInterest'] = _pointOfInterest.toMap();
+    json['logoAnchor'] = _logoAnchor.toString();
+    json['logoOffset'] = _logoOffset.toMap();
+    json['overlays'] = _overlays.map((overlay) => overlay.toMap()).toList();
+    json['focusGesture'] = _focusGesture?.toMap();
+    json['zoomGesture'] = _zoomGesture?.toMap();
+    json['controls'] = _controls.map((e) => e.toMap()).toList();
+    json['logoStyle'] = _logoStyle.toString();
+
+    return json;
   }
 }
 

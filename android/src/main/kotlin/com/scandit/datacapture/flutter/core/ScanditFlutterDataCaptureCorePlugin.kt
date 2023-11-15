@@ -64,7 +64,7 @@ class ScanditFlutterDataCaptureCorePlugin :
                     eventEmitter
                 )
             ).also {
-                it.onStart(binding.applicationContext)
+                it.onCreate(binding.applicationContext)
                 it.registerDataCaptureContextListener()
                 it.registerDataCaptureViewListener()
                 it.registerFrameSourceListener()
@@ -91,7 +91,7 @@ class ScanditFlutterDataCaptureCorePlugin :
         lock.withLock {
             methodChannel?.setMethodCallHandler(null)
             methodChannel = null
-            coreModule?.onStop()
+            coreModule?.onDestroy()
             coreModule = null
             isPluginAttached = false
         }

@@ -70,8 +70,8 @@ class ImageFrameSource extends FrameSource {
     var json = <String, dynamic>{
       'type': 'image',
       'id': _id,
-      'position': _position.jsonValue,
-      'desiredState': _desiredState.jsonValue,
+      'position': _position.toString(),
+      'desiredState': _desiredState.toString(),
       'image': _base64EncodedImage
     };
     return json;

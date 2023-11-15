@@ -4,6 +4,8 @@
  * Copyright (C) 2020- Scandit AG. All rights reserved.
  */
 
+import ScanditCaptureCore
+
 extension Brush {
     public var defaults: [String: Any] {
         return [
