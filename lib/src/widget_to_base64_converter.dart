@@ -5,7 +5,7 @@
  */
 
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
+import 'dart:typed_data';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'dart:ui' as ui;
@@ -18,16 +18,14 @@ extension WidgetToBase64Converter on Widget {
   Future<Uint8List?> _getImageBytesFromWidget(Widget widget) async {
     final repaintBoundary = RenderRepaintBoundary();
 
-    var lastView = WidgetsBinding.instance.platformDispatcher.views.last;
-
-    var logicalSize = lastView.physicalSize / lastView.devicePixelRatio;
+    var logicalSize = ui.window.physicalSize / ui.window.devicePixelRatio;
 
     final renderView = RenderView(
-      view: lastView,
+      window: ui.window,
       child: RenderPositionedBox(alignment: Alignment.center, child: repaintBoundary),
       configuration: ViewConfiguration(
         size: logicalSize,
-        devicePixelRatio: lastView.devicePixelRatio,
+        devicePixelRatio: ui.window.devicePixelRatio,
       ),
     );
 
@@ -71,7 +69,7 @@ extension WidgetToBase64Converter on Widget {
     pipelineOwner.flushCompositingBits();
     pipelineOwner.flushPaint();
 
-    final image = await repaintBoundary.toImage(pixelRatio: lastView.devicePixelRatio);
+    final image = await repaintBoundary.toImage(pixelRatio: ui.window.devicePixelRatio);
 
     final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
 

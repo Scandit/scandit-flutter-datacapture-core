@@ -12,7 +12,7 @@ internal object MainThreadUtil {
 
     private var mainHandler: Handler? = null
 
-    private fun isOnMainThread(): Boolean = Looper.getMainLooper().thread === Thread.currentThread()
+    fun isOnMainThread(): Boolean = Looper.getMainLooper().thread === Thread.currentThread()
 
     fun runOnMainThread(lambda: () -> Unit) {
         if (isOnMainThread()) {

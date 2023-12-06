@@ -48,22 +48,20 @@ class DataCaptureContextSettings implements Serializable {
   }
 }
 
-enum Expiration {
-  available('available'),
-  perpetual('perpetual'),
-  notAvailable('notAvailable');
-
-  const Expiration(this._name);
-
-  @override
-  String toString() => _name;
-
-  final String _name;
-}
+enum Expiration { available, perpetual, notAvailable }
 
 extension ExpirationDeserializer on Expiration {
   static Expiration expirationFromJSON(String jsonValue) {
-    return Expiration.values.firstWhere((element) => element.toString() == jsonValue);
+    switch (jsonValue) {
+      case 'available':
+        return Expiration.available;
+      case 'perpetual':
+        return Expiration.perpetual;
+      case 'notAvailable':
+        return Expiration.notAvailable;
+      default:
+        throw Exception("Missing Expiration for '$jsonValue'");
+    }
   }
 }
 
@@ -104,8 +102,6 @@ class DataCaptureContext with PrivateDataCaptureContext implements Serializable 
 
   LicenseInfo? get licenseInfo => _licenseInfo;
 
-  static String get deviceId => Defaults.deviceId;
-
   DataCaptureContext._(this._licenseKey, this._deviceName, this._settings) {
     _controller = _DataCaptureContextController(this, Defaults.channel);
   }
@@ -141,7 +137,6 @@ class DataCaptureContext with PrivateDataCaptureContext implements Serializable 
       element._context = null;
     }
     modes.clear();
-    view?.removeAllOverlays();
     update();
   }
 
@@ -213,16 +208,7 @@ mixin PrivateDataCaptureContext {
   final List<DataCaptureContextListener> _listeners = [];
   final List<DataCaptureComponent> _components = [];
 
-  PrivateDataCaptureView? view;
-
-  bool _isInitialized = false;
-
-  void initialize() {
-    if (!_isInitialized) {
-      _controller = _DataCaptureContextController(this as DataCaptureContext, Defaults.channel);
-      _isInitialized = true;
-    }
-  }
+  DataCaptureView? view;
 
   Future<void> update() async {
     return _controller.updateContextFromJSON();
@@ -233,8 +219,13 @@ class _DataCaptureContextController {
   final DataCaptureContext context;
   final MethodChannel methodChannel;
 
-  final EventChannel _contextEventsChannel = const EventChannel(FunctionNames.eventsChannelName);
-  StreamSubscription? _contextEventsSubscription;
+  final EventChannel _didStartObservingContextEventChannel =
+      const EventChannel('com.scandit.datacapture.core.event/datacapture_context#didStartObservingContext');
+  StreamSubscription? _didStartObservingContextSubscription;
+
+  final EventChannel _contextStatusEventChannel =
+      const EventChannel('com.scandit.datacapture.core.event/datacapture_context#didChangeStatus');
+  StreamSubscription? _contextStatusSubscription;
 
   PrivateDataCaptureContext get _privateContext {
     return context;
@@ -249,7 +240,7 @@ class _DataCaptureContextController {
     try {
       return methodChannel.invokeMethod(FunctionNames.createContextFromJSONMethodName, encoded);
     } on PlatformException catch (e) {
-      _notifyListenersOfDeserializationError(e, "Init - " + encoded);
+      _notifyListenersOfDeserializationError(e);
     }
     return Future.value();
   }
@@ -259,9 +250,7 @@ class _DataCaptureContextController {
     return methodChannel
         .invokeMethod(FunctionNames.updateContextFromJSONMethodName, encoded)
         // ignore: unnecessary_lambdas
-        .catchError((error) {
-      _notifyListenersOfDeserializationError(error, "Update - " + encoded);
-    });
+        .catchError((error) => _notifyListenersOfDeserializationError(error));
   }
 
   void _notifyListenersOfDidChangeStatus(ContextStatus contextStatus) {
@@ -270,7 +259,7 @@ class _DataCaptureContextController {
     }
   }
 
-  void _notifyListenersOfDeserializationError(PlatformException error, String json) {
+  void _notifyListenersOfDeserializationError(PlatformException error) {
     _notifyListenersOfDidChangeStatus(ContextStatus.fromJSON({
       "message": error.message,
       "code": int.parse(error.code),
@@ -285,27 +274,26 @@ class _DataCaptureContextController {
   }
 
   void initSubscribers() {
-    _contextEventsSubscription = _contextEventsChannel.receiveBroadcastStream().listen((event) {
-      var eventJSON = jsonDecode(event);
-      var eventName = eventJSON['event'] as String;
-
-      if (eventName == FunctionNames.eventDataCaptureContextObservationStarted) {
-        Map<String, dynamic>? licenseInfoJSON =
-            eventJSON.containsKey('licenseInfo') ? jsonDecode(eventJSON['licenseInfo']) : null;
-        context._licenseInfo = licenseInfoJSON == null ? null : LicenseInfo.fromJSON(licenseInfoJSON);
-        _notifyListenersOfObservationStarted();
-      }
-
-      if (eventName == FunctionNames.eventDataCaptureContextOnStatusChanged) {
-        Map<String, dynamic> statusInfo = jsonDecode(eventJSON['status']);
-        var status = ContextStatus.fromJSON(statusInfo);
-        _notifyListenersOfDidChangeStatus(status);
-      }
+    _contextStatusSubscription = _contextStatusEventChannel.receiveBroadcastStream().listen((statusJSON) {
+      Map<String, dynamic> payload = jsonDecode(statusJSON as String);
+      Map<String, dynamic> statusInfo = jsonDecode(payload['status']);
+      var status = ContextStatus.fromJSON(statusInfo);
+      _notifyListenersOfDidChangeStatus(status);
+    });
+    _didStartObservingContextSubscription =
+        _didStartObservingContextEventChannel.receiveBroadcastStream().listen((event) {
+      Map<String, dynamic> payload = jsonDecode(event);
+      Map<String, dynamic>? licenseInfoJSON =
+          payload.containsKey('licenseInfo') ? jsonDecode(payload['licenseInfo']) : null;
+      context._licenseInfo = licenseInfoJSON == null ? null : LicenseInfo.fromJSON(licenseInfoJSON);
+      _notifyListenersOfObservationStarted();
     });
   }
 
   void cancelSubscribers() {
-    _contextEventsSubscription?.cancel();
-    _contextEventsSubscription = null;
+    _didStartObservingContextSubscription?.cancel();
+    _didStartObservingContextSubscription = null;
+    _contextStatusSubscription?.cancel();
+    _contextStatusSubscription = null;
   }
 }

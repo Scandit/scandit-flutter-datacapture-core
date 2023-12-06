@@ -5,8 +5,8 @@
  */
 
 import 'dart:convert';
-
-import 'package:scandit_flutter_datacapture_core/src/function_names.dart';
+// ignore: unnecessary_import
+import 'dart:ui';
 
 import 'camera.dart';
 import 'common.dart';
@@ -26,10 +26,9 @@ class CameraSettingsDefaults {
   final FocusGestureStrategy focusGestureStrategy;
   final double zoomGestureZoomFactor;
   final bool shouldPreferSmoothAutoFocus;
-  final Map<String, dynamic> properties;
 
-  CameraSettingsDefaults(this.preferredResolution, this.zoomFactor, this.focusRange, this.focusGestureStrategy,
-      this.zoomGestureZoomFactor, this.properties,
+  CameraSettingsDefaults(
+      this.preferredResolution, this.zoomFactor, this.focusRange, this.focusGestureStrategy, this.zoomGestureZoomFactor,
       {required this.shouldPreferSmoothAutoFocus});
 
   factory CameraSettingsDefaults.fromJSON(Map<String, dynamic> json) {
@@ -40,13 +39,7 @@ class CameraSettingsDefaults {
         FocusGestureStrategyDeserializer.focusGestureStrategyFromJSON(json['focusGestureStrategy']);
     var zoomGestureZoomFactor = (json['zoomGestureZoomFactor'] as num).toDouble();
     var shouldPreferSmoothAutoFocus = json['shouldPreferSmoothAutoFocus'] as bool?;
-    var properties = <String, dynamic>{};
-
-    if (json.containsKey('properties')) {
-      properties = json['properties'] as Map<String, dynamic>;
-    }
-    return CameraSettingsDefaults(
-        resolution, zoomFactor, focusRange, focusGestureStrategy, zoomGestureZoomFactor, properties,
+    return CameraSettingsDefaults(resolution, zoomFactor, focusRange, focusGestureStrategy, zoomGestureZoomFactor,
         shouldPreferSmoothAutoFocus: shouldPreferSmoothAutoFocus ?? false);
   }
 }
@@ -231,7 +224,7 @@ class AimerViewfinderDefaults {
 
 // ignore: avoid_classes_with_only_static_members
 class Defaults {
-  static MethodChannel channel = MethodChannel(FunctionNames.methodsChannelName);
+  static MethodChannel channel = MethodChannel('com.scandit.datacapture.core.method/datacapture_defaults');
   static late CameraDefaults cameraDefaults;
   static late DataCaptureViewDefaults captureViewDefaults;
   static late LaserlineViewfinderDefaults laserlineViewfinderDefaults;
@@ -252,7 +245,7 @@ class Defaults {
     laserlineViewfinderDefaults = LaserlineViewfinderDefaults.fromJSON(defaults['LaserlineViewfinder']);
     brushDefaults = BrushDefaults.fromJSON(defaults['Brush']);
     sdkVersion = defaults['Version'] as String;
-    deviceId = defaults['deviceID'] as String;
+    deviceId = defaults['DeviceId'] as String;
     aimerViewfinderDefaults = AimerViewfinderDefaults.fromJSON(defaults['AimerViewfinder']);
     _isInitialized = true;
   }
