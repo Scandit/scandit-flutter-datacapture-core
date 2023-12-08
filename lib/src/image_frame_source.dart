@@ -1,10 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
-// ignore: unnecessary_import
-import 'dart:typed_data';
 
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:scandit_flutter_datacapture_core/src/function_names.dart';
 
 import 'camera.dart';
 import 'defaults.dart';
@@ -71,8 +70,8 @@ class ImageFrameSource extends FrameSource {
     var json = <String, dynamic>{
       'type': 'image',
       'id': _id,
-      'position': _position.jsonValue,
-      'desiredState': _desiredState.jsonValue,
+      'position': _position.toString(),
+      'desiredState': _desiredState.toString(),
       'image': _base64EncodedImage
     };
     return json;
@@ -83,8 +82,7 @@ class _ImageFrameSourceController {
   final ImageFrameSource imageFrameSource;
   final MethodChannel methodChannel;
 
-  final EventChannel _stateChangeEventChannel =
-      const EventChannel('com.scandit.datacapture.core.event/camera#didChangeState');
+  final EventChannel _stateChangeEventChannel = const EventChannel(FunctionNames.eventsChannelName);
   StreamSubscription? _stateChangeSubscription;
 
   _ImageFrameSourceController(this.imageFrameSource, this.methodChannel);
@@ -92,8 +90,12 @@ class _ImageFrameSourceController {
   void subscribeFrameSourceListener() {
     if (_stateChangeSubscription != null) return;
     _stateChangeSubscription = _stateChangeEventChannel.receiveBroadcastStream().listen((event) {
-      var state = FrameSourceStateDeserializer.fromJSON(jsonDecode(event)['state'] as String);
-      _notifyCameraListeners(state);
+      var eventJSON = jsonDecode(event);
+      var eventName = eventJSON['event'] as String;
+      if (eventName == FunctionNames.eventFrameSourceStateChanged) {
+        var state = FrameSourceStateDeserializer.fromJSON(jsonDecode(event)['state'] as String);
+        _notifyCameraListeners(state);
+      }
     });
   }
 

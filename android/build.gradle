@@ -1,7 +1,10 @@
+def safeExtGet(prop, fallback) {
+    rootProject.ext.has(prop) ? rootProject.ext.get(prop) : fallback
+}
+
 buildscript {
     ext {
-        sdk_version = "6.17.3"
-        kotlin_version = "1.6.21"
+        kotlin_version = "1.7.21"
         agp_version = "7.2.1"
     }
 
@@ -35,7 +38,14 @@ android {
 }
 
 dependencies {
-    api "com.scandit.datacapture:core:$sdk_version"
-    
+    def sdk_version = "6.21.0"
+
+    println("Version of the native sdk used in this build: ${safeExtGet('global_sdk_version', sdk_version)}")
+    if (findProject(':scandit-datacapture-frameworks-core') != null) {
+        api project(":scandit-datacapture-frameworks-core")
+    } else {
+        api "com.scandit.datacapture.frameworks:core:${safeExtGet('global_sdk_version', sdk_version)}"
+    }
+
     implementation 'com.squareup.okhttp3:okhttp:4.9.2'
 }

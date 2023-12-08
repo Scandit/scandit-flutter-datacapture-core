@@ -9,14 +9,14 @@ import io.flutter.plugin.common.MethodChannel.Result
 
 data class Error(val code: Int, val message: String)
 
-fun Result.reject(throwable: Throwable) {
-    error("0", throwable.message, null)
-}
-
 fun Result.reject(error: Error) {
     error(error.code.toString(), error.message, null)
 }
 
 fun Result.reject(error: Error, vararg messageArgs: Any?) {
     error(error.code.toString(), error.message.format(messageArgs.joinToString(" ")), null)
+}
+
+fun Result.rejectKotlinError(error: kotlin.Error) {
+    error("-1", error.message, error.cause)
 }
