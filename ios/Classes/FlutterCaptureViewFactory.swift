@@ -12,7 +12,6 @@ import ScanditFrameworksCore
 class FlutterCaptureViewFactory: NSObject, FlutterPlatformViewFactory, DeserializationLifeCycleObserver {
     var captureView: DataCaptureView? {
         didSet {
-            captureView?.autoresizingMask = [.flexibleWidth, .flexibleHeight]
             addCaptureViewToLastContainer()
         }
     }
@@ -52,6 +51,9 @@ class FlutterCaptureViewFactory: NSObject, FlutterPlatformViewFactory, Deseriali
         
         if captureView.superview != nil {
             captureView.removeFromSuperview()
+        }
+        if container.frame != .zero {
+            captureView.frame = container.frame
         }
         container.addSubview(captureView)
     }

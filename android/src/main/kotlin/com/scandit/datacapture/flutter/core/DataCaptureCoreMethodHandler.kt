@@ -7,15 +7,13 @@ package com.scandit.datacapture.flutter.core
 
 import com.scandit.datacapture.flutter.core.utils.FlutterResult
 import com.scandit.datacapture.frameworks.core.CoreModule
-import com.scandit.datacapture.frameworks.core.utils.DefaultMainThread
 import com.scandit.datacapture.frameworks.core.utils.MainThread
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import org.json.JSONObject
 
 class DataCaptureCoreMethodHandler(
-    private val coreModule: CoreModule,
-    private val mainThread: MainThread = DefaultMainThread.getInstance()
+    private val coreModule: CoreModule
 ) : MethodChannel.MethodCallHandler {
 
     companion object {
@@ -42,7 +40,7 @@ class DataCaptureCoreMethodHandler(
 
             METHOD_UPDATE_CONTEXT_FROM_JSON -> {
                 val contextJson = call.arguments as String
-                mainThread.runOnMainThread {
+                MainThread.runOnMainThread {
                     coreModule.updateContextFromJson(contextJson, FlutterResult(result))
                 }
             }

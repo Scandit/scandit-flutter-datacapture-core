@@ -19,4 +19,13 @@ class FlutterDataCaptureView: UIView, FlutterPlatformView {
         factory?.views.remove(at: index)
         factory?.addCaptureViewToLastContainer()
     }
+
+    override var frame: CGRect {
+        didSet {
+            guard let captureView = factory?.captureView, frame != .zero else {
+                return
+            }
+            captureView.frame = frame
+        }
+    }
 }
