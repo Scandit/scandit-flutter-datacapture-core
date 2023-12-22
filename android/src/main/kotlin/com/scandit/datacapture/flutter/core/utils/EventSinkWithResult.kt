@@ -5,6 +5,7 @@
  */
 package com.scandit.datacapture.flutter.core.utils
 
+import com.scandit.datacapture.frameworks.core.utils.DefaultFrameworksLog
 import com.scandit.datacapture.frameworks.core.utils.FrameworksLog
 import io.flutter.plugin.common.EventChannel.EventSink
 import java.util.concurrent.ArrayBlockingQueue
@@ -12,7 +13,8 @@ import java.util.concurrent.TimeUnit
 
 class EventSinkWithResult<T>(
     private val name: String,
-    private val timeoutMillis: Long = DEFAULT_TIMEOUT_MILLIS
+    private val timeoutMillis: Long = DEFAULT_TIMEOUT_MILLIS,
+    private val logger: FrameworksLog = DefaultFrameworksLog.getInstance()
 ) {
     companion object {
         private const val DEFAULT_TIMEOUT_MILLIS = 2000L
@@ -32,12 +34,12 @@ class EventSinkWithResult<T>(
                 resultHolder.poll(timeoutMillis, TimeUnit.MILLISECONDS)
         ) {
             is Cancellation -> {
-                FrameworksLog.info("Callback `$name` not finished, because onCancel was called.")
+                logger.info("Callback `$name` not finished, because onCancel was called.")
                 timeoutResult
             }
             is Result<*> -> pendingResult.value as T
             else -> {
-                FrameworksLog.info(
+                logger.info(
                     "Callback `$name` not finished after $timeoutMillis milliseconds."
                 )
                 timeoutResult

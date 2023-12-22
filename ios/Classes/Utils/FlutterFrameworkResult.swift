@@ -30,6 +30,12 @@ public class FlutterFrameworkResult: FrameworksResult {
     }
 }
 
+public extension FrameworksResult where Self == FlutterFrameworkResult {
+    static func create(_ result: @escaping FlutterResult) -> Self {
+        FlutterFrameworkResult(reply: result)
+    }
+}
+
 public class FlutterLogInsteadOfResult: FrameworksResult {
     public init() { }
 
