@@ -13,17 +13,14 @@ import com.scandit.datacapture.frameworks.core.listeners.FrameworksDataCaptureVi
 import com.scandit.datacapture.frameworks.core.listeners.FrameworksFrameSourceListener
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.FlutterPlugin.FlutterPluginBinding
-import io.flutter.embedding.engine.plugins.activity.ActivityAware
-import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
-import java.lang.ref.WeakReference
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
 /** ScanditFlutterDataCaptureCorePlugin. */
 class ScanditFlutterDataCaptureCorePlugin :
-    FlutterPlugin, ActivityAware {
+    FlutterPlugin {
 
     companion object {
         @JvmStatic
@@ -41,97 +38,62 @@ class ScanditFlutterDataCaptureCorePlugin :
 
     private var methodChannel: MethodChannel? = null
 
+    private var dataCaptureCoreMethodHandler: DataCaptureCoreMethodHandler? = null
+
     private var coreModule: CoreModule? = null
 
-    private var flutterPluginBinding: WeakReference<FlutterPluginBinding?> = WeakReference(null)
-
     override fun onAttachedToEngine(binding: FlutterPluginBinding) {
-        flutterPluginBinding = WeakReference(binding)
-    }
-
-    override fun onDetachedFromEngine(binding: FlutterPluginBinding) {
-        flutterPluginBinding = WeakReference(null)
-    }
-
-    override fun onAttachedToActivity(binding: ActivityPluginBinding) {
-        onAttached()
-    }
-
-    override fun onDetachedFromActivityForConfigChanges() {
-        onDetached()
-    }
-
-    override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
-        onAttached()
-    }
-
-    override fun onDetachedFromActivity() {
-        onDetached()
-    }
-
-    private fun onAttached() {
         lock.withLock {
             if (isPluginAttached) return
 
-            val flutterBinding = flutterPluginBinding.get() ?: return
+            val eventEmitter = FlutterEmitter(
+                EventChannel(
+                    binding.binaryMessenger,
+                    EVENT_CHANNEL_NAME
+                )
+            )
 
-            setupModule(flutterBinding)
+            val coreModule = CoreModule(
+                FrameworksFrameSourceListener(
+                    eventEmitter
+                ),
+                FrameworksDataCaptureContextListener(
+                    eventEmitter
+                ),
+                FrameworksDataCaptureViewListener(
+                    eventEmitter
+                )
+            ).also {
+                it.onCreate(binding.applicationContext)
+                it.registerDataCaptureContextListener()
+                it.registerDataCaptureViewListener()
+                it.registerFrameSourceListener()
+            }
 
+            dataCaptureCoreMethodHandler = DataCaptureCoreMethodHandler(
+                coreModule
+            )
+
+            this.coreModule = coreModule
+
+            binding.platformViewRegistry.registerViewFactory(
+                DATACAPTURE_VIEW_ID,
+                ScanditPlatformViewFactory(coreModule)
+            )
+            methodChannel = binding.getMethodChannel(METHOD_CHANNEL_NAME).also {
+                it.setMethodCallHandler(dataCaptureCoreMethodHandler)
+            }
             isPluginAttached = true
         }
     }
 
-    private fun onDetached() {
+    override fun onDetachedFromEngine(binding: FlutterPluginBinding) {
         lock.withLock {
-            disposeModules()
+            methodChannel?.setMethodCallHandler(null)
+            methodChannel = null
+            coreModule?.onDestroy()
+            coreModule = null
             isPluginAttached = false
         }
-    }
-
-    private fun setupModule(binding: FlutterPluginBinding) {
-        val eventEmitter = FlutterEmitter(
-            EventChannel(
-                binding.binaryMessenger,
-                EVENT_CHANNEL_NAME
-            )
-        )
-
-        val coreModule = CoreModule(
-            FrameworksFrameSourceListener(
-                eventEmitter
-            ),
-            FrameworksDataCaptureContextListener(
-                eventEmitter
-            ),
-            FrameworksDataCaptureViewListener(
-                eventEmitter
-            )
-        ).also {
-            it.onCreate(binding.applicationContext)
-            it.registerDataCaptureContextListener()
-            it.registerDataCaptureViewListener()
-            it.registerFrameSourceListener()
-        }
-
-        val dataCaptureCoreMethodHandler = DataCaptureCoreMethodHandler(
-            coreModule
-        )
-
-        this.coreModule = coreModule
-
-        binding.platformViewRegistry.registerViewFactory(
-            DATACAPTURE_VIEW_ID,
-            ScanditPlatformViewFactory(coreModule)
-        )
-        methodChannel = binding.getMethodChannel(METHOD_CHANNEL_NAME).also {
-            it.setMethodCallHandler(dataCaptureCoreMethodHandler)
-        }
-    }
-
-    private fun disposeModules() {
-        methodChannel?.setMethodCallHandler(null)
-        methodChannel = null
-        coreModule?.onDestroy()
-        coreModule = null
     }
 }
