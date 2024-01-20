@@ -9,6 +9,7 @@ import 'dart:convert';
 import 'package:flutter/services.dart';
 
 import 'common.dart';
+import 'data_capture_context.dart';
 import 'defaults.dart';
 import 'frame_source.dart';
 import 'function_names.dart';
@@ -176,12 +177,12 @@ class CameraSettings implements Serializable {
   }
 }
 
-class Camera extends FrameSource {
+class Camera with PrivateCamera implements FrameSource {
   CameraSettings? _settings;
   late CameraPosition _position;
   TorchState _desiredTorchState = TorchState.off;
   FrameSourceState _desiredState = FrameSourceState.off;
-  late _CameraController _cameraController;
+
   final List<FrameSourceListener> _frameSourceListeners = [];
   final List<TorchListener> _torchStateListeners = [];
 
@@ -237,10 +238,6 @@ class Camera extends FrameSource {
   void addListener(FrameSourceListener? listener) {
     if (listener == null) return;
 
-    if (_frameSourceListeners.isEmpty && _torchStateListeners.isEmpty) {
-      _cameraController.subscribeFrameSourceListener();
-    }
-
     if (!_frameSourceListeners.contains(listener)) {
       _frameSourceListeners.add(listener);
     }
@@ -251,17 +248,9 @@ class Camera extends FrameSource {
     if (listener == null) return;
 
     _frameSourceListeners.remove(listener);
-
-    if (_frameSourceListeners.isEmpty && _torchStateListeners.isEmpty) {
-      _cameraController.unsubscribeFrameSourceListener();
-    }
   }
 
   void addTorchListener(TorchListener listener) {
-    if (_frameSourceListeners.isEmpty && _torchStateListeners.isEmpty) {
-      _cameraController.subscribeFrameSourceListener();
-    }
-
     if (!_torchStateListeners.contains(listener)) {
       _torchStateListeners.add(listener);
     }
@@ -269,10 +258,6 @@ class Camera extends FrameSource {
 
   void removeTorchListener(TorchListener listener) {
     _torchStateListeners.remove(listener);
-
-    if (_frameSourceListeners.isEmpty && _torchStateListeners.isEmpty) {
-      _cameraController.unsubscribeFrameSourceListener();
-    }
   }
 
   Future<void> _onChange() {
@@ -291,6 +276,24 @@ class Camera extends FrameSource {
       json['settings'] = _settings?.toMap();
     }
     return json;
+  }
+}
+
+mixin PrivateCamera implements FrameSource {
+  late _CameraController _cameraController;
+  DataCaptureContext? _context;
+
+  @override
+  DataCaptureContext? get context => _context;
+
+  @override
+  set context(DataCaptureContext? context) {
+    _context = context;
+    if (context != null) {
+      _cameraController.subscribeFrameSourceListener();
+    } else {
+      _cameraController.unsubscribeFrameSourceListener();
+    }
   }
 }
 
@@ -316,6 +319,7 @@ class _CameraController {
 
       if (eventName == FunctionNames.eventTorchStateChanged) {
         var state = TorchStateDeserializer.fromJSON(jsonDecode(event)['state'] as String);
+        camera._desiredTorchState = state;
         _notifyTorchListeners(state);
       }
     });
