@@ -9,56 +9,43 @@ import ScanditCaptureCore
 import ScanditFrameworksCore
 
 @objc
-class FlutterCaptureViewFactory: NSObject, FlutterPlatformViewFactory, DeserializationLifeCycleObserver {
-    var captureView: DataCaptureView? {
-        didSet {
-            addCaptureViewToLastContainer()
-        }
-    }
+class FlutterCaptureViewFactory: NSObject, FlutterPlatformViewFactory {
+    
+    let coreModule: CoreModule
 
-    var views: [FlutterDataCaptureView] = []
-
-    override init() {
+    init(coreModule: CoreModule) {
+        self.coreModule = coreModule
         super.init()
-        DeserializationLifeCycleDispatcher.shared.attach(observer: self)
     }
 
-    deinit {
-        DeserializationLifeCycleDispatcher.shared.detach(observer: self)
-    }
 
     public func create(withFrame frame: CGRect,
                        viewIdentifier viewId: Int64,
                        arguments args: Any?) -> FlutterPlatformView {
-        let flutterWrapperView = FlutterDataCaptureView(frame: frame)
-        flutterWrapperView.factory = self
-        views.append(flutterWrapperView)
-        addCaptureViewToLastContainer()
-        return flutterWrapperView
-    }
-
-    func addCaptureViewToLastContainer() {
-        guard let captureView = captureView,
-              let container = views.last else {
-            return
+        
+        guard let creationArgs = args as? [String: Any] else {
+            Log.error("Unable to create DataCaptureView without the JSON.")
+            fatalError("Unable to create DataCaptureView without the JSON.")
         }
-        if captureView.superview != nil && captureView.superview == container {
-            // if attached to the same container do nothing. Removing and adding
-            // it again might trigger something in the DataCaptureView that we don't
-            // want. (overlay re-drawn, black screen, etc.)
-            return
+        guard let creationJson = creationArgs["DataCaptureView"] as? String else {
+            Log.error("Unable to create the DataCaptureView without the json.")
+            fatalError("Unable to create the DataCaptureView without the json.")
         }
         
-        if captureView.superview != nil {
-            captureView.removeFromSuperview()
+        
+        let flutterWrapperView = FlutterDataCaptureView(frame: frame)
+        flutterWrapperView.factory = self
+        
+        if let dcView = coreModule.createDataCaptureView(viewJson: creationJson,
+                                                         result: FlutterLogInsteadOfResult()) {
+            
+            flutterWrapperView.attachDataCaptureView(dataCaptureView: dcView)
         }
-        if container.frame != .zero {
-            captureView.frame = container.frame
-        }
-        container.addSubview(captureView)
-    }
 
-    func dataCaptureView(deserialized view: DataCaptureView?) {
-        captureView = view
+        return flutterWrapperView
+    }
+    
+    func createArgsCodec() -> FlutterMessageCodec & NSObjectProtocol {
+        FlutterStandardMessageCodec.sharedInstance()
     }
 }

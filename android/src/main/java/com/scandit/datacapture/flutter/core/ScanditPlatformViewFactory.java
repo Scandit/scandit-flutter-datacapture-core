@@ -8,6 +8,8 @@ import androidx.annotation.Nullable;
 import com.scandit.datacapture.flutter.core.ui.FlutterDataCaptureView;
 import com.scandit.datacapture.frameworks.core.CoreModule;
 
+import java.util.HashMap;
+
 import io.flutter.plugin.common.StandardMessageCodec;
 import io.flutter.plugin.platform.PlatformView;
 import io.flutter.plugin.platform.PlatformViewFactory;
@@ -23,6 +25,18 @@ public class ScanditPlatformViewFactory extends PlatformViewFactory {
     @NonNull
     @Override
     public PlatformView create(Context context, int viewId, @Nullable Object args) {
-        return new FlutterDataCaptureView(context, this.coreModule);
+        HashMap<String, String> creationArgs = (HashMap<String, String>) args;
+
+        if (creationArgs == null) {
+            throw new IllegalArgumentException("Unable to create the BarcodeCountView without the json.");
+        }
+
+        String creationJson = creationArgs.get("DataCaptureView");
+
+        if (creationJson == null) {
+            throw new IllegalArgumentException("Unable to create the BarcodeCountView without the json.");
+        }
+
+        return new FlutterDataCaptureView(context, this.coreModule, creationJson);
     }
 }
