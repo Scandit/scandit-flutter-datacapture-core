@@ -18,6 +18,18 @@ class DataCaptureCoreMethodHandler(
     private val mainThread: MainThread = DefaultMainThread.getInstance()
 ) : MethodChannel.MethodCallHandler {
 
+    companion object {
+        private const val METHOD_GET_DEFAULTS = "getDefaults"
+        private const val METHOD_CONTEXT_FROM_JSON = "createContextFromJSON"
+        private const val METHOD_UPDATE_CONTEXT_FROM_JSON = "updateContextFromJSON"
+        private const val METHOD_GET_CAMERA_STATE = "getCameraState"
+        private const val METHOD_IS_TORCH_AVAILABLE = "isTorchAvailable"
+        private const val METHOD_EMIT_FEEDBACK = "emitFeedback"
+        private const val METHOD_VIEW_POINT_FOR_FRAME_POINT = "viewPointForFramePoint"
+        private const val METHOD_VIEW_QUADRILATERAL_FOR_FRAME_QUADRILATERAL =
+            "viewQuadrilateralForFrameQuadrilateral"
+    }
+
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
             METHOD_GET_DEFAULTS ->
@@ -57,58 +69,8 @@ class DataCaptureCoreMethodHandler(
                     FlutterResult(result)
                 )
 
-            METHOD_SWITCH_CAMERA_TO_DESIRED_STATE ->
-                coreModule.switchCameraToDesiredState(
-                    call.arguments as String,
-                    FlutterResult(result)
-                )
-
-            METHOD_ADD_MODE_TO_CONTEXT ->
-                coreModule.addModeToContext(call.arguments as String, FlutterResult(result))
-
-            METHOD_REMOVE_MODE_FROM_CONTEXT ->
-                coreModule.removeModeFromContext(call.arguments as String, FlutterResult(result))
-
-            METHOD_REMOVE_ALL_MODES_FROM_CONTEXT -> coreModule.removeAllModes(FlutterResult(result))
-
-            METHOD_UPDATE_DC_VIEW -> coreModule.updateDataCaptureView(
-                call.arguments as String,
-                FlutterResult(result)
-            )
-
-            METHOD_ADD_OVERLAY -> coreModule.addOverlayToView(
-                call.arguments as String,
-                FlutterResult(result)
-            )
-
-            METHOD_REMOVE_OVERLAY -> coreModule.removeOverlayFromView(
-                call.arguments as String,
-                FlutterResult(result)
-            )
-
-            METHOD_REMOVE_ALL_OVERLAYS -> coreModule.removeAllOverlays(FlutterResult(result))
             else ->
                 result.notImplemented()
         }
-    }
-
-    companion object {
-        private const val METHOD_GET_DEFAULTS = "getDefaults"
-        private const val METHOD_CONTEXT_FROM_JSON = "createContextFromJSON"
-        private const val METHOD_UPDATE_CONTEXT_FROM_JSON = "updateContextFromJSON"
-        private const val METHOD_GET_CAMERA_STATE = "getCameraState"
-        private const val METHOD_IS_TORCH_AVAILABLE = "isTorchAvailable"
-        private const val METHOD_EMIT_FEEDBACK = "emitFeedback"
-        private const val METHOD_VIEW_POINT_FOR_FRAME_POINT = "viewPointForFramePoint"
-        private const val METHOD_VIEW_QUADRILATERAL_FOR_FRAME_QUADRILATERAL =
-            "viewQuadrilateralForFrameQuadrilateral"
-        private const val METHOD_SWITCH_CAMERA_TO_DESIRED_STATE = "switchCameraToDesiredState"
-        private const val METHOD_ADD_MODE_TO_CONTEXT = "addModeToContext"
-        private const val METHOD_REMOVE_MODE_FROM_CONTEXT = "removeModeFromContext"
-        private const val METHOD_REMOVE_ALL_MODES_FROM_CONTEXT = "removeAllModesFromContext"
-        private const val METHOD_UPDATE_DC_VIEW = "updateDataCaptureView"
-        private const val METHOD_ADD_OVERLAY = "addOverlay"
-        private const val METHOD_REMOVE_OVERLAY = "removeOverlay"
-        private const val METHOD_REMOVE_ALL_OVERLAYS = "removeAllOverlays"
     }
 }

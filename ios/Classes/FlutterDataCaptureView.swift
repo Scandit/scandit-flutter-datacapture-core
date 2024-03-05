@@ -5,37 +5,27 @@
  */
 
 import Flutter
-import ScanditCaptureCore
 
 class FlutterDataCaptureView: UIView, FlutterPlatformView {
     weak var factory: FlutterCaptureViewFactory?
-    weak var currentDataCaptureView: DataCaptureView?
-
-    override var frame: CGRect {
-        didSet {
-            if frame != .zero, let captureView = currentDataCaptureView {
-                captureView.frame = frame
-            }
-        }
-    }
 
     func view() -> UIView {
         self
     }
-    
-    func attachDataCaptureView(dataCaptureView: DataCaptureView) {
-        currentDataCaptureView = dataCaptureView
-        if frame != .zero {
-            dataCaptureView.frame = frame
-        }
-        addSubview(dataCaptureView)
-    }
 
     override func removeFromSuperview() {
-        if let dcView = currentDataCaptureView {
-            factory?.coreModule.dataCaptureViewDisposed(dcView)
-        }
-        currentDataCaptureView = nil
         super.removeFromSuperview()
+        guard let index = factory?.views.firstIndex(of: self) else { return }
+        factory?.views.remove(at: index)
+        factory?.addCaptureViewToLastContainer()
+    }
+
+    override var frame: CGRect {
+        didSet {
+            guard let captureView = factory?.captureView, frame != .zero else {
+                return
+            }
+            captureView.frame = frame
+        }
     }
 }

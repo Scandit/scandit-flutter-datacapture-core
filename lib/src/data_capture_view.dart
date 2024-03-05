@@ -47,12 +47,12 @@ class DataCaptureView extends StatefulWidget with PrivateDataCaptureView {
   PrivateDataCaptureContext? _dataCaptureContext;
 
   final EventChannel _viewDidChangeSizeEventChannel = const EventChannel(FunctionNames.eventsChannelName);
-
+  final _DataCaptureViewController _controller = _DataCaptureViewController();
   StreamSubscription? _streamSubscription;
 
   DataCaptureView._(this._dataCaptureContext) : super() {
-    _controller = _DataCaptureViewController(this);
     _dataCaptureContext?.view = this;
+    _dataCaptureContext?.update();
   }
 
   factory DataCaptureView.forContext(DataCaptureContext dataCaptureContext) {
@@ -79,7 +79,7 @@ class DataCaptureView extends StatefulWidget with PrivateDataCaptureView {
 
   set scanAreaMargins(common.MarginsWithUnit newValue) {
     _scanAreaMargins = newValue;
-    _controller.update();
+    _updateContext();
   }
 
   common.PointWithUnit get pointOfInterest {
@@ -88,7 +88,7 @@ class DataCaptureView extends StatefulWidget with PrivateDataCaptureView {
 
   set pointOfInterest(common.PointWithUnit newValue) {
     _pointOfInterest = newValue;
-    _controller.update();
+    _updateContext();
   }
 
   common.Anchor get logoAnchor {
@@ -97,7 +97,7 @@ class DataCaptureView extends StatefulWidget with PrivateDataCaptureView {
 
   set logoAnchor(common.Anchor newValue) {
     _logoAnchor = newValue;
-    _controller.update();
+    _updateContext();
   }
 
   common.PointWithUnit get logoOffset {
@@ -106,7 +106,7 @@ class DataCaptureView extends StatefulWidget with PrivateDataCaptureView {
 
   set logoOffset(common.PointWithUnit newValue) {
     _logoOffset = newValue;
-    _controller.update();
+    _updateContext();
   }
 
   FocusGesture? get focusGesture {
@@ -115,7 +115,7 @@ class DataCaptureView extends StatefulWidget with PrivateDataCaptureView {
 
   set focusGesture(FocusGesture? newValue) {
     _focusGesture = newValue;
-    _controller.update();
+    _updateContext();
   }
 
   ZoomGesture? get zoomGesture {
@@ -124,7 +124,7 @@ class DataCaptureView extends StatefulWidget with PrivateDataCaptureView {
 
   set zoomGesture(ZoomGesture? newValue) {
     _zoomGesture = newValue;
-    _controller.update();
+    _updateContext();
   }
 
   void addOverlay(DataCaptureOverlay overlay) {
@@ -132,7 +132,7 @@ class DataCaptureView extends StatefulWidget with PrivateDataCaptureView {
       return;
     }
     _overlays.add(overlay);
-    _controller.addOverlay(overlay);
+    _updateContext();
   }
 
   void removeOverlay(DataCaptureOverlay overlay) {
@@ -140,7 +140,7 @@ class DataCaptureView extends StatefulWidget with PrivateDataCaptureView {
       return;
     }
     _overlays.remove(overlay);
-    _controller.removeOverlay(overlay);
+    _updateContext();
   }
 
   void addListener(DataCaptureViewListener listener) {
@@ -194,22 +194,26 @@ class DataCaptureView extends StatefulWidget with PrivateDataCaptureView {
     }
   }
 
+  void _updateContext() {
+    _dataCaptureContext?.update();
+  }
+
   void addControl(Control control) {
     if (!_controls.contains(control)) {
       _controls.add(control);
-      _controller.update();
+      _updateContext();
     }
   }
 
   void removeControl(Control control) {
     if (_controls.remove(control)) {
-      _controller.update();
+      _updateContext();
     }
   }
 
   set logoStyle(LogoStyle newValue) {
     _logoStyle = newValue;
-    _controller.update();
+    _updateContext();
   }
 
   LogoStyle get logoStyle => _logoStyle;
@@ -217,9 +221,6 @@ class DataCaptureView extends StatefulWidget with PrivateDataCaptureView {
 
 class _DataCaptureViewController {
   final MethodChannel _methodChannel = Defaults.channel;
-  final DataCaptureView _view;
-
-  _DataCaptureViewController(this._view);
 
   Future<common.Point> _viewPointForFramePoint(common.Point point) {
     var args = jsonEncode(point.toMap());
@@ -234,36 +235,6 @@ class _DataCaptureViewController {
         .invokeMethod(FunctionNames.viewQuadrilateralForFrameQuadrilateral, args)
         .then((value) => common.Quadrilateral.fromJSON(jsonDecode(value)));
   }
-
-  Future<void> update() {
-    var args = jsonEncode(_view.toMap());
-    return _methodChannel.invokeMethod(FunctionNames.updateDataCaptureView, args).onError(_onError);
-  }
-
-  Future<void> addOverlay(DataCaptureOverlay overlay) {
-    var args = jsonEncode(overlay.toMap());
-    return _methodChannel.invokeMethod(FunctionNames.addOverlay, args).onError(_onError);
-  }
-
-  Future<void> removeOverlay(DataCaptureOverlay overlay) {
-    var args = jsonEncode(overlay.toMap());
-    return _methodChannel.invokeMethod(FunctionNames.removeOverlay, args).onError(_onError);
-  }
-
-  Future<void> removeAllOverlays() {
-    return _methodChannel.invokeMethod(FunctionNames.removeAllOverlays).onError(_onError);
-  }
-
-  void _onError(Object? error, StackTrace? stackTrace) {
-    if (error == null) return;
-    print(error);
-
-    if (stackTrace != null) {
-      print(stackTrace);
-    }
-
-    throw error;
-  }
 }
 
 mixin PrivateDataCaptureView implements common.Serializable {
@@ -274,7 +245,6 @@ mixin PrivateDataCaptureView implements common.Serializable {
   final List<DataCaptureViewListener> _listeners = [];
   final List<Control> _controls = [];
   LogoStyle _logoStyle = Defaults.captureViewDefaults.logoStyle;
-  late _DataCaptureViewController _controller;
 
   FocusGesture? _focusGesture = Defaults.captureViewDefaults.focusGesture;
   ZoomGesture? _zoomGesture = Defaults.captureViewDefaults.zoomGesture;
@@ -282,7 +252,6 @@ mixin PrivateDataCaptureView implements common.Serializable {
 
   void removeAllOverlays() {
     _overlays.clear();
-    _controller.removeAllOverlays();
   }
 
   @override
@@ -292,6 +261,7 @@ mixin PrivateDataCaptureView implements common.Serializable {
     json['pointOfInterest'] = _pointOfInterest.toMap();
     json['logoAnchor'] = _logoAnchor.toString();
     json['logoOffset'] = _logoOffset.toMap();
+    json['overlays'] = _overlays.map((overlay) => overlay.toMap()).toList();
     json['focusGesture'] = _focusGesture?.toMap();
     json['zoomGesture'] = _zoomGesture?.toMap();
     json['controls'] = _controls.map((e) => e.toMap()).toList();
@@ -333,7 +303,7 @@ class _DataCaptureViewState extends State<DataCaptureView> {
             id: params.id,
             viewType: viewType,
             layoutDirection: TextDirection.ltr,
-            creationParams: {"DataCaptureView": jsonEncode(widget.toMap())},
+            creationParams: <String, dynamic>{},
             creationParamsCodec: const StandardMessageCodec(),
             onFocus: () {
               params.onFocusChanged(true);
@@ -346,8 +316,6 @@ class _DataCaptureViewState extends State<DataCaptureView> {
     } else {
       return UiKitView(
         viewType: viewType,
-        creationParams: {"DataCaptureView": jsonEncode(widget.toMap())},
-        creationParamsCodec: const StandardMessageCodec(),
       );
     }
   }

@@ -224,7 +224,7 @@ class Camera with PrivateCamera implements FrameSource {
   @override
   Future<void> switchToDesiredState(FrameSourceState state) {
     _desiredState = state;
-    return _cameraController.switchCameraToDesiredState(state);
+    return _onChange();
   }
 
   Future<void> applySettings(CameraSettings settings) {
@@ -269,7 +269,8 @@ class Camera with PrivateCamera implements FrameSource {
     var json = <String, dynamic>{
       'type': 'camera',
       'position': _position.toString(),
-      'desiredTorchState': _desiredTorchState.toString()
+      'desiredTorchState': _desiredTorchState.toString(),
+      'desiredState': _desiredState.toString()
     };
     if (_settings != null) {
       json['settings'] = _settings?.toMap();
@@ -340,10 +341,6 @@ class _CameraController {
         await methodChannel.invokeMethod<bool>(FunctionNames.isTorchAvailableMethodName, camera.position.toString());
 
     return isTorchAvailableReturn ?? false;
-  }
-
-  Future<void> switchCameraToDesiredState(FrameSourceState desiredState) {
-    return methodChannel.invokeMethod(FunctionNames.switchCameraToDesiredState, desiredState.toString());
   }
 
   void _notifyCameraListeners(FrameSourceState state) {

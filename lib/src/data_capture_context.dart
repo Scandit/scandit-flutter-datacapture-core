@@ -123,16 +123,16 @@ class DataCaptureContext with PrivateDataCaptureContext implements Serializable 
 
   void addMode(DataCaptureMode mode) {
     if (!modes.contains(mode)) {
-      mode._context = this;
       modes.add(mode);
-      _controller.addModeToContext(mode);
+      mode._context = this;
+      update();
     }
   }
 
   void removeMode(DataCaptureMode mode) {
     if (modes.contains(mode) && modes.remove(mode)) {
       mode._context = null;
-      _controller.removeModeFromContext(mode);
+      update();
     }
   }
 
@@ -142,7 +142,7 @@ class DataCaptureContext with PrivateDataCaptureContext implements Serializable 
     }
     modes.clear();
     view?.removeAllOverlays();
-    _controller.removeAllModes();
+    update();
   }
 
   void addListener(DataCaptureContextListener listener) {
@@ -163,9 +163,12 @@ class DataCaptureContext with PrivateDataCaptureContext implements Serializable 
     }
   }
 
-  @Deprecated('Deprecated. No need to add the component to the DataCaptureContext in oder to use it.')
   Future<void> addComponent(DataCaptureComponent component) {
-    return Future.value(null);
+    if (_components.contains(component)) {
+      return Future.value();
+    }
+    _components.add(component);
+    return update();
   }
 
   Future<void> applySettings(DataCaptureContextSettings settings) {
@@ -181,6 +184,9 @@ class DataCaptureContext with PrivateDataCaptureContext implements Serializable 
       'framework': 'flutter',
       'frameworkVersion': _getFrameworkVersion(),
       'frameSource': _frameSource?.toMap(),
+      'modes': modes.map((mode) => mode.toMap()).toList(),
+      'components': _components.map((component) => component.toMap()).toList(),
+      'view': view?.toMap(),
       'settings': _settings.toMap(),
     };
     return json;
@@ -205,6 +211,7 @@ mixin PrivateDataCaptureContext {
   late _DataCaptureContextController _controller;
   final List<DataCaptureMode> modes = [];
   final List<DataCaptureContextListener> _listeners = [];
+  final List<DataCaptureComponent> _components = [];
 
   PrivateDataCaptureView? view;
 
@@ -254,35 +261,6 @@ class _DataCaptureContextController {
         // ignore: unnecessary_lambdas
         .catchError((error) {
       _notifyListenersOfDeserializationError(error, "Update - " + encoded);
-    });
-  }
-
-  Future<void> addModeToContext(DataCaptureMode mode) {
-    var encoded = jsonEncode(mode.toMap());
-    return methodChannel
-        .invokeMethod(FunctionNames.addModeToContext, encoded)
-        // ignore: unnecessary_lambdas
-        .catchError((error) {
-      _notifyListenersOfDeserializationError(error, "AddMode - " + encoded);
-    });
-  }
-
-  Future<void> removeModeFromContext(DataCaptureMode mode) {
-    var encoded = jsonEncode(mode.toMap());
-    return methodChannel
-        .invokeMethod(FunctionNames.removeModeFromContext, encoded)
-        // ignore: unnecessary_lambdas
-        .catchError((error) {
-      _notifyListenersOfDeserializationError(error, "RemoveMode - " + encoded);
-    });
-  }
-
-  Future<void> removeAllModes() {
-    return methodChannel
-        .invokeMethod(FunctionNames.removeAllModesFromContext)
-        // ignore: unnecessary_lambdas
-        .catchError((error) {
-      _notifyListenersOfDeserializationError(error, "RemoveAllModes");
     });
   }
 
