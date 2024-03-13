@@ -58,11 +58,7 @@ class ImageFrameSource extends FrameSource {
   @override
   Future<void> switchToDesiredState(FrameSourceState state) {
     _desiredState = state;
-    return _onChange();
-  }
-
-  Future<void> _onChange() {
-    return context?.update() ?? Future<void>.value();
+    return _controller.switchCameraToDesiredState(state);
   }
 
   @override
@@ -97,6 +93,10 @@ class _ImageFrameSourceController {
         _notifyCameraListeners(state);
       }
     });
+  }
+
+  Future<void> switchCameraToDesiredState(FrameSourceState desiredState) {
+    return methodChannel.invokeMethod(FunctionNames.switchCameraToDesiredState, desiredState.toString());
   }
 
   void unsubscribeFrameSourceListener() {

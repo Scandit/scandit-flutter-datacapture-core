@@ -72,3 +72,4 @@ export 'src/direction.dart' show Direction, DirectionDeserializer;
 export 'src/image_buffer.dart' show ImageBuffer;
 export 'src/frame_data.dart' show FrameData, DefaultFrameData;
 export 'src/image_frame_source.dart' show ImageFrameSource;
+export 'src/battery_saving_mode.dart' show BatterySavingMode;

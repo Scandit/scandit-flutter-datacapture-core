@@ -6,11 +6,17 @@
 package com.scandit.datacapture.flutter.core.utils
 
 import com.scandit.datacapture.frameworks.core.events.Emitter
+import com.scandit.datacapture.frameworks.core.utils.DefaultMainThread
+import com.scandit.datacapture.frameworks.core.utils.MainThread
 import io.flutter.plugin.common.EventChannel
 import org.json.JSONObject
 import java.util.concurrent.atomic.AtomicReference
 
-class FlutterEmitter(private val channel: EventChannel, autoEnableListener: Boolean = true) :
+class FlutterEmitter(
+    private val channel: EventChannel,
+    autoEnableListener: Boolean = true,
+    private val mainThread: MainThread = DefaultMainThread.getInstance()
+) :
     EventChannel.StreamHandler, Emitter {
 
     private var atomicEventSink: AtomicReference<EventChannel.EventSink?> = AtomicReference(null)
@@ -22,14 +28,11 @@ class FlutterEmitter(private val channel: EventChannel, autoEnableListener: Bool
     override fun emit(eventName: String, payload: MutableMap<String, Any?>) {
         payload[FIELD_EVENT_NAME] = eventName
         atomicEventSink.get()?.let {
-            MainThreadUtil.runOnMainThread {
+            mainThread.runOnMainThread {
                 it.success(JSONObject(payload).toString())
             }
         }
     }
-
-    fun getCurrentEventSink(): EventChannel.EventSink? =
-        atomicEventSink.get()
 
     fun enableListener() {
         channel.setStreamHandler(this)

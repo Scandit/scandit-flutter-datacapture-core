@@ -4,21 +4,21 @@
  * Copyright (C) 2022- Scandit AG. All rights reserved.
  */
 
-import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
 
 class ImageBuffer {
-  final String _base64EncodedImage;
+  final Uint8List _imageBytes;
 
   final int _width;
 
   final int _heigth;
 
-  ImageBuffer._(this._width, this._heigth, this._base64EncodedImage);
+  ImageBuffer._(this._width, this._heigth, this._imageBytes);
 
   factory ImageBuffer.fromJSON(Map<String, dynamic> json) {
-    return ImageBuffer._(json['width'] as int, json['height'] as int, json['data'] as String);
+    return ImageBuffer._(json['width'] as int, json['height'] as int, json['data'] as Uint8List);
   }
 
   Image? _cachedImage;
@@ -26,12 +26,13 @@ class ImageBuffer {
   Image get image {
     var cachedImage = _cachedImage;
     if (cachedImage == null) {
-      final decodedImage = base64Decode(_base64EncodedImage);
-      cachedImage = Image.memory(decodedImage);
+      cachedImage = Image.memory(_imageBytes);
       _cachedImage = cachedImage;
     }
     return cachedImage;
   }
+
+  Uint8List get data => _imageBytes;
 
   int get width => _width;
 
