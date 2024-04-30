@@ -123,25 +123,6 @@ class BrushDefaults {
   Brush toBrush() => Brush(fillColor, strokeColor, strokeWidth);
 }
 
-// This class is used to deserialize the brush json serialized on the native sdk
-@immutable
-class NativeBrushDefaults {
-  final Color fillColor;
-  final Color strokeColor;
-  final double strokeWidth;
-
-  NativeBrushDefaults(this.fillColor, this.strokeColor, this.strokeWidth);
-
-  factory NativeBrushDefaults.fromJSON(Map<String, dynamic> json) {
-    var fillColor = ColorDeserializer.fromRgbaHex(json['fill']['color'] as String);
-    var strokeColor = ColorDeserializer.fromRgbaHex(json['stroke']['color'] as String);
-    var strokeWidth = (json['stroke']['width'] as num).toDouble();
-    return NativeBrushDefaults(fillColor, strokeColor, strokeWidth);
-  }
-
-  Brush toBrush() => Brush(fillColor, strokeColor, strokeWidth);
-}
-
 @immutable
 class LaserlineViewfinderDefaults {
   final LaserlineViewfinderStyleDefaults defaultStyle;
