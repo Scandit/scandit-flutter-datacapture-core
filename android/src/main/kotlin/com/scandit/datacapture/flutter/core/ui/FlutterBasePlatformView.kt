@@ -8,7 +8,6 @@ package com.scandit.datacapture.flutter.core.ui
 import android.content.Context
 import android.widget.FrameLayout
 import io.flutter.plugin.platform.PlatformView
-import java.io.InvalidClassException
 import java.util.UUID
 
 abstract class FlutterBasePlatformView(context: Context) : FrameLayout(context), PlatformView {
