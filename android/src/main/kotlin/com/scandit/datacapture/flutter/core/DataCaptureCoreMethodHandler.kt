@@ -20,7 +20,8 @@ class DataCaptureCoreMethodHandler(
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
-            METHOD_GET_DEFAULTS -> result.success(JSONObject(coreModule.getDefaults()).toString())
+            METHOD_GET_DEFAULTS ->
+                result.success(JSONObject(coreModule.getDefaults()).toString())
 
             METHOD_CONTEXT_FROM_JSON -> {
                 val contextJson = call.arguments as String
