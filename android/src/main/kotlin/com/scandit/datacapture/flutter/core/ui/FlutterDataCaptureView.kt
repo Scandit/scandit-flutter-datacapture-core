@@ -7,8 +7,6 @@ package com.scandit.datacapture.flutter.core.ui
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.graphics.Canvas
-import android.graphics.Rect
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
@@ -16,10 +14,7 @@ import android.widget.FrameLayout
 import com.scandit.datacapture.core.ui.DataCaptureView
 import com.scandit.datacapture.flutter.core.utils.FlutterLogInsteadOfResult
 import com.scandit.datacapture.frameworks.core.CoreModule
-import com.scandit.datacapture.frameworks.core.utils.DefaultFrameworksLog
-import io.flutter.plugin.platform.PlatformView
 import java.lang.ref.WeakReference
-import java.util.UUID
 
 @SuppressLint("ViewConstructor")
 class FlutterDataCaptureView(

@@ -25,18 +25,18 @@ public class ScanditPlatformViewFactory extends PlatformViewFactory {
     @NonNull
     @Override
     public PlatformView create(Context context, int viewId, @Nullable Object args) {
-        HashMap<String, String> creationArgs = (HashMap<String, String>) args;
+        HashMap<?, ?>  creationArgs = (HashMap<?, ?>) args;
 
         if (creationArgs == null) {
             throw new IllegalArgumentException("Unable to create the BarcodeCountView without the json.");
         }
 
-        String creationJson = creationArgs.get("DataCaptureView");
+        Object creationJson = creationArgs.get("DataCaptureView");
 
         if (creationJson == null) {
             throw new IllegalArgumentException("Unable to create the BarcodeCountView without the json.");
         }
 
-        return new FlutterDataCaptureView(context, this.coreModule, creationJson);
+        return new FlutterDataCaptureView(context, this.coreModule, creationJson.toString());
     }
 }
