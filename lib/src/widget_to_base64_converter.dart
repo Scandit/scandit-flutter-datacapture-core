@@ -26,8 +26,7 @@ extension WidgetToBase64Converter on Widget {
       view: lastView,
       child: RenderPositionedBox(alignment: Alignment.center, child: repaintBoundary),
       configuration: ViewConfiguration(
-        physicalConstraints: BoxConstraints.tight(logicalSize) * lastView.devicePixelRatio,
-        logicalConstraints: BoxConstraints.tight(logicalSize),
+        size: logicalSize,
         devicePixelRatio: lastView.devicePixelRatio,
       ),
     );
