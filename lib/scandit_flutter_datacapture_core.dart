@@ -49,7 +49,7 @@ export 'src/data_capture_context.dart'
         DataCaptureMode;
 export 'src/data_capture_version.dart' show DataCaptureVersion;
 export 'src/data_capture_view.dart' show DataCaptureOverlay, DataCaptureView, DataCaptureViewListener;
-export 'src/defaults.dart' show BrushDefaults, CameraSettingsDefaults hide Defaults;
+export 'src/defaults.dart' show BrushDefaults, NativeBrushDefaults, CameraSettingsDefaults hide Defaults;
 export 'src/feedback.dart' show Feedback, Sound, Vibration;
 export 'src/frame_source.dart' show FrameSource, FrameSourceListener, FrameSourceState, TorchListener;
 export 'src/location_selection.dart' show LocationSelection, RadiusLocationSelection, RectangularLocationSelection;
@@ -73,3 +73,4 @@ export 'src/image_buffer.dart' show ImageBuffer;
 export 'src/frame_data.dart' show FrameData, DefaultFrameData;
 export 'src/image_frame_source.dart' show ImageFrameSource;
 export 'src/battery_saving_mode.dart' show BatterySavingMode;
+export 'src/scan_intention.dart' show ScanIntention, ScanIntentionSerializer;
