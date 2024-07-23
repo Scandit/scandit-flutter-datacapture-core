@@ -7,8 +7,6 @@ import androidx.annotation.Nullable;
 
 import com.scandit.datacapture.flutter.core.ui.FlutterDataCaptureView;
 import com.scandit.datacapture.frameworks.core.CoreModule;
-import com.scandit.datacapture.frameworks.core.FrameworkModule;
-import com.scandit.datacapture.frameworks.core.locator.ServiceLocator;
 
 import java.util.HashMap;
 
@@ -17,33 +15,28 @@ import io.flutter.plugin.platform.PlatformView;
 import io.flutter.plugin.platform.PlatformViewFactory;
 
 public class ScanditPlatformViewFactory extends PlatformViewFactory {
-    private final ServiceLocator<FrameworkModule> serviceLocator;
+    private final CoreModule coreModule;
 
-    public ScanditPlatformViewFactory(ServiceLocator<FrameworkModule> serviceLocator) {
+    public ScanditPlatformViewFactory(CoreModule coreModule) {
         super(StandardMessageCodec.INSTANCE);
-        this.serviceLocator = serviceLocator;
+        this.coreModule = coreModule;
     }
 
     @NonNull
     @Override
     public PlatformView create(Context context, int viewId, @Nullable Object args) {
-        HashMap<?, ?>  creationArgs = (HashMap<?, ?>) args;
+        HashMap<String, String> creationArgs = (HashMap<String, String>) args;
 
         if (creationArgs == null) {
-            throw new IllegalArgumentException("Unable to create the DataCaptureView without the json.");
+            throw new IllegalArgumentException("Unable to create the BarcodeCountView without the json.");
         }
 
-        Object creationJson = creationArgs.get("DataCaptureView");
+        String creationJson = creationArgs.get("DataCaptureView");
 
         if (creationJson == null) {
-            throw new IllegalArgumentException("Unable to create the DataCaptureView without the json.");
+            throw new IllegalArgumentException("Unable to create the BarcodeCountView without the json.");
         }
 
-        CoreModule coreModule = (CoreModule) this.serviceLocator.resolve(CoreModule.class.getName());
-        if (coreModule == null) {
-            throw new IllegalArgumentException("Unable to create the DataCaptureView. Core module not initialized.");
-        }
-
-        return new FlutterDataCaptureView(context, coreModule, creationJson.toString());
+        return new FlutterDataCaptureView(context, this.coreModule, creationJson);
     }
 }
