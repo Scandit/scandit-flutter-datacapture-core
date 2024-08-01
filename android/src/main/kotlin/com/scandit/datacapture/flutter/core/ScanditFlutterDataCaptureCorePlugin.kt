@@ -11,6 +11,7 @@ import com.scandit.datacapture.frameworks.core.CoreModule
 import com.scandit.datacapture.frameworks.core.listeners.FrameworksDataCaptureContextListener
 import com.scandit.datacapture.frameworks.core.listeners.FrameworksDataCaptureViewListener
 import com.scandit.datacapture.frameworks.core.listeners.FrameworksFrameSourceListener
+import com.scandit.datacapture.frameworks.core.locator.DefaultServiceLocator
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.FlutterPlugin.FlutterPluginBinding
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
@@ -39,18 +40,20 @@ class ScanditFlutterDataCaptureCorePlugin :
         private const val DATACAPTURE_VIEW_ID = "com.scandit.DataCaptureView"
     }
 
-    private var methodChannel: MethodChannel? = null
+    private val serviceLocator = DefaultServiceLocator.getInstance()
 
-    private var coreModule: CoreModule? = null
+    private var methodChannel: MethodChannel? = null
 
     private var flutterPluginBinding: WeakReference<FlutterPluginBinding?> = WeakReference(null)
 
     override fun onAttachedToEngine(binding: FlutterPluginBinding) {
         flutterPluginBinding = WeakReference(binding)
+        onAttached()
     }
 
     override fun onDetachedFromEngine(binding: FlutterPluginBinding) {
         flutterPluginBinding = WeakReference(null)
+        onDetached()
     }
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
@@ -71,7 +74,9 @@ class ScanditFlutterDataCaptureCorePlugin :
 
     private fun onAttached() {
         lock.withLock {
-            if (isPluginAttached) return
+            if (isPluginAttached) {
+                disposeModules()
+            }
 
             val flutterBinding = flutterPluginBinding.get() ?: return
 
@@ -117,21 +122,20 @@ class ScanditFlutterDataCaptureCorePlugin :
             coreModule
         )
 
-        this.coreModule = coreModule
-
         binding.platformViewRegistry.registerViewFactory(
             DATACAPTURE_VIEW_ID,
-            ScanditPlatformViewFactory(coreModule)
+            ScanditPlatformViewFactory(serviceLocator)
         )
         methodChannel = binding.getMethodChannel(METHOD_CHANNEL_NAME).also {
             it.setMethodCallHandler(dataCaptureCoreMethodHandler)
         }
+
+        serviceLocator.register(coreModule)
     }
 
     private fun disposeModules() {
         methodChannel?.setMethodCallHandler(null)
         methodChannel = null
-        coreModule?.onDestroy()
-        coreModule = null
+        serviceLocator.remove(CoreModule::class.java.name)?.onDestroy()
     }
 }

@@ -115,10 +115,10 @@ class Feedback implements Serializable {
   Map<String, dynamic> toMap() {
     var json = <String, dynamic>{};
     if (_vibration != null) {
-      json['vibration'] = _vibration?.toMap();
+      json['vibration'] = _vibration.toMap();
     }
     if (_sound != null) {
-      json['sound'] = _sound?.toMap();
+      json['sound'] = _sound.toMap();
     }
     return json;
   }
