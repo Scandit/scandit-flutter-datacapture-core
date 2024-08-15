@@ -20,6 +20,7 @@ abstract class Viewfinder implements Serializable {
   }
 }
 
+@Deprecated('The LaserlineViewfinder is deprecated.')
 class LaserlineViewfinder extends Viewfinder {
   DoubleWithUnit width;
   Color enabledColor;
@@ -58,6 +59,7 @@ class LaserlineViewfinder extends Viewfinder {
   }
 }
 
+@Deprecated('The LaserlineViewfinderStyle is deprecated.')
 enum LaserlineViewfinderStyle {
   legacy('legacy'),
   animated('animated');
@@ -177,6 +179,7 @@ class RectangularViewfinderAnimation extends Serializable {
 }
 
 enum RectangularViewfinderStyle {
+  @Deprecated('The legacy style of the RectangularViewfinder is deprecated.')
   legacy('legacy'),
   rounded('rounded'),
   square('square');
