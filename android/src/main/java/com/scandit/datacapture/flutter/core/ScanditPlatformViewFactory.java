@@ -1,15 +1,11 @@
-/*
- * This file is part of the Scandit Data Capture SDK
- *
- * Copyright (C) 2024- Scandit AG. All rights reserved.
- */
-package com.scandit.datacapture.flutter.core.ui;
+package com.scandit.datacapture.flutter.core;
 
 import android.content.Context;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.scandit.datacapture.flutter.core.ui.FlutterDataCaptureView;
 import com.scandit.datacapture.frameworks.core.CoreModule;
 import com.scandit.datacapture.frameworks.core.FrameworkModule;
 import com.scandit.datacapture.frameworks.core.locator.ServiceLocator;
