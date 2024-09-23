@@ -46,7 +46,8 @@ export 'src/data_capture_context.dart'
         DataCaptureContextCreationOptions,
         DataCaptureContextListener,
         DataCaptureContextSettings,
-        DataCaptureMode;
+        DataCaptureMode,
+        DataCaptureContextFeatures;
 export 'src/data_capture_version.dart' show DataCaptureVersion;
 export 'src/data_capture_view.dart' show DataCaptureOverlay, DataCaptureView, DataCaptureViewListener;
 export 'src/defaults.dart' show BrushDefaults, NativeBrushDefaults, CameraSettingsDefaults hide Defaults;

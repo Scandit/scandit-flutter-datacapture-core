@@ -222,6 +222,14 @@ mixin PrivateDataCaptureContext {
   }
 }
 
+class DataCaptureContextFeatures {
+  static Map<String, dynamic> _features = {};
+
+  static T getFeature<T>(String name) {
+    return _features[name] as T;
+  }
+}
+
 class _DataCaptureContextController {
   final DataCaptureContext context;
   final MethodChannel methodChannel;
@@ -237,14 +245,18 @@ class _DataCaptureContextController {
     _initialize();
   }
 
-  Future<void> _initialize() {
+  Future<void> _initialize() async {
     var encoded = jsonEncode(context.toMap());
     try {
-      return methodChannel.invokeMethod(FunctionNames.createContextFromJSONMethodName, encoded);
+      var result = await methodChannel.invokeMethod(FunctionNames.createContextFromJSONMethodName, encoded) as Map?;
+
+      if (result != null) {
+        DataCaptureContextFeatures._features =
+            result.map<String, dynamic>((key, value) => MapEntry(key.toString(), value));
+      }
     } on PlatformException catch (e) {
       _notifyListenersOfDeserializationError(e, "Init - " + encoded);
     }
-    return Future.value();
   }
 
   Future<void> updateContextFromJSON() {
