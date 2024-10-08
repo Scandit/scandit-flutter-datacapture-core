@@ -114,26 +114,6 @@ public class DataCaptureCoreMethodHandler implements MethodChannel.MethodCallHan
                 );
                 break;
 
-            case "addOverlay":
-                assert call.arguments() != null;
-                getSharedModule().addOverlayToView(
-                        call.arguments(),
-                        new FlutterResult(result)
-                );
-                break;
-
-            case "removeOverlay":
-                assert call.arguments() != null;
-                getSharedModule().removeOverlayFromView(
-                        call.arguments(),
-                        new FlutterResult(result)
-                );
-                break;
-
-            case "removeAllOverlays":
-                getSharedModule().removeAllOverlays(new FlutterResult(result));
-                break;
-
             default:
                 result.notImplemented();
                 break;

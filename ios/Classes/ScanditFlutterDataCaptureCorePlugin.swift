@@ -68,12 +68,6 @@ public class ScanditFlutterDataCaptureCore: NSObject, FlutterPlugin, Deserializa
         }
     }
 
-    public static func getLastFrameData(reply: @escaping FlutterResult) {
-        LastFrameData.shared.getLastFrameDataJSON {
-            reply($0)
-        }
-    }
-
     public static func register(modeDeserializer: DataCaptureModeDeserializer) {
         Deserializers.Factory.add(modeDeserializer)
     }
@@ -167,14 +161,6 @@ public class ScanditFlutterDataCaptureCore: NSObject, FlutterPlugin, Deserializa
             case FunctionName.updateDataCaptureView:
                 let viewJson = methodCall.arguments as! String
                 self.coreModule.updateDataCaptureView(viewJson: viewJson, result: FlutterFrameworkResult(reply: result))
-            case FunctionName.addOverlay:
-                let overlayJson = methodCall.arguments as! String
-                self.coreModule.addOverlayToView(overlayJson: overlayJson, result: FlutterFrameworkResult(reply: result))
-            case FunctionName.removeOverlay:
-                let overlayJson = methodCall.arguments as! String
-                self.coreModule.removeOverlayFromView(overlayJson: overlayJson, result: FlutterFrameworkResult(reply: result))
-            case FunctionName.removeAllOverlays:
-                self.coreModule.removeAllOverlays(result: FlutterFrameworkResult(reply: result))
             default:
                 result(FlutterMethodNotImplemented)
             }

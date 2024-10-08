@@ -132,7 +132,7 @@ class DataCaptureView extends StatefulWidget with PrivateDataCaptureView {
       return;
     }
     _overlays.add(overlay);
-    _controller.addOverlay(overlay);
+    _controller.update();
   }
 
   void removeOverlay(DataCaptureOverlay overlay) {
@@ -140,7 +140,7 @@ class DataCaptureView extends StatefulWidget with PrivateDataCaptureView {
       return;
     }
     _overlays.remove(overlay);
-    _controller.removeOverlay(overlay);
+    _controller.update();
   }
 
   void addListener(DataCaptureViewListener listener) {
@@ -159,6 +159,10 @@ class DataCaptureView extends StatefulWidget with PrivateDataCaptureView {
     if (_listeners.isEmpty) {
       _unregisterListener();
     }
+  }
+
+  void setProperty<T>(String name, T value) {
+    _properties[name] = value;
   }
 
   Future<common.Point> viewPointForFramePoint(common.Point point) {
@@ -240,20 +244,6 @@ class _DataCaptureViewController {
     return _methodChannel.invokeMethod(FunctionNames.updateDataCaptureView, args).onError(_onError);
   }
 
-  Future<void> addOverlay(DataCaptureOverlay overlay) {
-    var args = jsonEncode(overlay.toMap());
-    return _methodChannel.invokeMethod(FunctionNames.addOverlay, args).onError(_onError);
-  }
-
-  Future<void> removeOverlay(DataCaptureOverlay overlay) {
-    var args = jsonEncode(overlay.toMap());
-    return _methodChannel.invokeMethod(FunctionNames.removeOverlay, args).onError(_onError);
-  }
-
-  Future<void> removeAllOverlays() {
-    return _methodChannel.invokeMethod(FunctionNames.removeAllOverlays).onError(_onError);
-  }
-
   void _onError(Object? error, StackTrace? stackTrace) {
     if (error == null) return;
     print(error);
@@ -274,6 +264,7 @@ mixin PrivateDataCaptureView implements common.Serializable {
   final List<DataCaptureViewListener> _listeners = [];
   final List<Control> _controls = [];
   LogoStyle _logoStyle = Defaults.captureViewDefaults.logoStyle;
+  final Map<String, dynamic> _properties = {};
   late _DataCaptureViewController _controller;
 
   FocusGesture? _focusGesture = Defaults.captureViewDefaults.focusGesture;
@@ -282,20 +273,26 @@ mixin PrivateDataCaptureView implements common.Serializable {
 
   void removeAllOverlays() {
     _overlays.clear();
-    _controller.removeAllOverlays();
+    _controller.update();
   }
 
   @override
   Map<String, dynamic> toMap() {
-    var json = <String, dynamic>{};
-    json['scanAreaMargins'] = _scanAreaMargins.toMap();
-    json['pointOfInterest'] = _pointOfInterest.toMap();
-    json['logoAnchor'] = _logoAnchor.toString();
-    json['logoOffset'] = _logoOffset.toMap();
-    json['focusGesture'] = _focusGesture?.toMap();
-    json['zoomGesture'] = _zoomGesture?.toMap();
-    json['controls'] = _controls.map((e) => e.toMap()).toList();
-    json['logoStyle'] = _logoStyle.toString();
+    var json = <String, dynamic>{
+      'scanAreaMargins': _scanAreaMargins.toMap(),
+      'pointOfInterest': _pointOfInterest.toMap(),
+      'logoAnchor': _logoAnchor.toString(),
+      'logoOffset': _logoOffset.toMap(),
+      'focusGesture': _focusGesture?.toMap(),
+      'zoomGesture': _zoomGesture?.toMap(),
+      'controls': _controls.map((e) => e.toMap()).toList(),
+      'logoStyle': _logoStyle.toString(),
+      'overlays': _overlays.map((overlay) => overlay.toMap()).toList(),
+    };
+
+    for (var prop in _properties.entries) {
+      json[prop.key] = prop.value;
+    }
 
     return json;
   }
