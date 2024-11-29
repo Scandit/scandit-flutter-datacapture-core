@@ -10,6 +10,7 @@ import androidx.annotation.NonNull;
 import com.scandit.datacapture.flutter.core.extensions.MethodChannelExtensions;
 import com.scandit.datacapture.flutter.core.ui.ScanditPlatformViewFactory;
 import com.scandit.datacapture.flutter.core.utils.FlutterEmitter;
+import com.scandit.datacapture.flutter.core.utils.DefaultActivityLifecycleObserver;
 import com.scandit.datacapture.frameworks.core.CoreModule;
 import com.scandit.datacapture.frameworks.core.FrameworkModule;
 import com.scandit.datacapture.frameworks.core.listeners.FrameworksDataCaptureContextListener;
@@ -17,10 +18,13 @@ import com.scandit.datacapture.frameworks.core.listeners.FrameworksDataCaptureVi
 import com.scandit.datacapture.frameworks.core.listeners.FrameworksFrameSourceListener;
 import com.scandit.datacapture.frameworks.core.locator.DefaultServiceLocator;
 import com.scandit.datacapture.frameworks.core.locator.ServiceLocator;
+import com.scandit.datacapture.frameworks.core.utils.DefaultFrameworksLog;
+import com.scandit.datacapture.frameworks.core.utils.FrameworksLog;
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.embedding.engine.plugins.activity.ActivityAware;
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
+import io.flutter.embedding.engine.plugins.lifecycle.HiddenLifecycleReference;
 import io.flutter.plugin.common.MethodChannel;
 
 import java.lang.ref.WeakReference;
@@ -36,6 +40,10 @@ public class ScanditFlutterDataCaptureCorePlugin implements FlutterPlugin, Activ
 
     private MethodChannel methodChannel;
     private WeakReference<FlutterPlugin.FlutterPluginBinding> flutterPluginBinding = new WeakReference<>(null);
+
+    private WeakReference<ActivityPluginBinding> activityBinding = new WeakReference<>(null);
+
+    private final FrameworksLog logger = DefaultFrameworksLog.getInstance();
 
     @Override
     public void onAttachedToEngine(@NonNull FlutterPlugin.FlutterPluginBinding binding) {
@@ -54,21 +62,42 @@ public class ScanditFlutterDataCaptureCorePlugin implements FlutterPlugin, Activ
     @Override
     public void onAttachedToActivity(@NonNull ActivityPluginBinding binding) {
         setupEventChannels();
+        activityBinding = new WeakReference<>(binding);
+
+        if (binding.getLifecycle() instanceof HiddenLifecycleReference) {
+            HiddenLifecycleReference lifecycleReference = (HiddenLifecycleReference) binding.getLifecycle();
+            lifecycleReference.getLifecycle().addObserver(DefaultActivityLifecycleObserver.getInstance());
+        } else {
+            logger.error("ActivityPluginBinding lifecycle is not of the expected type. " +
+                    String.format("Current instance %s, but HiddenLifecycleReference was expected", binding.getLifecycle().getClass().getSimpleName()));
+        }
     }
 
     @Override
     public void onDetachedFromActivityForConfigChanges() {
-        // NOOP
+        disposeEventChannels();
+        ActivityPluginBinding binding = activityBinding.get();
+        if (binding == null) return;
+        if (binding.getLifecycle() instanceof HiddenLifecycleReference) {
+            HiddenLifecycleReference lifecycleReference = (HiddenLifecycleReference) binding.getLifecycle();
+            lifecycleReference.getLifecycle().removeObserver(DefaultActivityLifecycleObserver.getInstance());
+        }
     }
 
     @Override
     public void onReattachedToActivityForConfigChanges(@NonNull ActivityPluginBinding binding) {
-        // NOOP
+        onAttachedToActivity(binding);
     }
 
     @Override
     public void onDetachedFromActivity() {
         disposeEventChannels();
+        ActivityPluginBinding binding = activityBinding.get();
+        if (binding == null) return;
+        if (binding.getLifecycle() instanceof HiddenLifecycleReference) {
+            HiddenLifecycleReference lifecycleReference = (HiddenLifecycleReference) binding.getLifecycle();
+            lifecycleReference.getLifecycle().removeObserver(DefaultActivityLifecycleObserver.getInstance());
+        }
     }
 
     private void setupEventChannels() {
