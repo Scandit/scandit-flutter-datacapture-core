@@ -8,8 +8,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/services.dart';
-import 'package:meta/meta.dart';
 
+import 'open_source_software_license_info.dart';
 import 'common.dart';
 import 'context_status.dart';
 import 'data_capture_component.dart';
@@ -30,7 +30,7 @@ abstract class DataCaptureMode implements Serializable {
 }
 
 class DataCaptureContextSettings implements Serializable {
-  final Map<String, dynamic> _settings = {};
+  final Map<String, dynamic> _settings = <String, dynamic>{};
 
   DataCaptureContextSettings();
 
@@ -76,7 +76,6 @@ class LicenseInfo {
 
   LicenseInfo._(this._expiration, this._date);
 
-  @visibleForTesting
   factory LicenseInfo.fromJSON(Map<String, dynamic> json) {
     var expiration = ExpirationDeserializer.expirationFromJSON(json['expirationDateStatus'] as String);
     var date = expiration == Expiration.available
@@ -121,28 +120,30 @@ class DataCaptureContext with PrivateDataCaptureContext implements Serializable 
     return DataCaptureContext._(licenseKey, null, settings ?? DataCaptureContextSettings());
   }
 
-  void addMode(DataCaptureMode mode) {
+  Future<void> addMode(DataCaptureMode mode) {
     if (!modes.contains(mode)) {
       mode._context = this;
       modes.add(mode);
-      _controller.addModeToContext(mode);
+      return _controller.addModeToContext(mode);
     }
+    return Future.value(null);
   }
 
-  void removeMode(DataCaptureMode mode) {
+  Future<void> removeMode(DataCaptureMode mode) {
     if (modes.contains(mode) && modes.remove(mode)) {
       mode._context = null;
-      _controller.removeModeFromContext(mode);
+      return _controller.removeModeFromContext(mode);
     }
+    return Future.value(null);
   }
 
-  void removeAllModes() {
+  Future<void> removeAllModes() {
     for (var element in modes) {
       element._context = null;
     }
     modes.clear();
     view?.removeAllOverlays();
-    _controller.removeAllModes();
+    return _controller.removeAllModes();
   }
 
   void addListener(DataCaptureContextListener listener) {
@@ -161,6 +162,12 @@ class DataCaptureContext with PrivateDataCaptureContext implements Serializable 
     if (_listeners.isEmpty) {
       _controller.cancelSubscribers();
     }
+  }
+
+  static Future<OpenSourceSoftwareLicenseInfo> getOpenSourceSoftwareLicenseInfo() {
+    return Defaults.channel
+        .invokeMethod(FunctionNames.getOpenSourceSoftwareLicenseInfo)
+        .then((value) => OpenSourceSoftwareLicenseInfo(value));
   }
 
   @Deprecated('Deprecated. No need to add the component to the DataCaptureContext in oder to use it.')
@@ -189,8 +196,7 @@ class DataCaptureContext with PrivateDataCaptureContext implements Serializable 
   String _getFrameworkVersion() {
     try {
       return Platform.version.split(' ').first;
-    } on Exception catch (e) {
-      print(e);
+    } on Exception {
       return 'undefined';
     }
   }
@@ -255,7 +261,7 @@ class _DataCaptureContextController {
             result.map<String, dynamic>((key, value) => MapEntry(key.toString(), value));
       }
     } on PlatformException catch (e) {
-      _notifyListenersOfDeserializationError(e, "Init - " + encoded);
+      _notifyListenersOfDeserializationError(e, "Init - $encoded");
     }
   }
 
@@ -265,7 +271,7 @@ class _DataCaptureContextController {
         .invokeMethod(FunctionNames.updateContextFromJSONMethodName, encoded)
         // ignore: unnecessary_lambdas
         .catchError((error) {
-      _notifyListenersOfDeserializationError(error, "Update - " + encoded);
+      _notifyListenersOfDeserializationError(error, "Update - $encoded");
     });
   }
 
@@ -275,7 +281,7 @@ class _DataCaptureContextController {
         .invokeMethod(FunctionNames.addModeToContext, encoded)
         // ignore: unnecessary_lambdas
         .catchError((error) {
-      _notifyListenersOfDeserializationError(error, "AddMode - " + encoded);
+      _notifyListenersOfDeserializationError(error, "AddMode - $encoded");
     });
   }
 
@@ -285,7 +291,7 @@ class _DataCaptureContextController {
         .invokeMethod(FunctionNames.removeModeFromContext, encoded)
         // ignore: unnecessary_lambdas
         .catchError((error) {
-      _notifyListenersOfDeserializationError(error, "RemoveMode - " + encoded);
+      _notifyListenersOfDeserializationError(error, "RemoveMode - $encoded");
     });
   }
 

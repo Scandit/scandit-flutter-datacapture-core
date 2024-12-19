@@ -60,7 +60,7 @@ class DataCaptureView extends StatefulWidget with PrivateDataCaptureView {
   }
 
   @override
-  State<StatefulWidget> createState() => _DataCaptureViewState(dataCaptureContext);
+  State<StatefulWidget> createState() => _DataCaptureViewState();
 
   DataCaptureContext? get dataCaptureContext {
     return _dataCaptureContext as DataCaptureContext?;
@@ -127,20 +127,24 @@ class DataCaptureView extends StatefulWidget with PrivateDataCaptureView {
     _controller.update();
   }
 
-  void addOverlay(DataCaptureOverlay overlay) {
-    if (_overlays.contains(overlay)) {
-      return;
-    }
-    _overlays.add(overlay);
-    _controller.update();
+  void setProperty<T>(String name, T value) {
+    _properties[name] = value;
   }
 
-  void removeOverlay(DataCaptureOverlay overlay) {
+  Future<void> addOverlay(DataCaptureOverlay overlay) {
+    if (_overlays.contains(overlay)) {
+      return Future.value(null);
+    }
+    _overlays.add(overlay);
+    return _controller.update();
+  }
+
+  Future<void> removeOverlay(DataCaptureOverlay overlay) {
     if (!_overlays.contains(overlay)) {
-      return;
+      return Future.value(null);
     }
     _overlays.remove(overlay);
-    _controller.update();
+    return _controller.update();
   }
 
   void addListener(DataCaptureViewListener listener) {
@@ -159,10 +163,6 @@ class DataCaptureView extends StatefulWidget with PrivateDataCaptureView {
     if (_listeners.isEmpty) {
       _unregisterListener();
     }
-  }
-
-  void setProperty<T>(String name, T value) {
-    _properties[name] = value;
   }
 
   Future<common.Point> viewPointForFramePoint(common.Point point) {
@@ -198,17 +198,19 @@ class DataCaptureView extends StatefulWidget with PrivateDataCaptureView {
     }
   }
 
-  void addControl(Control control) {
+  Future<void> addControl(Control control) {
     if (!_controls.contains(control)) {
       _controls.add(control);
-      _controller.update();
+      return _controller.update();
     }
+    return Future.value(null);
   }
 
-  void removeControl(Control control) {
+  Future<void> removeControl(Control control) {
     if (_controls.remove(control)) {
-      _controller.update();
+      return _controller.update();
     }
+    return Future.value(null);
   }
 
   set logoStyle(LogoStyle newValue) {
@@ -246,12 +248,6 @@ class _DataCaptureViewController {
 
   void _onError(Object? error, StackTrace? stackTrace) {
     if (error == null) return;
-    print(error);
-
-    if (stackTrace != null) {
-      print(stackTrace);
-    }
-
     throw error;
   }
 }
@@ -299,18 +295,6 @@ mixin PrivateDataCaptureView implements common.Serializable {
 }
 
 class _DataCaptureViewState extends State<DataCaptureView> {
-  DataCaptureContext? _dataCaptureContext;
-
-  DataCaptureContext? get dataCaptureContext => _dataCaptureContext;
-
-  set dataCaptureContext(DataCaptureContext? newValue) {
-    _dataCaptureContext = newValue;
-    _dataCaptureContext?.view = widget;
-    _dataCaptureContext?.update();
-  }
-
-  _DataCaptureViewState(this._dataCaptureContext);
-
   @override
   Widget build(BuildContext context) {
     const viewType = 'com.scandit.DataCaptureView';
