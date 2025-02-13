@@ -6,7 +6,7 @@
 
 import 'dart:ui';
 
-import 'package:flutter/foundation.dart';
+import 'package:meta/meta.dart';
 
 abstract class Serializable {
   Map<String, dynamic> toMap();
@@ -19,7 +19,7 @@ class MarginsWithUnit implements Serializable {
   final DoubleWithUnit right;
   final DoubleWithUnit bottom;
 
-  const MarginsWithUnit(this.left, this.top, this.right, this.bottom);
+  MarginsWithUnit(this.left, this.top, this.right, this.bottom);
 
   MarginsWithUnit.fromJSON(Map<String, dynamic> json)
       : this(
@@ -41,7 +41,7 @@ class PointWithUnit implements Serializable {
 
   static PointWithUnit get zero => PointWithUnit(DoubleWithUnit.zero, DoubleWithUnit.zero);
 
-  const PointWithUnit(this.x, this.y);
+  PointWithUnit(this.x, this.y);
 
   PointWithUnit.fromJSON(Map<String, dynamic> json)
       : this(DoubleWithUnit.fromJSON(json['x'] as Map<String, dynamic>),
@@ -58,9 +58,9 @@ class DoubleWithUnit implements Serializable {
   final double value;
   final MeasureUnit unit;
 
-  static DoubleWithUnit get zero => const DoubleWithUnit(0.0, MeasureUnit.fraction);
+  static DoubleWithUnit get zero => DoubleWithUnit(0.0, MeasureUnit.fraction);
 
-  const DoubleWithUnit(this.value, this.unit);
+  DoubleWithUnit(this.value, this.unit);
 
   DoubleWithUnit.fromJSON(Map<String, dynamic> json)
       : this(
@@ -68,7 +68,6 @@ class DoubleWithUnit implements Serializable {
                 .toDouble(),
             MesaureUnitDeserializer.fromJSON(json['unit'] as String?));
 
-  @override
   Map<String, dynamic> toMap() {
     return {'value': value, 'unit': unit.toString()};
   }
@@ -126,7 +125,7 @@ class Point implements Serializable {
   final double _y;
   double get y => _y;
 
-  const Point(this._x, this._y);
+  Point(this._x, this._y);
 
   Point.fromJSON(Map<String, dynamic> json) : this((json['x'] as num).toDouble(), (json['y'] as num).toDouble());
 
@@ -150,7 +149,7 @@ class Quadrilateral implements Serializable {
   final Point _bottomLeft;
   Point get bottomLeft => _bottomLeft;
 
-  const Quadrilateral(this._topLeft, this._topRight, this._bottomRight, this._bottomLeft);
+  Quadrilateral(this._topLeft, this._topRight, this._bottomRight, this._bottomLeft);
 
   Quadrilateral.fromJSON(Map<String, dynamic> json)
       : this(Point.fromJSON(json['topLeft']), Point.fromJSON(json['topRight']), Point.fromJSON(json['bottomRight']),
@@ -275,7 +274,7 @@ class SizeWithUnit implements Serializable {
   final DoubleWithUnit _height;
   DoubleWithUnit get height => _height;
 
-  const SizeWithUnit(this._width, this._height);
+  SizeWithUnit(this._width, this._height);
 
   SizeWithUnit.fromJSON(Map<String, dynamic> json)
       : this(DoubleWithUnit.fromJSON(json['width']), DoubleWithUnit.fromJSON(json['height']));
@@ -294,7 +293,7 @@ class SizeWithAspect implements Serializable {
   final double _aspect;
   double get aspect => _aspect;
 
-  const SizeWithAspect(this._size, this._aspect);
+  SizeWithAspect(this._size, this._aspect);
 
   SizeWithAspect.fromJSON(Map<String, dynamic> json)
       : this(DoubleWithUnit.fromJSON(json['size']), (json['aspect'] as num).toDouble());
@@ -326,7 +325,7 @@ extension SizingModeDeserializer on SizingMode {
 }
 
 class Brush implements Serializable {
-  static const Color _transparent = Color(0x00000000);
+  static final Color _transparent = Color(0x00000000);
 
   final Color _fillColor;
   Color get fillColor => _fillColor;
@@ -415,7 +414,7 @@ class Size {
   final double _height;
   double get height => _height;
 
-  const Size(this._width, this._height);
+  Size(this._width, this._height);
 
   Size.fromJSON(Map<String, dynamic> json)
       : this(json.containsKey('width') ? (json['width'] as num).toDouble() : throw ArgumentError('width'),
