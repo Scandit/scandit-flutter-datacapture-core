@@ -9,89 +9,58 @@ import androidx.annotation.NonNull;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
 
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
+import com.scandit.datacapture.frameworks.core.lifecycle.ActivityLifecycleDispatcher;
+import com.scandit.datacapture.frameworks.core.lifecycle.DefaultActivityLifecycle;
 
 public class DefaultActivityLifecycleObserver implements DefaultLifecycleObserver {
     private static volatile DefaultActivityLifecycleObserver instance;
 
-    private final List<ViewObserver> observers = new CopyOnWriteArrayList<>();
+    final ActivityLifecycleDispatcher dispatcher;
 
-    private DefaultActivityLifecycleObserver() {
+    private DefaultActivityLifecycleObserver(ActivityLifecycleDispatcher dispatcher) {
+        this.dispatcher = dispatcher;
     }
 
     public static DefaultActivityLifecycleObserver getInstance() {
         if (instance == null) {
             synchronized (DefaultActivityLifecycleObserver.class) {
                 if (instance == null) {
-                    instance = new DefaultActivityLifecycleObserver();
+                    instance = new DefaultActivityLifecycleObserver(
+                            DefaultActivityLifecycle.Companion.getInstance()
+                    );
                 }
             }
         }
         return instance;
     }
 
-    public void addObserver(ViewObserver observer) {
-        observers.add(observer);
-    }
-
-    public void removeObserver(ViewObserver observer) {
-        observers.remove(observer);
-    }
-
     @Override
     public void onCreate(@NonNull LifecycleOwner owner) {
-        for (ViewObserver observer : observers) {
-            observer.onCreate();
-        }
+        dispatcher.dispatchOnCreate();
     }
 
     @Override
     public void onDestroy(@NonNull LifecycleOwner owner) {
-        for (ViewObserver observer : observers) {
-            observer.onDestroy();
-        }
+        dispatcher.dispatchOnDestroy();
     }
 
     @Override
     public void onPause(@NonNull LifecycleOwner owner) {
-        for (ViewObserver observer : observers) {
-            observer.onPause();
-        }
+        dispatcher.dispatchOnPause();
     }
 
     @Override
     public void onResume(@NonNull LifecycleOwner owner) {
-        for (ViewObserver observer : observers) {
-            observer.onResume();
-        }
+        dispatcher.dispatchOnResume();
     }
 
     @Override
     public void onStart(@NonNull LifecycleOwner owner) {
-        for (ViewObserver observer : observers) {
-            observer.onStart();
-        }
+        dispatcher.dispatchOnStart();
     }
 
     @Override
     public void onStop(@NonNull LifecycleOwner owner) {
-        for (ViewObserver observer : observers) {
-            observer.onStop();
-        }
-    }
-
-    public interface ViewObserver {
-        void onCreate();
-
-        void onStart();
-
-        void onResume();
-
-        void onPause();
-
-        void onStop();
-
-        void onDestroy();
+        dispatcher.dispatchOnStop();
     }
 }

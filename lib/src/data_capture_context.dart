@@ -86,11 +86,20 @@ class LicenseInfo {
 }
 
 class DataCaptureContext with PrivateDataCaptureContext implements Serializable {
+  static final DataCaptureContext _instance = DataCaptureContext._internal();
+
+  DataCaptureContext._internal()
+      : _licenseKey = '',
+        _deviceName = null,
+        _settings = DataCaptureContextSettings() {
+    _controller = _DataCaptureContextController(this);
+  }
+
   FrameSource? _frameSource;
-  String _licenseKey;
+  String _licenseKey = '';
   String? _deviceName;
   LicenseInfo? _licenseInfo;
-  DataCaptureContextSettings _settings;
+  DataCaptureContextSettings _settings = DataCaptureContextSettings();
 
   FrameSource? get frameSource => _frameSource;
 
@@ -105,20 +114,35 @@ class DataCaptureContext with PrivateDataCaptureContext implements Serializable 
 
   static String get deviceId => Defaults.deviceId;
 
-  DataCaptureContext._(this._licenseKey, this._deviceName, this._settings) {
-    _controller = _DataCaptureContextController(this, Defaults.channel);
+  static Future<DataCaptureContext> initialize(
+    String licenseKey, {
+    DataCaptureContextCreationOptions? options,
+    DataCaptureContextSettings? settings,
+  }) async {
+    _instance._licenseKey = licenseKey;
+    _instance._deviceName = options?.deviceName;
+    _instance._settings = settings ?? DataCaptureContextSettings();
+    await _instance._controller.initialize();
+
+    return _instance;
   }
 
-  DataCaptureContext.forLicenseKey(String licenseKey) : this._(licenseKey, null, DataCaptureContextSettings());
+  factory DataCaptureContext.forLicenseKey(String licenseKey) {
+    DataCaptureContext.initialize(licenseKey);
+    return _instance;
+  }
 
   factory DataCaptureContext.forLicenseKeyWithOptions(String licenseKey, DataCaptureContextCreationOptions? options) {
-    var deviceName = (options == null || options.deviceName == null) ? '' : options.deviceName;
-    return DataCaptureContext._(licenseKey, deviceName, DataCaptureContextSettings());
+    DataCaptureContext.initialize(licenseKey, options: options);
+    return _instance;
   }
 
   factory DataCaptureContext.forLicenseKeyWithSettings(String licenseKey, DataCaptureContextSettings? settings) {
-    return DataCaptureContext._(licenseKey, null, settings ?? DataCaptureContextSettings());
+    DataCaptureContext.initialize(licenseKey, settings: settings);
+    return _instance;
   }
+
+  static DataCaptureContext get sharedInstance => _instance;
 
   Future<void> addMode(DataCaptureMode mode) {
     if (!modes.contains(mode)) {
@@ -127,6 +151,21 @@ class DataCaptureContext with PrivateDataCaptureContext implements Serializable 
       return _controller.addModeToContext(mode);
     }
     return Future.value(null);
+  }
+
+  Future<void> setMode(DataCaptureMode mode) async {
+    if (modes.isNotEmpty) {
+      await removeAllModes();
+    }
+    mode._context = this;
+    modes.add(mode);
+    await _controller.addModeToContext(mode);
+  }
+
+  Future<void> removeCurrentMode() async {
+    if (modes.isNotEmpty) {
+      await removeMode(modes.first);
+    }
   }
 
   Future<void> removeMode(DataCaptureMode mode) {
@@ -142,7 +181,6 @@ class DataCaptureContext with PrivateDataCaptureContext implements Serializable 
       element._context = null;
     }
     modes.clear();
-    view?.removeAllOverlays();
     return _controller.removeAllModes();
   }
 
@@ -214,15 +252,6 @@ mixin PrivateDataCaptureContext {
 
   PrivateDataCaptureView? view;
 
-  bool _isInitialized = false;
-
-  void initialize() {
-    if (!_isInitialized) {
-      _controller = _DataCaptureContextController(this as DataCaptureContext, Defaults.channel);
-      _isInitialized = true;
-    }
-  }
-
   Future<void> update() async {
     return _controller.updateContextFromJSON();
   }
@@ -230,7 +259,7 @@ mixin PrivateDataCaptureContext {
 
 class _DataCaptureContextController {
   final DataCaptureContext context;
-  final MethodChannel methodChannel;
+  final MethodChannel methodChannel = Defaults.channel;
 
   final EventChannel _contextEventsChannel = const EventChannel(FunctionNames.eventsChannelName);
   StreamSubscription? _contextEventsSubscription;
@@ -239,11 +268,9 @@ class _DataCaptureContextController {
     return context;
   }
 
-  _DataCaptureContextController(this.context, this.methodChannel) {
-    _initialize();
-  }
+  _DataCaptureContextController(this.context);
 
-  Future<void> _initialize() {
+  Future<void> initialize() {
     var encoded = jsonEncode(context.toMap());
     return methodChannel.invokeMethod(FunctionNames.createContextFromJSONMethodName, encoded).catchError((error) {
       _notifyListenersOfDeserializationError(error, "Init - $encoded");

@@ -34,7 +34,7 @@ public class ScanditFlutterDataCaptureCore: NSObject, FlutterPlugin, Deserializa
                                                binaryMessenger: registrar.messenger())
         let methodChannel = FlutterMethodChannel(name: "com.scandit.datacapture.core/method_channel",
                                                  binaryMessenger: registrar.messenger())
-        
+
         let eventEmitter = FlutterEventEmitter(eventChannel: eventChannel)
         let frameSourceListener = FrameworksFrameSourceListener(eventEmitter: eventEmitter)
         let frameSourceDeserializer = FrameworksFrameSourceDeserializer(frameSourceListener: frameSourceListener,
@@ -47,7 +47,7 @@ public class ScanditFlutterDataCaptureCore: NSObject, FlutterPlugin, Deserializa
                                     dataCaptureViewListener: viewListener)
         let corePlugin = ScanditFlutterDataCaptureCore(coreModule: coreModule, methodChannel: methodChannel)
         registrar.addMethodCallDelegate(corePlugin, channel: methodChannel)
-        
+
         let captureViewFactory = FlutterCaptureViewFactory(coreModule: coreModule)
         registrar.register(captureViewFactory, withId: "com.scandit.DataCaptureView")
 
@@ -159,6 +159,6 @@ public class ScanditFlutterDataCaptureCore: NSObject, FlutterPlugin, Deserializa
                 result(FlutterMethodNotImplemented)
             }
         }
-        dispatchMainSync(handlerBlock)
+        dispatchMain(handlerBlock)
     }
 }

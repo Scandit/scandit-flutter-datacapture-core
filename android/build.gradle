@@ -25,15 +25,10 @@ android {
     lintOptions {
         abortOnError false
     }
-
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
-    }
 }
 
 dependencies {
-    def sdk_version = "7.1.3"
+    def sdk_version = "7.2.0"
 
     println("Version of the native sdk used in this build: ${safeExtGet('global_sdk_version', sdk_version)}")
     if (findProject(':scandit-datacapture-frameworks-core') != null) {

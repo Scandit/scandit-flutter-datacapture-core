@@ -340,6 +340,9 @@ class _DataCaptureViewState extends State<DataCaptureView> {
         viewType: viewType,
         creationParams: {"DataCaptureView": jsonEncode(widget.toMap())},
         creationParamsCodec: const StandardMessageCodec(),
+        onPlatformViewCreated: (int id) {
+          widget._isViewCreated = true;
+        },
       );
     }
   }

@@ -412,7 +412,7 @@ extension OrientationDeserializer on Orientation {
 }
 
 @immutable
-class Size {
+class Size implements Serializable {
   final double _width;
   double get width => _width;
 
@@ -424,4 +424,30 @@ class Size {
   Size.fromJSON(Map<String, dynamic> json)
       : this(json.containsKey('width') ? (json['width'] as num).toDouble() : throw ArgumentError('width'),
             json.containsKey('height') ? (json['height'] as num).toDouble() : throw ArgumentError('height'));
+
+  @override
+  Map<String, dynamic> toMap() {
+    return {'width': _width, 'height': _height};
+  }
+}
+
+@immutable
+class Rect implements Serializable {
+  final Point _origin;
+  Point get origin => _origin;
+
+  final Size _size;
+  Size get size => _size;
+
+  const Rect(this._origin, this._size);
+
+  Rect.fromJSON(Map<String, dynamic> json) : this(Point.fromJSON(json['origin']), Size.fromJSON(json['size']));
+
+  @override
+  Map<String, dynamic> toMap() {
+    return {
+      'origin': _origin.toMap(),
+      'size': _size.toMap(),
+    };
+  }
 }
