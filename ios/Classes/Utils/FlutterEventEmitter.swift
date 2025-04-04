@@ -25,7 +25,7 @@ public class FlutterEventEmitter: NSObject, Emitter, FlutterStreamHandler {
         payload["event"] = name
         let jsonString = String(data: try! JSONSerialization.data(withJSONObject: payload),
                                 encoding: .utf8)!
-        dispatchMain {
+        dispatchMainSync {
             sink(jsonString)
         }
     }

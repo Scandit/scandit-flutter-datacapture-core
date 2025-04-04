@@ -114,10 +114,6 @@ public class DataCaptureCoreMethodHandler implements MethodChannel.MethodCallHan
                 );
                 break;
 
-            case "getOpenSourceSoftwareLicenseInfo":
-                getSharedModule().getOpenSourceSoftwareLicenseInfo(new FlutterResult(result));
-                break;
-
             default:
                 result.notImplemented();
                 break;
