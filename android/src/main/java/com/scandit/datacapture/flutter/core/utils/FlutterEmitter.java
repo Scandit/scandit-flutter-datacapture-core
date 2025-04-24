@@ -6,6 +6,7 @@
 package com.scandit.datacapture.flutter.core.utils;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 
 import com.scandit.datacapture.frameworks.core.events.Emitter;
 import com.scandit.datacapture.frameworks.core.utils.DefaultMainThread;
@@ -23,8 +24,11 @@ import java.util.concurrent.atomic.AtomicReference;
 public class FlutterEmitter implements Emitter {
     private final String channelName;
     private final MainThread mainThread;
-    private final CopyOnWriteArrayList<EventChannel.EventSink> sinkEvents = new CopyOnWriteArrayList<>();
-    private final ConcurrentHashMap<Integer, EventChannel> channels = new ConcurrentHashMap<>();
+
+    @VisibleForTesting
+    final CopyOnWriteArrayList<EventChannel.EventSink> sinkEvents = new CopyOnWriteArrayList<>();
+    @VisibleForTesting
+    final ConcurrentHashMap<Integer, EventChannel> channels = new ConcurrentHashMap<>();
 
     public FlutterEmitter(String channelName, MainThread mainThread) {
         this.channelName = channelName;
