@@ -1,6 +1,6 @@
 name: scandit_flutter_datacapture_core
 description: This plugin builds the foundation of all data capture related functionality offered by the Scandit Data Capture SDK.
-version: 7.2.2
+version: 7.3.0
 homepage: https://scandit.com
 
 environment:
