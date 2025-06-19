@@ -215,3 +215,26 @@ class AimerViewfinder extends Viewfinder {
     return json;
   }
 }
+
+class LaserlineViewfinder extends Viewfinder {
+  DoubleWithUnit width;
+  Color enabledColor;
+  Color disabledColor;
+
+  LaserlineViewfinder._(this.width, this.enabledColor, this.disabledColor) : super('laserline');
+
+  LaserlineViewfinder()
+      : this._(Defaults.laserlineViewfinderDefaults.width, Defaults.laserlineViewfinderDefaults.enabledColor,
+            Defaults.laserlineViewfinderDefaults.disabledColor);
+
+  @override
+  Map<String, dynamic> toMap() {
+    var json = super.toMap();
+    json.addAll({
+      'width': width.toMap(),
+      'enabledColor': enabledColor.jsonValue,
+      'disabledColor': disabledColor.jsonValue,
+    });
+    return json;
+  }
+}

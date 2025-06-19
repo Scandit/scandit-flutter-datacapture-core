@@ -79,7 +79,6 @@ public class ScanditFlutterDataCaptureCorePlugin extends BaseFlutterPlugin imple
         coreModule = CoreModule.create(coreEmitter);
         coreModule.onCreate(binding.getApplicationContext());
         coreModule.registerDataCaptureContextListener();
-        coreModule.registerDataCaptureViewListener();
         coreModule.registerFrameSourceListener();
 
         registerModule(coreModule);
