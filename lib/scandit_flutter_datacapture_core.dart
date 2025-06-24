@@ -62,8 +62,7 @@ export 'src/viewfinder.dart'
         Viewfinder,
         RectangularViewfinderStyle,
         RectangularViewfinderLineStyle,
-        RectangularViewfinderAnimation,
-        LaserlineViewfinder;
+        RectangularViewfinderAnimation;
 export 'src/scandit_flutter_datacapture_core.dart' show ScanditFlutterDataCaptureCore;
 export 'src/focus_gesture.dart' show FocusGesture, TapToFocus;
 export 'src/zoom_gesture.dart' show ZoomGesture, SwipeToZoom;

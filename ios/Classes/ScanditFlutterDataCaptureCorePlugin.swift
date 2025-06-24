@@ -36,7 +36,15 @@ public class ScanditFlutterDataCaptureCore: NSObject, FlutterPlugin, Deserializa
                                                  binaryMessenger: registrar.messenger())
 
         let eventEmitter = FlutterEventEmitter(eventChannel: eventChannel)
-        let coreModule = CoreModule.create(emitter: eventEmitter)
+        let frameSourceListener = FrameworksFrameSourceListener(eventEmitter: eventEmitter)
+        let frameSourceDeserializer = FrameworksFrameSourceDeserializer(frameSourceListener: frameSourceListener,
+                                                                        torchListener: frameSourceListener)
+        let contextListener = FrameworksDataCaptureContextListener(eventEmitter: eventEmitter)
+        let viewListener = FrameworksDataCaptureViewListener(eventEmitter: eventEmitter)
+        let coreModule = CoreModule(frameSourceDeserializer: frameSourceDeserializer,
+                                    frameSourceListener: frameSourceListener,
+                                    dataCaptureContextListener: contextListener,
+                                    dataCaptureViewListener: viewListener)
         let corePlugin = ScanditFlutterDataCaptureCore(coreModule: coreModule, methodChannel: methodChannel)
         registrar.addMethodCallDelegate(corePlugin, channel: methodChannel)
 
@@ -94,13 +102,13 @@ public class ScanditFlutterDataCaptureCore: NSObject, FlutterPlugin, Deserializa
         coreModule.emitFeedback(json: feedbackJSON, result: FlutterFrameworkResult(reply: reply))
     }
 
-    func viewPointForFramePoint(_ viewId: Int, pointJSON: String, reply: @escaping FlutterResult) {
-        coreModule.viewPointForFramePoint(viewId: viewId, json: pointJSON, result: FlutterFrameworkResult(reply: reply))
+    func viewPointForFramePoint(_ pointJSON: String, reply: @escaping FlutterResult) {
+        coreModule.viewPointForFramePoint(json: pointJSON, result: FlutterFrameworkResult(reply: reply))
     }
 
-    func viewQuadrilateralForFrameQuadrilateral(_ viewId: Int, quadrilateralJSON: String,
+    func viewQuadrilateralForFrameQuadrilateral(_ quadrilateralJSON: String,
                                                 reply: @escaping FlutterResult) {
-        coreModule.viewQuadrilateralForFrameQuadrilateral(viewId: viewId, json: quadrilateralJSON,
+        coreModule.viewQuadrilateralForFrameQuadrilateral(json: quadrilateralJSON,
                                                           result: FlutterFrameworkResult(reply: reply))
     }
 
@@ -126,45 +134,11 @@ public class ScanditFlutterDataCaptureCore: NSObject, FlutterPlugin, Deserializa
                 let feedbackJSON = methodCall.arguments as! String
                 self.emitFeedback(feedbackJSON, reply: result)
             case FunctionName.viewPointForFramePoint:
-                guard let args = methodCall.arguments as? [String: Any?] else {
-                    result(FlutterError(
-                        code: "-1",
-                        message: "Invalid argument for \(FunctionName.viewPointForFramePoint)",
-                        details: methodCall.arguments)
-                    )
-                    return
-                }
-                
-                guard let viewId = args["viewId"] as? Int,
-                      let pointJSON = args["point"] as? String else {
-                    result(FlutterError(
-                        code: "-1",
-                        message: "Invalid argument for \(FunctionName.viewPointForFramePoint)",
-                        details: methodCall.arguments)
-                    )
-                    return
-                }
-                self.viewPointForFramePoint(viewId, pointJSON: pointJSON, reply: result)
+                let pointJSON = methodCall.arguments as! String
+                self.viewPointForFramePoint(pointJSON, reply: result)
             case FunctionName.viewQuadrilateralForFrameQuadrilateral:
-                guard let args = methodCall.arguments as? [String: Any?] else {
-                    result(FlutterError(
-                        code: "-1",
-                        message: "Invalid argument for \(FunctionName.viewPointForFramePoint)",
-                        details: methodCall.arguments)
-                    )
-                    return
-                }
-                
-                guard let viewId = args["viewId"] as? Int,
-                      let quadrilateralJSON = args["quadrilateral"] as? String else {
-                    result(FlutterError(
-                        code: "-1",
-                        message: "Invalid argument for \(FunctionName.viewPointForFramePoint)",
-                        details: methodCall.arguments)
-                    )
-                    return
-                }
-                self.viewQuadrilateralForFrameQuadrilateral(viewId,quadrilateralJSON: quadrilateralJSON, reply: result)
+                let quadrilateralJSON = methodCall.arguments as! String
+                self.viewQuadrilateralForFrameQuadrilateral(quadrilateralJSON, reply: result)
             case FunctionName.switchCameraToDesiredState:
                 let desiredStateJson = methodCall.arguments as! String
                 self.coreModule.switchCameraToDesiredState(stateJson: desiredStateJson, result: FlutterFrameworkResult(reply: result))
