@@ -209,6 +209,22 @@ class AimerViewfinderDefaults {
   }
 }
 
+@immutable
+class LaserlineViewfinderDefaults {
+  final DoubleWithUnit width;
+  final Color enabledColor;
+  final Color disabledColor;
+
+  const LaserlineViewfinderDefaults(this.width, this.enabledColor, this.disabledColor);
+
+  factory LaserlineViewfinderDefaults.fromJSON(Map<String, dynamic> json) {
+    var width = DoubleWithUnit.fromJSON(jsonDecode(json['width']) as Map<String, dynamic>);
+    var enabledColor = ColorDeserializer.fromRgbaHex(json['enabledColor'] as String);
+    var disabledColor = ColorDeserializer.fromRgbaHex(json['disabledColor'] as String);
+    return LaserlineViewfinderDefaults(width, enabledColor, disabledColor);
+  }
+}
+
 // ignore: avoid_classes_with_only_static_members
 class Defaults {
   static MethodChannel channel = const MethodChannel(FunctionNames.methodsChannelName);
@@ -219,7 +235,7 @@ class Defaults {
   static late String sdkVersion;
   static late String deviceId;
   static late AimerViewfinderDefaults aimerViewfinderDefaults;
-
+  static late LaserlineViewfinderDefaults laserlineViewfinderDefaults;
   static bool _isInitialized = false;
 
   static void initializeDefaults(String defaultsJSON) {
@@ -232,6 +248,7 @@ class Defaults {
     sdkVersion = defaults['Version'] as String;
     deviceId = defaults['deviceID'] as String;
     aimerViewfinderDefaults = AimerViewfinderDefaults.fromJSON(defaults['AimerViewfinder']);
+    laserlineViewfinderDefaults = LaserlineViewfinderDefaults.fromJSON(defaults['LaserlineViewfinder']);
     _isInitialized = true;
   }
 
