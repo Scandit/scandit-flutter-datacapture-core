@@ -8,8 +8,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/services.dart';
+import 'package:meta/meta.dart';
 
-import 'open_source_software_license_info.dart';
 import 'common.dart';
 import 'context_status.dart';
 import 'data_capture_component.dart';
@@ -30,7 +30,7 @@ abstract class DataCaptureMode implements Serializable {
 }
 
 class DataCaptureContextSettings implements Serializable {
-  final Map<String, dynamic> _settings = <String, dynamic>{};
+  final Map<String, dynamic> _settings = {};
 
   DataCaptureContextSettings();
 
@@ -76,6 +76,7 @@ class LicenseInfo {
 
   LicenseInfo._(this._expiration, this._date);
 
+  @visibleForTesting
   factory LicenseInfo.fromJSON(Map<String, dynamic> json) {
     var expiration = ExpirationDeserializer.expirationFromJSON(json['expirationDateStatus'] as String);
     var date = expiration == Expiration.available
@@ -86,20 +87,11 @@ class LicenseInfo {
 }
 
 class DataCaptureContext with PrivateDataCaptureContext implements Serializable {
-  static final DataCaptureContext _instance = DataCaptureContext._internal();
-
-  DataCaptureContext._internal()
-      : _licenseKey = '',
-        _deviceName = null,
-        _settings = DataCaptureContextSettings() {
-    _controller = _DataCaptureContextController(this);
-  }
-
   FrameSource? _frameSource;
-  String _licenseKey = '';
+  String _licenseKey;
   String? _deviceName;
   LicenseInfo? _licenseInfo;
-  DataCaptureContextSettings _settings = DataCaptureContextSettings();
+  DataCaptureContextSettings _settings;
 
   FrameSource? get frameSource => _frameSource;
 
@@ -114,74 +106,43 @@ class DataCaptureContext with PrivateDataCaptureContext implements Serializable 
 
   static String get deviceId => Defaults.deviceId;
 
-  static Future<DataCaptureContext> initialize(
-    String licenseKey, {
-    DataCaptureContextCreationOptions? options,
-    DataCaptureContextSettings? settings,
-  }) async {
-    _instance._licenseKey = licenseKey;
-    _instance._deviceName = options?.deviceName;
-    _instance._settings = settings ?? DataCaptureContextSettings();
-    await _instance._controller.initialize();
-
-    return _instance;
+  DataCaptureContext._(this._licenseKey, this._deviceName, this._settings) {
+    _controller = _DataCaptureContextController(this, Defaults.channel);
   }
 
-  factory DataCaptureContext.forLicenseKey(String licenseKey) {
-    DataCaptureContext.initialize(licenseKey);
-    return _instance;
-  }
+  DataCaptureContext.forLicenseKey(String licenseKey) : this._(licenseKey, null, DataCaptureContextSettings());
 
   factory DataCaptureContext.forLicenseKeyWithOptions(String licenseKey, DataCaptureContextCreationOptions? options) {
-    DataCaptureContext.initialize(licenseKey, options: options);
-    return _instance;
+    var deviceName = (options == null || options.deviceName == null) ? '' : options.deviceName;
+    return DataCaptureContext._(licenseKey, deviceName, DataCaptureContextSettings());
   }
 
   factory DataCaptureContext.forLicenseKeyWithSettings(String licenseKey, DataCaptureContextSettings? settings) {
-    DataCaptureContext.initialize(licenseKey, settings: settings);
-    return _instance;
+    return DataCaptureContext._(licenseKey, null, settings ?? DataCaptureContextSettings());
   }
 
-  static DataCaptureContext get sharedInstance => _instance;
-
-  Future<void> addMode(DataCaptureMode mode) {
+  void addMode(DataCaptureMode mode) {
     if (!modes.contains(mode)) {
       mode._context = this;
       modes.add(mode);
-      return _controller.addModeToContext(mode);
-    }
-    return Future.value(null);
-  }
-
-  Future<void> setMode(DataCaptureMode mode) async {
-    if (modes.isNotEmpty) {
-      await removeAllModes();
-    }
-    mode._context = this;
-    modes.add(mode);
-    await _controller.addModeToContext(mode);
-  }
-
-  Future<void> removeCurrentMode() async {
-    if (modes.isNotEmpty) {
-      await removeMode(modes.first);
+      _controller.addModeToContext(mode);
     }
   }
 
-  Future<void> removeMode(DataCaptureMode mode) {
+  void removeMode(DataCaptureMode mode) {
     if (modes.contains(mode) && modes.remove(mode)) {
       mode._context = null;
-      return _controller.removeModeFromContext(mode);
+      _controller.removeModeFromContext(mode);
     }
-    return Future.value(null);
   }
 
-  Future<void> removeAllModes() {
+  void removeAllModes() {
     for (var element in modes) {
       element._context = null;
     }
     modes.clear();
-    return _controller.removeAllModes();
+    view?.removeAllOverlays();
+    _controller.removeAllModes();
   }
 
   void addListener(DataCaptureContextListener listener) {
@@ -200,12 +161,6 @@ class DataCaptureContext with PrivateDataCaptureContext implements Serializable 
     if (_listeners.isEmpty) {
       _controller.cancelSubscribers();
     }
-  }
-
-  static Future<OpenSourceSoftwareLicenseInfo> getOpenSourceSoftwareLicenseInfo() {
-    return Defaults.channel
-        .invokeMethod(FunctionNames.getOpenSourceSoftwareLicenseInfo)
-        .then((value) => OpenSourceSoftwareLicenseInfo(value));
   }
 
   @Deprecated('Deprecated. No need to add the component to the DataCaptureContext in oder to use it.')
@@ -234,7 +189,8 @@ class DataCaptureContext with PrivateDataCaptureContext implements Serializable 
   String _getFrameworkVersion() {
     try {
       return Platform.version.split(' ').first;
-    } on Exception {
+    } on Exception catch (e) {
+      print(e);
       return 'undefined';
     }
   }
@@ -252,6 +208,15 @@ mixin PrivateDataCaptureContext {
 
   PrivateDataCaptureView? view;
 
+  bool _isInitialized = false;
+
+  void initialize() {
+    if (!_isInitialized) {
+      _controller = _DataCaptureContextController(this as DataCaptureContext, Defaults.channel);
+      _isInitialized = true;
+    }
+  }
+
   Future<void> update() async {
     return _controller.updateContextFromJSON();
   }
@@ -259,7 +224,7 @@ mixin PrivateDataCaptureContext {
 
 class _DataCaptureContextController {
   final DataCaptureContext context;
-  final MethodChannel methodChannel = Defaults.channel;
+  final MethodChannel methodChannel;
 
   final EventChannel _contextEventsChannel = const EventChannel(FunctionNames.eventsChannelName);
   StreamSubscription? _contextEventsSubscription;
@@ -268,13 +233,17 @@ class _DataCaptureContextController {
     return context;
   }
 
-  _DataCaptureContextController(this.context);
+  _DataCaptureContextController(this.context, this.methodChannel) {
+    _initialize();
+  }
 
-  Future<void> initialize() {
+  Future<void> _initialize() async {
     var encoded = jsonEncode(context.toMap());
-    return methodChannel.invokeMethod(FunctionNames.createContextFromJSONMethodName, encoded).catchError((error) {
-      _notifyListenersOfDeserializationError(error, "Init - $encoded");
-    });
+    try {
+      await methodChannel.invokeMethod(FunctionNames.createContextFromJSONMethodName, encoded) as Map?;
+    } on PlatformException catch (e) {
+      _notifyListenersOfDeserializationError(e, "Init - " + encoded);
+    }
   }
 
   Future<void> updateContextFromJSON() {
@@ -283,7 +252,7 @@ class _DataCaptureContextController {
         .invokeMethod(FunctionNames.updateContextFromJSONMethodName, encoded)
         // ignore: unnecessary_lambdas
         .catchError((error) {
-      _notifyListenersOfDeserializationError(error, "Update - $encoded");
+      _notifyListenersOfDeserializationError(error, "Update - " + encoded);
     });
   }
 
@@ -293,7 +262,7 @@ class _DataCaptureContextController {
         .invokeMethod(FunctionNames.addModeToContext, encoded)
         // ignore: unnecessary_lambdas
         .catchError((error) {
-      _notifyListenersOfDeserializationError(error, "AddMode - $encoded");
+      _notifyListenersOfDeserializationError(error, "AddMode - " + encoded);
     });
   }
 
@@ -303,7 +272,7 @@ class _DataCaptureContextController {
         .invokeMethod(FunctionNames.removeModeFromContext, encoded)
         // ignore: unnecessary_lambdas
         .catchError((error) {
-      _notifyListenersOfDeserializationError(error, "RemoveMode - $encoded");
+      _notifyListenersOfDeserializationError(error, "RemoveMode - " + encoded);
     });
   }
 
