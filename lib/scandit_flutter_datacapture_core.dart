@@ -10,6 +10,7 @@ export 'src/camera.dart'
     show
         Camera,
         CameraPosition,
+        CameraPositionDeserializer,
         CameraSettings,
         FocusRange,
         TorchState,
@@ -37,7 +38,8 @@ export 'src/common.dart'
         SizeWithUnit,
         SizeWithUnitAndAspect,
         SizeWithAspect,
-        SizingMode;
+        SizingMode,
+        Rect;
 export 'src/context_status.dart' show ContextStatus;
 export 'src/data_capture_component.dart' show DataCaptureComponent;
 export 'src/data_capture_context.dart'
@@ -55,13 +57,11 @@ export 'src/frame_source.dart' show FrameSource, FrameSourceListener, FrameSourc
 export 'src/location_selection.dart' show LocationSelection, RadiusLocationSelection, RectangularLocationSelection;
 export 'src/viewfinder.dart'
     show
-        LaserlineViewfinder,
         RectangularViewfinder,
         AimerViewfinder,
         Viewfinder,
         RectangularViewfinderStyle,
         RectangularViewfinderLineStyle,
-        LaserlineViewfinderStyle,
         RectangularViewfinderAnimation;
 export 'src/scandit_flutter_datacapture_core.dart' show ScanditFlutterDataCaptureCore;
 export 'src/focus_gesture.dart' show FocusGesture, TapToFocus;
@@ -72,5 +72,17 @@ export 'src/direction.dart' show Direction, DirectionDeserializer;
 export 'src/image_buffer.dart' show ImageBuffer;
 export 'src/frame_data.dart' show FrameData, DefaultFrameData;
 export 'src/image_frame_source.dart' show ImageFrameSource;
-export 'src/battery_saving_mode.dart' show BatterySavingMode;
+export 'src/battery_saving_mode.dart' show BatterySavingMode, BatterySavingModeDeserializer;
 export 'src/scan_intention.dart' show ScanIntention, ScanIntentionSerializer;
+export 'src/widget_to_base64_converter.dart' show WidgetToBase64Converter;
+export 'src/open_source_software_license_info.dart' show OpenSourceSoftwareLicenseInfo;
+export 'src/scandit_icon.dart'
+    show
+        ScanditIcon,
+        ScanditIconType,
+        ScanditIconBuilder,
+        ScanditIconShape,
+        ScanditIconShapeSerializer,
+        ScanditIconTypeSerializer;
+export 'src/text_alignment.dart' show TextAlignment, TextAlignmentSerializer;
+export 'src/font_family.dart' show FontFamily, FontFamilySerializer;

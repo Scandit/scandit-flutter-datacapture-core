@@ -25,6 +25,7 @@ enum FunctionName {
     static let addOverlay = "addOverlay"
     static let removeOverlay = "removeOverlay"
     static let removeAllOverlays = "removeAllOverlays"
+    static let getOpenSourceSoftwareLicenseInfo = "getOpenSourceSoftwareLicenseInfo"
 }
 
 public class ScanditFlutterDataCaptureCore: NSObject, FlutterPlugin, DeserializationLifeCycleObserver {
@@ -33,7 +34,7 @@ public class ScanditFlutterDataCaptureCore: NSObject, FlutterPlugin, Deserializa
                                                binaryMessenger: registrar.messenger())
         let methodChannel = FlutterMethodChannel(name: "com.scandit.datacapture.core/method_channel",
                                                  binaryMessenger: registrar.messenger())
-        
+
         let eventEmitter = FlutterEventEmitter(eventChannel: eventChannel)
         let frameSourceListener = FrameworksFrameSourceListener(eventEmitter: eventEmitter)
         let frameSourceDeserializer = FrameworksFrameSourceDeserializer(frameSourceListener: frameSourceListener,
@@ -46,7 +47,7 @@ public class ScanditFlutterDataCaptureCore: NSObject, FlutterPlugin, Deserializa
                                     dataCaptureViewListener: viewListener)
         let corePlugin = ScanditFlutterDataCaptureCore(coreModule: coreModule, methodChannel: methodChannel)
         registrar.addMethodCallDelegate(corePlugin, channel: methodChannel)
-        
+
         let captureViewFactory = FlutterCaptureViewFactory(coreModule: coreModule)
         registrar.register(captureViewFactory, withId: "com.scandit.DataCaptureView")
 
@@ -58,15 +59,6 @@ public class ScanditFlutterDataCaptureCore: NSObject, FlutterPlugin, Deserializa
 
     private let methodChannel: FlutterMethodChannel
     private let coreModule: CoreModule
-
-    public static var lastFrame: FrameData? {
-        get {
-            LastFrameData.shared.frameData
-        }
-        set {
-            LastFrameData.shared.frameData = newValue
-        }
-    }
 
     public static func register(modeDeserializer: DataCaptureModeDeserializer) {
         Deserializers.Factory.add(modeDeserializer)
@@ -161,10 +153,12 @@ public class ScanditFlutterDataCaptureCore: NSObject, FlutterPlugin, Deserializa
             case FunctionName.updateDataCaptureView:
                 let viewJson = methodCall.arguments as! String
                 self.coreModule.updateDataCaptureView(viewJson: viewJson, result: FlutterFrameworkResult(reply: result))
+            case FunctionName.getOpenSourceSoftwareLicenseInfo:
+                self.coreModule.getOpenSourceSoftwareLicenseInfo(result: FlutterFrameworkResult(reply: result))
             default:
                 result(FlutterMethodNotImplemented)
             }
         }
-        dispatchMainSync(handlerBlock)
+        dispatchMain(handlerBlock)
     }
 }
