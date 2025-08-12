@@ -18,7 +18,7 @@ Pod::Spec.new do |s|
   s.requires_arc            = true
 
   s.dependency "Flutter"
-  s.dependency "scandit-datacapture-frameworks-core", '= 7.2.4'
+  s.dependency "scandit-datacapture-frameworks-core", '= 7.5.0'
 
   # Flutter.framework does not contain a i386 slice. Only x86_64 simulators are supported.
   s.pod_target_xcconfig = { "DEFINES_MODULE" => "YES", "VALID_ARCHS[sdk=iphonesimulator*]" => "x86_64" }

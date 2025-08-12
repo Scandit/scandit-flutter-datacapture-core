@@ -8,6 +8,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/services.dart';
+import 'package:scandit_flutter_datacapture_core/src/frame_data_settings.dart';
 
 import 'open_source_software_license_info.dart';
 import 'common.dart';
@@ -32,6 +33,8 @@ abstract class DataCaptureMode implements Serializable {
 class DataCaptureContextSettings implements Serializable {
   final Map<String, dynamic> _settings = <String, dynamic>{};
 
+  FrameDataSettings frameDataSettings = FrameDataSettings();
+
   DataCaptureContextSettings();
 
   void setProperty<T>(String name, T value) {
@@ -42,8 +45,13 @@ class DataCaptureContextSettings implements Serializable {
     return _settings[name] as T;
   }
 
+  FrameDataSettingsBuilder frameDataSettingsBuilder() {
+    return FrameDataSettingsBuilder(frameDataSettings);
+  }
+
   @override
   Map<String, dynamic> toMap() {
+    _settings["frameDataSettings"] = frameDataSettings.toMap();
     return _settings;
   }
 }
