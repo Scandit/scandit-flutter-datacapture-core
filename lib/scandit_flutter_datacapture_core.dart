@@ -51,7 +51,7 @@ export 'src/data_capture_context.dart'
         DataCaptureMode;
 export 'src/data_capture_version.dart' show DataCaptureVersion;
 export 'src/data_capture_view.dart' show DataCaptureOverlay, DataCaptureView, DataCaptureViewListener;
-export 'src/defaults.dart' show BrushDefaults, NativeBrushDefaults, CameraSettingsDefaults hide Defaults;
+export 'src/defaults.dart' show BrushDefaults, NativeBrushDefaults, CameraSettingsDefaults;
 export 'src/feedback.dart' show Feedback, Sound, Vibration;
 export 'src/frame_source.dart' show FrameSource, FrameSourceListener, FrameSourceState, TorchListener;
 export 'src/location_selection.dart' show LocationSelection, RadiusLocationSelection, RectangularLocationSelection;
