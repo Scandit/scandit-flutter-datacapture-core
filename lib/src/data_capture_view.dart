@@ -127,22 +127,22 @@ class DataCaptureView extends StatefulWidget with PrivateDataCaptureView {
     _properties[name] = value;
   }
 
-  Future<void> addOverlay(DataCaptureOverlay overlay) {
+  Future<void> addOverlay(DataCaptureOverlay overlay) async {
     if (_overlays.contains(overlay)) {
-      return Future.value(null);
+      return;
     }
     _overlays.add(overlay);
     overlay.view = this;
-    return _update();
+    await _update();
   }
 
-  Future<void> removeOverlay(DataCaptureOverlay overlay) {
+  Future<void> removeOverlay(DataCaptureOverlay overlay) async {
     if (!_overlays.contains(overlay)) {
-      return Future.value(null);
+      return;
     }
     _overlays.remove(overlay);
     overlay.view = null;
-    return _update();
+    await _update();
   }
 
   void addListener(DataCaptureViewListener listener) {
@@ -290,14 +290,9 @@ mixin PrivateDataCaptureView implements common.Serializable {
     _update();
   }
 
-  bool _isViewCreated = false;
-
-  Future<void> _update() {
-    if (_isViewCreated == false) {
-      return Future.value(null);
-    }
+  Future<void> _update() async {
     var viewJson = jsonEncode(toMap());
-    return _controller?.update(viewJson) ?? Future.value(null);
+    return _controller?.update(viewJson);
   }
 
   int get viewId => _controller?._viewId ?? -1;
@@ -364,9 +359,6 @@ class _DataCaptureViewState extends State<DataCaptureView> {
             },
           )
             ..addOnPlatformViewCreatedListener(params.onPlatformViewCreated)
-            ..addOnPlatformViewCreatedListener((int id) {
-              widget._isViewCreated = true;
-            })
             ..create();
         },
       );
@@ -375,9 +367,6 @@ class _DataCaptureViewState extends State<DataCaptureView> {
         viewType: viewType,
         creationParams: {'DataCaptureView': jsonEncode(widget.toMap())},
         creationParamsCodec: const StandardMessageCodec(),
-        onPlatformViewCreated: (int id) {
-          widget._isViewCreated = true;
-        },
       );
     }
   }
