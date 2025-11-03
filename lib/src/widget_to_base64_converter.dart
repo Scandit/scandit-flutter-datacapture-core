@@ -63,7 +63,7 @@ extension WidgetToBase64Converter on Widget {
 
     buildOwner.buildScope(rootElement);
 
-    await Future.delayed(const Duration(milliseconds: 20));
+    await Future.delayed(Duration(milliseconds: 20));
 
     buildOwner.buildScope(rootElement);
     buildOwner.finalizeTree();

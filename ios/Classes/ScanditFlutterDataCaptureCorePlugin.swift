@@ -25,7 +25,6 @@ enum FunctionName {
     static let addOverlay = "addOverlay"
     static let removeOverlay = "removeOverlay"
     static let removeAllOverlays = "removeAllOverlays"
-    static let getOpenSourceSoftwareLicenseInfo = "getOpenSourceSoftwareLicenseInfo"
 }
 
 public class ScanditFlutterDataCaptureCore: NSObject, FlutterPlugin, DeserializationLifeCycleObserver {
@@ -34,12 +33,20 @@ public class ScanditFlutterDataCaptureCore: NSObject, FlutterPlugin, Deserializa
                                                binaryMessenger: registrar.messenger())
         let methodChannel = FlutterMethodChannel(name: "com.scandit.datacapture.core/method_channel",
                                                  binaryMessenger: registrar.messenger())
-
+        
         let eventEmitter = FlutterEventEmitter(eventChannel: eventChannel)
-        let coreModule = CoreModule.create(emitter: eventEmitter)
+        let frameSourceListener = FrameworksFrameSourceListener(eventEmitter: eventEmitter)
+        let frameSourceDeserializer = FrameworksFrameSourceDeserializer(frameSourceListener: frameSourceListener,
+                                                                        torchListener: frameSourceListener)
+        let contextListener = FrameworksDataCaptureContextListener(eventEmitter: eventEmitter)
+        let viewListener = FrameworksDataCaptureViewListener(eventEmitter: eventEmitter)
+        let coreModule = CoreModule(frameSourceDeserializer: frameSourceDeserializer,
+                                    frameSourceListener: frameSourceListener,
+                                    dataCaptureContextListener: contextListener,
+                                    dataCaptureViewListener: viewListener)
         let corePlugin = ScanditFlutterDataCaptureCore(coreModule: coreModule, methodChannel: methodChannel)
         registrar.addMethodCallDelegate(corePlugin, channel: methodChannel)
-
+        
         let captureViewFactory = FlutterCaptureViewFactory(coreModule: coreModule)
         registrar.register(captureViewFactory, withId: "com.scandit.DataCaptureView")
 
@@ -51,6 +58,15 @@ public class ScanditFlutterDataCaptureCore: NSObject, FlutterPlugin, Deserializa
 
     private let methodChannel: FlutterMethodChannel
     private let coreModule: CoreModule
+
+    public static var lastFrame: FrameData? {
+        get {
+            LastFrameData.shared.frameData
+        }
+        set {
+            LastFrameData.shared.frameData = newValue
+        }
+    }
 
     public static func register(modeDeserializer: DataCaptureModeDeserializer) {
         Deserializers.Factory.add(modeDeserializer)
@@ -94,13 +110,13 @@ public class ScanditFlutterDataCaptureCore: NSObject, FlutterPlugin, Deserializa
         coreModule.emitFeedback(json: feedbackJSON, result: FlutterFrameworkResult(reply: reply))
     }
 
-    func viewPointForFramePoint(_ viewId: Int, pointJSON: String, reply: @escaping FlutterResult) {
-        coreModule.viewPointForFramePoint(viewId: viewId, json: pointJSON, result: FlutterFrameworkResult(reply: reply))
+    func viewPointForFramePoint(_ pointJSON: String, reply: @escaping FlutterResult) {
+        coreModule.viewPointForFramePoint(json: pointJSON, result: FlutterFrameworkResult(reply: reply))
     }
 
-    func viewQuadrilateralForFrameQuadrilateral(_ viewId: Int, quadrilateralJSON: String,
+    func viewQuadrilateralForFrameQuadrilateral(_ quadrilateralJSON: String,
                                                 reply: @escaping FlutterResult) {
-        coreModule.viewQuadrilateralForFrameQuadrilateral(viewId: viewId, json: quadrilateralJSON,
+        coreModule.viewQuadrilateralForFrameQuadrilateral(json: quadrilateralJSON,
                                                           result: FlutterFrameworkResult(reply: reply))
     }
 
@@ -126,45 +142,11 @@ public class ScanditFlutterDataCaptureCore: NSObject, FlutterPlugin, Deserializa
                 let feedbackJSON = methodCall.arguments as! String
                 self.emitFeedback(feedbackJSON, reply: result)
             case FunctionName.viewPointForFramePoint:
-                guard let args = methodCall.arguments as? [String: Any?] else {
-                    result(FlutterError(
-                        code: "-1",
-                        message: "Invalid argument for \(FunctionName.viewPointForFramePoint)",
-                        details: methodCall.arguments)
-                    )
-                    return
-                }
-                
-                guard let viewId = args["viewId"] as? Int,
-                      let pointJSON = args["point"] as? String else {
-                    result(FlutterError(
-                        code: "-1",
-                        message: "Invalid argument for \(FunctionName.viewPointForFramePoint)",
-                        details: methodCall.arguments)
-                    )
-                    return
-                }
-                self.viewPointForFramePoint(viewId, pointJSON: pointJSON, reply: result)
+                let pointJSON = methodCall.arguments as! String
+                self.viewPointForFramePoint(pointJSON, reply: result)
             case FunctionName.viewQuadrilateralForFrameQuadrilateral:
-                guard let args = methodCall.arguments as? [String: Any?] else {
-                    result(FlutterError(
-                        code: "-1",
-                        message: "Invalid argument for \(FunctionName.viewPointForFramePoint)",
-                        details: methodCall.arguments)
-                    )
-                    return
-                }
-                
-                guard let viewId = args["viewId"] as? Int,
-                      let quadrilateralJSON = args["quadrilateral"] as? String else {
-                    result(FlutterError(
-                        code: "-1",
-                        message: "Invalid argument for \(FunctionName.viewPointForFramePoint)",
-                        details: methodCall.arguments)
-                    )
-                    return
-                }
-                self.viewQuadrilateralForFrameQuadrilateral(viewId,quadrilateralJSON: quadrilateralJSON, reply: result)
+                let quadrilateralJSON = methodCall.arguments as! String
+                self.viewQuadrilateralForFrameQuadrilateral(quadrilateralJSON, reply: result)
             case FunctionName.switchCameraToDesiredState:
                 let desiredStateJson = methodCall.arguments as! String
                 self.coreModule.switchCameraToDesiredState(stateJson: desiredStateJson, result: FlutterFrameworkResult(reply: result))
@@ -179,12 +161,10 @@ public class ScanditFlutterDataCaptureCore: NSObject, FlutterPlugin, Deserializa
             case FunctionName.updateDataCaptureView:
                 let viewJson = methodCall.arguments as! String
                 self.coreModule.updateDataCaptureView(viewJson: viewJson, result: FlutterFrameworkResult(reply: result))
-            case FunctionName.getOpenSourceSoftwareLicenseInfo:
-                self.coreModule.getOpenSourceSoftwareLicenseInfo(result: FlutterFrameworkResult(reply: result))
             default:
                 result(FlutterMethodNotImplemented)
             }
         }
-        dispatchMain(handlerBlock)
+        dispatchMainSync(handlerBlock)
     }
 }

@@ -7,7 +7,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
@@ -47,7 +46,12 @@ abstract class DataCaptureViewListener {
 class DataCaptureView extends StatefulWidget with PrivateDataCaptureView {
   PrivateDataCaptureContext? _dataCaptureContext;
 
+  final EventChannel _viewDidChangeSizeEventChannel = const EventChannel(FunctionNames.eventsChannelName);
+
+  StreamSubscription? _streamSubscription;
+
   DataCaptureView._(this._dataCaptureContext) : super() {
+    _controller = _DataCaptureViewController(this);
     _dataCaptureContext?.view = this;
   }
 
@@ -56,7 +60,7 @@ class DataCaptureView extends StatefulWidget with PrivateDataCaptureView {
   }
 
   @override
-  State<StatefulWidget> createState() => _DataCaptureViewState();
+  State<StatefulWidget> createState() => _DataCaptureViewState(dataCaptureContext);
 
   DataCaptureContext? get dataCaptureContext {
     return _dataCaptureContext as DataCaptureContext?;
@@ -66,7 +70,7 @@ class DataCaptureView extends StatefulWidget with PrivateDataCaptureView {
     _dataCaptureContext = newValue;
 
     _dataCaptureContext?.view = this;
-    _update();
+    _dataCaptureContext?.update();
   }
 
   common.MarginsWithUnit get scanAreaMargins {
@@ -75,7 +79,7 @@ class DataCaptureView extends StatefulWidget with PrivateDataCaptureView {
 
   set scanAreaMargins(common.MarginsWithUnit newValue) {
     _scanAreaMargins = newValue;
-    _update();
+    _controller.update();
   }
 
   common.PointWithUnit get pointOfInterest {
@@ -84,7 +88,7 @@ class DataCaptureView extends StatefulWidget with PrivateDataCaptureView {
 
   set pointOfInterest(common.PointWithUnit newValue) {
     _pointOfInterest = newValue;
-    _update();
+    _controller.update();
   }
 
   common.Anchor get logoAnchor {
@@ -93,7 +97,7 @@ class DataCaptureView extends StatefulWidget with PrivateDataCaptureView {
 
   set logoAnchor(common.Anchor newValue) {
     _logoAnchor = newValue;
-    _update();
+    _controller.update();
   }
 
   common.PointWithUnit get logoOffset {
@@ -102,7 +106,7 @@ class DataCaptureView extends StatefulWidget with PrivateDataCaptureView {
 
   set logoOffset(common.PointWithUnit newValue) {
     _logoOffset = newValue;
-    _update();
+    _controller.update();
   }
 
   FocusGesture? get focusGesture {
@@ -111,7 +115,7 @@ class DataCaptureView extends StatefulWidget with PrivateDataCaptureView {
 
   set focusGesture(FocusGesture? newValue) {
     _focusGesture = newValue;
-    _update();
+    _controller.update();
   }
 
   ZoomGesture? get zoomGesture {
@@ -120,34 +124,28 @@ class DataCaptureView extends StatefulWidget with PrivateDataCaptureView {
 
   set zoomGesture(ZoomGesture? newValue) {
     _zoomGesture = newValue;
-    _update();
+    _controller.update();
   }
 
-  void setProperty<T>(String name, T value) {
-    _properties[name] = value;
-  }
-
-  Future<void> addOverlay(DataCaptureOverlay overlay) async {
+  void addOverlay(DataCaptureOverlay overlay) {
     if (_overlays.contains(overlay)) {
       return;
     }
     _overlays.add(overlay);
-    overlay.view = this;
-    await _update();
+    _controller.update();
   }
 
-  Future<void> removeOverlay(DataCaptureOverlay overlay) async {
+  void removeOverlay(DataCaptureOverlay overlay) {
     if (!_overlays.contains(overlay)) {
       return;
     }
     _overlays.remove(overlay);
-    overlay.view = null;
-    await _update();
+    _controller.update();
   }
 
   void addListener(DataCaptureViewListener listener) {
     if (_listeners.isEmpty) {
-      _controller?._registerListener();
+      _registerListener();
     }
 
     if (!_listeners.contains(listener)) {
@@ -159,69 +157,32 @@ class DataCaptureView extends StatefulWidget with PrivateDataCaptureView {
     _listeners.remove(listener);
 
     if (_listeners.isEmpty) {
-      _controller?._unregisterListener();
+      _unregisterListener();
     }
+  }
+
+  void setProperty<T>(String name, T value) {
+    _properties[name] = value;
   }
 
   Future<common.Point> viewPointForFramePoint(common.Point point) {
-    return _controller?.viewPointForFramePoint(point) ?? Future.error(Exception('DataCaptureView not initialized'));
+    return _controller._viewPointForFramePoint(point);
   }
 
   Future<common.Quadrilateral> viewQuadrilateralForFrameQuadrilateral(common.Quadrilateral quadrilateral) {
-    return _controller?.viewQuadrilateralForFrameQuadrilateral(quadrilateral) ??
-        Future.error(Exception('DataCaptureView not initialized'));
+    return _controller._viewQuadrilateralForFrameQuadrilateral(quadrilateral);
   }
-
-  Future<void> addControl(Control control) {
-    if (!_controls.contains(control)) {
-      _controls.add(control);
-      return _update();
-    }
-    return Future.value(null);
-  }
-
-  Future<void> removeControl(Control control) {
-    if (_controls.remove(control)) {
-      return _update();
-    }
-    return Future.value(null);
-  }
-
-  set logoStyle(LogoStyle newValue) {
-    _logoStyle = newValue;
-    _update();
-  }
-
-  LogoStyle get logoStyle => _logoStyle;
-}
-
-class _DataCaptureViewController {
-  final MethodChannel _methodChannel = Defaults.channel;
-
-  final EventChannel _viewDidChangeSizeEventChannel = const EventChannel(FunctionNames.eventsChannelName);
-
-  StreamSubscription? _streamSubscription;
-
-  final int _viewId;
-
-  final DataCaptureView _view;
-
-  _DataCaptureViewController(this._viewId, this._view);
 
   void _registerListener() {
     _unregisterListener();
-
     _streamSubscription = _viewDidChangeSizeEventChannel.receiveBroadcastStream().listen((event) {
       var eventJSON = jsonDecode(event as String);
       var eventName = eventJSON['event'] as String;
 
       if (eventName == FunctionNames.eventDataCaptureViewSizeChanged) {
-        final viewId = eventJSON['viewId'] as int;
-        if (viewId == _viewId) {
-          var size = common.Size.fromJSON(eventJSON['size']);
-          var orientation = common.OrientationDeserializer.fromJSON(eventJSON['orientation']);
-          _notifyListenersOfViewDidChangeSize(size, orientation);
-        }
+        var size = common.Size.fromJSON(eventJSON['size']);
+        var orientation = common.OrientationDeserializer.fromJSON(eventJSON['orientation']);
+        _notifyListenersOfViewDidChangeSize(size, orientation);
       }
     });
   }
@@ -232,39 +193,65 @@ class _DataCaptureViewController {
   }
 
   void _notifyListenersOfViewDidChangeSize(common.Size size, common.Orientation orientation) {
-    for (var listener in _view._listeners) {
-      listener.didChangeSize(_view, size, orientation);
+    for (var listener in _listeners) {
+      listener.didChangeSize(this, size, orientation);
     }
   }
 
-  Future<common.Point> viewPointForFramePoint(common.Point point) {
-    final functionArgs = {
-      'viewId': _viewId,
-      'point': jsonEncode(point.toMap()),
-    };
+  void addControl(Control control) {
+    if (!_controls.contains(control)) {
+      _controls.add(control);
+      _controller.update();
+    }
+  }
 
+  void removeControl(Control control) {
+    if (_controls.remove(control)) {
+      _controller.update();
+    }
+  }
+
+  set logoStyle(LogoStyle newValue) {
+    _logoStyle = newValue;
+    _controller.update();
+  }
+
+  LogoStyle get logoStyle => _logoStyle;
+}
+
+class _DataCaptureViewController {
+  final MethodChannel _methodChannel = Defaults.channel;
+  final DataCaptureView _view;
+
+  _DataCaptureViewController(this._view);
+
+  Future<common.Point> _viewPointForFramePoint(common.Point point) {
+    var args = jsonEncode(point.toMap());
     return _methodChannel
-        .invokeMethod(FunctionNames.viewPointForFramePoint, functionArgs)
+        .invokeMethod(FunctionNames.viewPointForFramePoint, args)
         .then((value) => common.Point.fromJSON(jsonDecode(value)));
   }
 
-  Future<common.Quadrilateral> viewQuadrilateralForFrameQuadrilateral(common.Quadrilateral quadrilateral) {
-    final functionArgs = {
-      'viewId': _viewId,
-      'quadrilateral': jsonEncode(quadrilateral.toMap()),
-    };
-
+  Future<common.Quadrilateral> _viewQuadrilateralForFrameQuadrilateral(common.Quadrilateral quadrilateral) {
+    var args = jsonEncode(quadrilateral.toMap());
     return _methodChannel
-        .invokeMethod(FunctionNames.viewQuadrilateralForFrameQuadrilateral, functionArgs)
+        .invokeMethod(FunctionNames.viewQuadrilateralForFrameQuadrilateral, args)
         .then((value) => common.Quadrilateral.fromJSON(jsonDecode(value)));
   }
 
-  Future<void> update(String viewJson) {
-    return _methodChannel.invokeMethod(FunctionNames.updateDataCaptureView, viewJson).onError(_onError);
+  Future<void> update() {
+    var args = jsonEncode(_view.toMap());
+    return _methodChannel.invokeMethod(FunctionNames.updateDataCaptureView, args).onError(_onError);
   }
 
   void _onError(Object? error, StackTrace? stackTrace) {
     if (error == null) return;
+    print(error);
+
+    if (stackTrace != null) {
+      print(stackTrace);
+    }
+
     throw error;
   }
 }
@@ -278,8 +265,7 @@ mixin PrivateDataCaptureView implements common.Serializable {
   final List<Control> _controls = [];
   LogoStyle _logoStyle = Defaults.captureViewDefaults.logoStyle;
   final Map<String, dynamic> _properties = {};
-
-  _DataCaptureViewController? _controller;
+  late _DataCaptureViewController _controller;
 
   FocusGesture? _focusGesture = Defaults.captureViewDefaults.focusGesture;
   ZoomGesture? _zoomGesture = Defaults.captureViewDefaults.zoomGesture;
@@ -287,15 +273,8 @@ mixin PrivateDataCaptureView implements common.Serializable {
 
   void removeAllOverlays() {
     _overlays.clear();
-    _update();
+    _controller.update();
   }
-
-  Future<void> _update() async {
-    var viewJson = jsonEncode(toMap());
-    return _controller?.update(viewJson);
-  }
-
-  int get viewId => _controller?._viewId ?? -1;
 
   @override
   Map<String, dynamic> toMap() {
@@ -309,7 +288,6 @@ mixin PrivateDataCaptureView implements common.Serializable {
       'controls': _controls.map((e) => e.toMap()).toList(),
       'logoStyle': _logoStyle.toString(),
       'overlays': _overlays.map((overlay) => overlay.toMap()).toList(),
-      'viewId': _controller?._viewId ?? 0,
     };
 
     for (var prop in _properties.entries) {
@@ -321,17 +299,17 @@ mixin PrivateDataCaptureView implements common.Serializable {
 }
 
 class _DataCaptureViewState extends State<DataCaptureView> {
-  final int _viewId = Random().nextInt(0x7FFFFFFF);
+  DataCaptureContext? _dataCaptureContext;
 
-  late _DataCaptureViewController _controller;
+  DataCaptureContext? get dataCaptureContext => _dataCaptureContext;
 
-  @override
-  void initState() {
-    super.initState();
-    _controller = _DataCaptureViewController(_viewId, widget);
-    widget._controller = _controller;
-    // subscribe to events here
+  set dataCaptureContext(DataCaptureContext? newValue) {
+    _dataCaptureContext = newValue;
+    _dataCaptureContext?.view = widget;
+    _dataCaptureContext?.update();
   }
+
+  _DataCaptureViewState(this._dataCaptureContext);
 
   @override
   Widget build(BuildContext context) {
@@ -352,7 +330,7 @@ class _DataCaptureViewState extends State<DataCaptureView> {
             id: params.id,
             viewType: viewType,
             layoutDirection: TextDirection.ltr,
-            creationParams: {'DataCaptureView': jsonEncode(widget.toMap())},
+            creationParams: {"DataCaptureView": jsonEncode(widget.toMap())},
             creationParamsCodec: const StandardMessageCodec(),
             onFocus: () {
               params.onFocusChanged(true);
@@ -365,7 +343,7 @@ class _DataCaptureViewState extends State<DataCaptureView> {
     } else {
       return UiKitView(
         viewType: viewType,
-        creationParams: {'DataCaptureView': jsonEncode(widget.toMap())},
+        creationParams: {"DataCaptureView": jsonEncode(widget.toMap())},
         creationParamsCodec: const StandardMessageCodec(),
       );
     }
