@@ -25,7 +25,7 @@ public class FlutterEventEmitter: NSObject, Emitter, FlutterStreamHandler {
         payload["event"] = name
         let jsonString = String(data: try! JSONSerialization.data(withJSONObject: payload),
                                 encoding: .utf8)!
-        dispatchMainSync {
+        dispatchMain {
             sink(jsonString)
         }
     }
@@ -50,6 +50,14 @@ public class FlutterEventEmitter: NSObject, Emitter, FlutterStreamHandler {
     }
 
     public func hasListener(for event: String) -> Bool {
+        true
+    }
+    
+    public func hasViewSpecificListenersForEvent(_ viewId: Int, for event: String) -> Bool {
+        true
+    }
+    
+    public func hasModeSpecificListenersForEvent(_ viewId: Int, for event: String) -> Bool {
         true
     }
 }

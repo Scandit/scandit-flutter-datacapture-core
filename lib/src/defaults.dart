@@ -6,16 +6,19 @@
 
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
+import 'package:scandit_flutter_datacapture_core/src/source/camera_position.dart';
+import 'package:scandit_flutter_datacapture_core/src/source/focus_gesture_strategy.dart';
+import 'package:scandit_flutter_datacapture_core/src/source/focus_range.dart';
 import 'package:scandit_flutter_datacapture_core/src/function_names.dart';
+import 'package:scandit_flutter_datacapture_core/src/source/video_resolution.dart';
 
-import 'camera.dart';
 import 'common.dart';
 import 'focus_gesture.dart';
 import 'zoom_gesture.dart';
 import 'viewfinder.dart';
 import 'logo_style.dart';
 
-import 'package:meta/meta.dart';
 import 'package:flutter/services.dart';
 
 @immutable
@@ -28,16 +31,15 @@ class CameraSettingsDefaults {
   final bool shouldPreferSmoothAutoFocus;
   final Map<String, dynamic> properties;
 
-  CameraSettingsDefaults(this.preferredResolution, this.zoomFactor, this.focusRange, this.focusGestureStrategy,
+  const CameraSettingsDefaults(this.preferredResolution, this.zoomFactor, this.focusRange, this.focusGestureStrategy,
       this.zoomGestureZoomFactor, this.properties,
       {required this.shouldPreferSmoothAutoFocus});
 
   factory CameraSettingsDefaults.fromJSON(Map<String, dynamic> json) {
-    var resolution = VideoResolutionDeserializer.videoResolutionFromJSON(json['preferredResolution']);
+    var resolution = VideoResolution.fromJSON(json['preferredResolution']);
     var zoomFactor = (json['zoomFactor'] as num).toDouble();
     var focusRange = FocusRangeDeserializer.focusRangeFromJSON(json['focusRange']);
-    var focusGestureStrategy =
-        FocusGestureStrategyDeserializer.focusGestureStrategyFromJSON(json['focusGestureStrategy']);
+    var focusGestureStrategy = FocusGestureStrategy.fromJSON(json['focusGestureStrategy']);
     var zoomGestureZoomFactor = (json['zoomGestureZoomFactor'] as num).toDouble();
     var shouldPreferSmoothAutoFocus = json['shouldPreferSmoothAutoFocus'] as bool?;
     var properties = <String, dynamic>{};
@@ -57,16 +59,15 @@ class CameraDefaults {
   final CameraPosition? defaultPosition;
   final List<CameraPosition> availablePositions;
 
-  CameraDefaults(this.settings, this.defaultPosition, this.availablePositions);
+  const CameraDefaults(this.settings, this.defaultPosition, this.availablePositions);
 
   factory CameraDefaults.fromJSON(Map<String, dynamic> json) {
     var cameraSettings = CameraSettingsDefaults.fromJSON(json['Settings']);
     String? cameraPositionJSON = json['defaultPosition'];
-    var position =
-        cameraPositionJSON == null ? null : CameraPositionDeserializer.cameraPositionFromJSON(cameraPositionJSON);
+    var position = cameraPositionJSON == null ? null : CameraPosition.fromJSON(cameraPositionJSON);
     var availablePositions = (json['availablePositions'])
         // ignore: unnecessary_lambdas
-        .map((position) => CameraPositionDeserializer.cameraPositionFromJSON(position))
+        .map((position) => CameraPosition.fromJSON(position))
         .toList()
         .cast<CameraPosition>();
     return CameraDefaults(cameraSettings, position, availablePositions);
@@ -83,7 +84,7 @@ class DataCaptureViewDefaults {
   final FocusGesture? focusGesture;
   final LogoStyle logoStyle;
 
-  DataCaptureViewDefaults(this.scanAreaMargins, this.pointOfInterest, this.logoAnchor, this.logoOffset,
+  const DataCaptureViewDefaults(this.scanAreaMargins, this.pointOfInterest, this.logoAnchor, this.logoOffset,
       this.focusGesture, this.zoomGesture, this.logoStyle);
 
   factory DataCaptureViewDefaults.fromJSON(Map<String, dynamic> json) {
@@ -111,7 +112,7 @@ class BrushDefaults {
   final Color strokeColor;
   final double strokeWidth;
 
-  BrushDefaults(this.fillColor, this.strokeColor, this.strokeWidth);
+  const BrushDefaults(this.fillColor, this.strokeColor, this.strokeWidth);
 
   factory BrushDefaults.fromJSON(Map<String, dynamic> json) {
     var fillColor = ColorDeserializer.fromRgbaHex(json['fillColor'] as String);
@@ -130,7 +131,7 @@ class NativeBrushDefaults {
   final Color strokeColor;
   final double strokeWidth;
 
-  NativeBrushDefaults(this.fillColor, this.strokeColor, this.strokeWidth);
+  const NativeBrushDefaults(this.fillColor, this.strokeColor, this.strokeWidth);
 
   factory NativeBrushDefaults.fromJSON(Map<String, dynamic> json) {
     var fillColor = ColorDeserializer.fromRgbaHex(json['fill']['color'] as String);
@@ -143,50 +144,11 @@ class NativeBrushDefaults {
 }
 
 @immutable
-class LaserlineViewfinderDefaults {
-  final LaserlineViewfinderStyleDefaults defaultStyle;
-  final Map<LaserlineViewfinderStyle, LaserlineViewfinderStyleDefaults> styles;
-
-  LaserlineViewfinderDefaults(this.defaultStyle, this.styles);
-
-  factory LaserlineViewfinderDefaults.fromJSON(Map<String, dynamic> json) {
-    var styles = (json['styles'] as Map<String, dynamic>).map((key, value) =>
-        MapEntry(LaserlineViewfinderStyleDeserializer.fromJSON(key), LaserlineViewfinderStyleDefaults.fromJSON(value)));
-
-    var defaultStyle = styles[LaserlineViewfinderStyleDeserializer.fromJSON(json['defaultStyle'] as String)];
-
-    if (defaultStyle == null) {
-      throw Exception("Default style not found for LaserlineViewfinder");
-    }
-
-    return LaserlineViewfinderDefaults(defaultStyle, styles);
-  }
-}
-
-@immutable
-class LaserlineViewfinderStyleDefaults {
-  final DoubleWithUnit width;
-  final Color enabledColor;
-  final Color disabledColor;
-  final LaserlineViewfinderStyle style;
-
-  LaserlineViewfinderStyleDefaults(this.width, this.enabledColor, this.disabledColor, this.style);
-
-  factory LaserlineViewfinderStyleDefaults.fromJSON(Map<String, dynamic> json) {
-    var width = DoubleWithUnit.fromJSON(jsonDecode(json['width']) as Map<String, dynamic>);
-    var enabledColor = ColorDeserializer.fromRgbaHex(json['enabledColor'] as String);
-    var disabledColor = ColorDeserializer.fromRgbaHex(json['disabledColor'] as String);
-    var style = LaserlineViewfinderStyleDeserializer.fromJSON(json['style'] as String);
-    return LaserlineViewfinderStyleDefaults(width, enabledColor, disabledColor, style);
-  }
-}
-
-@immutable
 class RectangularViewfinderDefaults {
   final RectangularViewfinderStyleDefaults defaultStyle;
   final Map<RectangularViewfinderStyle, RectangularViewfinderStyleDefaults> styles;
 
-  RectangularViewfinderDefaults(this.defaultStyle, this.styles);
+  const RectangularViewfinderDefaults(this.defaultStyle, this.styles);
 
   factory RectangularViewfinderDefaults.fromJSON(Map<String, dynamic> json) {
     var styles = (json['styles'] as Map<String, dynamic>).map((key, value) => MapEntry(
@@ -212,8 +174,8 @@ class RectangularViewfinderStyleDefaults {
   final RectangularViewfinderAnimation? animation;
   final double disabledDimming;
 
-  RectangularViewfinderStyleDefaults(this.style, this.size, this.color, this.dimming, this.lineStyle, this.animation,
-      this.disabledDimming, this.disabledColor);
+  const RectangularViewfinderStyleDefaults(this.style, this.size, this.color, this.dimming, this.lineStyle,
+      this.animation, this.disabledDimming, this.disabledColor);
 
   factory RectangularViewfinderStyleDefaults.fromJSON(Map<String, dynamic> json) {
     var size = SizeWithUnitAndAspect.fromJSON(jsonDecode(json['size']) as Map<String, dynamic>);
@@ -239,7 +201,7 @@ class AimerViewfinderDefaults {
   final Color frameColor;
   final Color dotColor;
 
-  AimerViewfinderDefaults(this.frameColor, this.dotColor);
+  const AimerViewfinderDefaults(this.frameColor, this.dotColor);
 
   factory AimerViewfinderDefaults.fromJSON(Map<String, dynamic> json) {
     var frameColor = ColorDeserializer.fromRgbaHex(json['frameColor'] as String);
@@ -248,18 +210,32 @@ class AimerViewfinderDefaults {
   }
 }
 
+@immutable
+class LaserlineViewfinderDefaults {
+  final DoubleWithUnit width;
+  final Color enabledColor;
+  final Color disabledColor;
+
+  const LaserlineViewfinderDefaults(this.width, this.enabledColor, this.disabledColor);
+
+  factory LaserlineViewfinderDefaults.fromJSON(Map<String, dynamic> json) {
+    var width = DoubleWithUnit.fromJSON(jsonDecode(json['width']) as Map<String, dynamic>);
+    var enabledColor = ColorDeserializer.fromRgbaHex(json['enabledColor'] as String);
+    var disabledColor = ColorDeserializer.fromRgbaHex(json['disabledColor'] as String);
+    return LaserlineViewfinderDefaults(width, enabledColor, disabledColor);
+  }
+}
+
 // ignore: avoid_classes_with_only_static_members
 class Defaults {
-  static MethodChannel channel = MethodChannel(FunctionNames.methodsChannelName);
   static late CameraDefaults cameraDefaults;
   static late DataCaptureViewDefaults captureViewDefaults;
-  static late LaserlineViewfinderDefaults laserlineViewfinderDefaults;
   static late RectangularViewfinderDefaults rectangularViewfinderDefaults;
   static late BrushDefaults brushDefaults;
   static late String sdkVersion;
   static late String deviceId;
   static late AimerViewfinderDefaults aimerViewfinderDefaults;
-
+  static late LaserlineViewfinderDefaults laserlineViewfinderDefaults;
   static bool _isInitialized = false;
 
   static void initializeDefaults(String defaultsJSON) {
@@ -268,17 +244,17 @@ class Defaults {
     cameraDefaults = CameraDefaults.fromJSON(defaults['Camera']);
     captureViewDefaults = DataCaptureViewDefaults.fromJSON(defaults['DataCaptureView']);
     rectangularViewfinderDefaults = RectangularViewfinderDefaults.fromJSON(defaults['RectangularViewfinder']);
-    laserlineViewfinderDefaults = LaserlineViewfinderDefaults.fromJSON(defaults['LaserlineViewfinder']);
     brushDefaults = BrushDefaults.fromJSON(defaults['Brush']);
     sdkVersion = defaults['Version'] as String;
     deviceId = defaults['deviceID'] as String;
     aimerViewfinderDefaults = AimerViewfinderDefaults.fromJSON(defaults['AimerViewfinder']);
+    laserlineViewfinderDefaults = LaserlineViewfinderDefaults.fromJSON(defaults['LaserlineViewfinder']);
     _isInitialized = true;
   }
 
   static Future<dynamic> initializeDefaultsAsync() async {
     if (_isInitialized) return;
-
+    final channel = const MethodChannel(FunctionNames.methodsChannelName);
     String result = await channel.invokeMethod('getDefaults');
     initializeDefaults(result);
   }
