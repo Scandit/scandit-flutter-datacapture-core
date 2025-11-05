@@ -52,12 +52,4 @@ public class FlutterEventEmitter: NSObject, Emitter, FlutterStreamHandler {
     public func hasListener(for event: String) -> Bool {
         true
     }
-    
-    public func hasViewSpecificListenersForEvent(_ viewId: Int, for event: String) -> Bool {
-        true
-    }
-    
-    public func hasModeSpecificListenersForEvent(_ viewId: Int, for event: String) -> Bool {
-        true
-    }
 }

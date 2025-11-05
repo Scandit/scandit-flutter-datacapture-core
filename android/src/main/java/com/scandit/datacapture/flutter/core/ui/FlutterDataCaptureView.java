@@ -27,7 +27,6 @@ public class FlutterDataCaptureView extends FlutterBasePlatformView {
         this.coreModule = coreModule;
 
         DataCaptureView view = coreModule.createDataCaptureView(creationJson, new FlutterLogInsteadOfResult());
-
         if (view != null) {
             addDataCaptureViewToPlatformView(view, this);
             currentDataCaptureView = new WeakReference<>(view);
@@ -41,13 +40,13 @@ public class FlutterDataCaptureView extends FlutterBasePlatformView {
 
     @Override
     public void dispose() {
+        super.dispose();
+        removeAllViews();
         DataCaptureView view = currentDataCaptureView.get();
         if (view != null) {
             coreModule.dataCaptureViewDisposed(view);
             currentDataCaptureView = new WeakReference<>(null);
         }
-        removeAllViews();
-        super.dispose();
     }
 
     private void addDataCaptureViewToPlatformView(DataCaptureView dataCaptureView, FrameLayout platformView) {
@@ -56,7 +55,6 @@ public class FlutterDataCaptureView extends FlutterBasePlatformView {
             // trigger some overlay cleanup that we don't want.
             return;
         }
-
 
         ViewGroup parent = (ViewGroup) dataCaptureView.getParent();
         if (parent != null) {
