@@ -73,13 +73,19 @@ public class DataCaptureCoreMethodHandler implements MethodChannel.MethodCallHan
 
             case "viewPointForFramePoint":
                 assert call.arguments() != null;
-                getSharedModule().viewPointForFramePoint(call.arguments(), new FlutterResult(result));
+                //noinspection DataFlowIssue
+                getSharedModule().viewPointForFramePoint(
+                        call.argument ("viewId"),
+                        call.argument("point"),
+                        new FlutterResult(result));
                 break;
 
             case "viewQuadrilateralForFrameQuadrilateral":
                 assert call.arguments() != null;
+                //noinspection DataFlowIssue
                 getSharedModule().viewQuadrilateralForFrameQuadrilateral(
-                        call.arguments(),
+                        call.argument ("viewId"),
+                        call.argument("quadrilateral"),
                         new FlutterResult(result)
                 );
                 break;
