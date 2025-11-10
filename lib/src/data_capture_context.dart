@@ -6,10 +6,8 @@
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:developer' as developer;
 import 'dart:io';
 import 'package:flutter/services.dart';
-import 'package:scandit_flutter_datacapture_core/src/frame_data_settings.dart';
 
 import 'open_source_software_license_info.dart';
 import 'common.dart';
@@ -34,8 +32,6 @@ abstract class DataCaptureMode implements Serializable {
 class DataCaptureContextSettings implements Serializable {
   final Map<String, dynamic> _settings = <String, dynamic>{};
 
-  FrameDataSettings frameDataSettings = FrameDataSettings();
-
   DataCaptureContextSettings();
 
   void setProperty<T>(String name, T value) {
@@ -46,13 +42,8 @@ class DataCaptureContextSettings implements Serializable {
     return _settings[name] as T;
   }
 
-  FrameDataSettingsBuilder frameDataSettingsBuilder() {
-    return FrameDataSettingsBuilder(frameDataSettings);
-  }
-
   @override
   Map<String, dynamic> toMap() {
-    _settings["frameDataSettings"] = frameDataSettings.toMap();
     return _settings;
   }
 }
@@ -153,65 +144,44 @@ class DataCaptureContext with PrivateDataCaptureContext implements Serializable 
 
   static DataCaptureContext get sharedInstance => _instance;
 
-  Future<void> addMode(DataCaptureMode mode) async {
-    if (modes.contains(mode)) {
-      return;
+  Future<void> addMode(DataCaptureMode mode) {
+    if (!modes.contains(mode)) {
+      mode._context = this;
+      modes.add(mode);
+      return _controller.addModeToContext(mode);
     }
-
-    modes.add(mode);
-    await _controller.addModeToContext(mode);
-    mode._context = this;
+    return Future.value(null);
   }
 
   Future<void> setMode(DataCaptureMode mode) async {
-    // Remove all modes first to avoid conflicts
-    await removeAllModes();
-    // Add the new mode
+    if (modes.isNotEmpty) {
+      await removeAllModes();
+    }
+    mode._context = this;
     modes.add(mode);
     await _controller.addModeToContext(mode);
-    mode._context = this;
   }
 
   Future<void> removeCurrentMode() async {
-    if (modes.isEmpty) {
-      return;
+    if (modes.isNotEmpty) {
+      await removeMode(modes.first);
     }
-
-    if (modes.length > 1) {
-      developer.log(
-          'Warning: removeCurrentMode() called with multiple modes active. Consider using removeMode() for specific mode removal. Only the first mode will be removed.',
-          name: 'DataCaptureContext');
-    }
-
-    final mode = modes.first;
-    modes.remove(mode);
-    mode._context = null;
-    await _controller.removeModeFromContext(mode);
   }
 
-  Future<void> removeMode(DataCaptureMode mode) async {
-    if (!modes.remove(mode)) {
-      return;
-    }
-
-    mode._context = null;
-    await _controller.removeModeFromContext(mode);
-  }
-
-  Future<void> removeAllModes() async {
-    if (modes.isEmpty) {
-      return;
-    }
-
-    _clearAllModes();
-    await _controller.removeAllModes();
-  }
-
-  void _clearAllModes() {
-    for (final mode in modes) {
+  Future<void> removeMode(DataCaptureMode mode) {
+    if (modes.contains(mode) && modes.remove(mode)) {
       mode._context = null;
+      return _controller.removeModeFromContext(mode);
+    }
+    return Future.value(null);
+  }
+
+  Future<void> removeAllModes() {
+    for (var element in modes) {
+      element._context = null;
     }
     modes.clear();
+    return _controller.removeAllModes();
   }
 
   void addListener(DataCaptureContextListener listener) {
