@@ -7,7 +7,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
@@ -127,22 +126,20 @@ class DataCaptureView extends StatefulWidget with PrivateDataCaptureView {
     _properties[name] = value;
   }
 
-  Future<void> addOverlay(DataCaptureOverlay overlay) async {
+  Future<void> addOverlay(DataCaptureOverlay overlay) {
     if (_overlays.contains(overlay)) {
-      return;
+      return Future.value(null);
     }
     _overlays.add(overlay);
-    overlay.view = this;
-    await _update();
+    return _update();
   }
 
-  Future<void> removeOverlay(DataCaptureOverlay overlay) async {
+  Future<void> removeOverlay(DataCaptureOverlay overlay) {
     if (!_overlays.contains(overlay)) {
-      return;
+      return Future.value(null);
     }
     _overlays.remove(overlay);
-    overlay.view = null;
-    await _update();
+    return _update();
   }
 
   void addListener(DataCaptureViewListener listener) {
@@ -290,12 +287,15 @@ mixin PrivateDataCaptureView implements common.Serializable {
     _update();
   }
 
-  Future<void> _update() async {
-    var viewJson = jsonEncode(toMap());
-    return _controller?.update(viewJson);
-  }
+  bool _isViewCreated = false;
 
-  int get viewId => _controller?._viewId ?? -1;
+  Future<void> _update() {
+    if (_isViewCreated == false) {
+      return Future.value(null);
+    }
+    var viewJson = jsonEncode(toMap());
+    return _controller?.update(viewJson) ?? Future.value(null);
+  }
 
   @override
   Map<String, dynamic> toMap() {
@@ -321,7 +321,7 @@ mixin PrivateDataCaptureView implements common.Serializable {
 }
 
 class _DataCaptureViewState extends State<DataCaptureView> {
-  final int _viewId = Random().nextInt(0x7FFFFFFF);
+  final int _viewId = (DateTime.now().millisecondsSinceEpoch ~/ 1000).toInt();
 
   late _DataCaptureViewController _controller;
 
@@ -359,6 +359,9 @@ class _DataCaptureViewState extends State<DataCaptureView> {
             },
           )
             ..addOnPlatformViewCreatedListener(params.onPlatformViewCreated)
+            ..addOnPlatformViewCreatedListener((int id) {
+              widget._isViewCreated = true;
+            })
             ..create();
         },
       );
@@ -367,6 +370,9 @@ class _DataCaptureViewState extends State<DataCaptureView> {
         viewType: viewType,
         creationParams: {'DataCaptureView': jsonEncode(widget.toMap())},
         creationParamsCodec: const StandardMessageCodec(),
+        onPlatformViewCreated: (int id) {
+          widget._isViewCreated = true;
+        },
       );
     }
   }
