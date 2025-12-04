@@ -7,6 +7,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
@@ -131,6 +132,7 @@ class DataCaptureView extends StatefulWidget with PrivateDataCaptureView {
       return Future.value(null);
     }
     _overlays.add(overlay);
+    overlay.view = this;
     return _update();
   }
 
@@ -139,6 +141,7 @@ class DataCaptureView extends StatefulWidget with PrivateDataCaptureView {
       return Future.value(null);
     }
     _overlays.remove(overlay);
+    overlay.view = null;
     return _update();
   }
 
@@ -297,6 +300,8 @@ mixin PrivateDataCaptureView implements common.Serializable {
     return _controller?.update(viewJson) ?? Future.value(null);
   }
 
+  int get viewId => _controller?._viewId ?? -1;
+
   @override
   Map<String, dynamic> toMap() {
     var json = <String, dynamic>{
@@ -321,7 +326,7 @@ mixin PrivateDataCaptureView implements common.Serializable {
 }
 
 class _DataCaptureViewState extends State<DataCaptureView> {
-  final int _viewId = (DateTime.now().millisecondsSinceEpoch ~/ 1000).toInt();
+  final int _viewId = Random().nextInt(0x7FFFFFFF);
 
   late _DataCaptureViewController _controller;
 
