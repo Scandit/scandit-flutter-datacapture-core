@@ -20,7 +20,7 @@ enum ScanditIconType {
   chevronDown('chevronDown'),
   chevronLeft('chevronLeft'),
   chevronRight('chevronRight'),
-  xMark('xmark'),
+  xMark('xMark'),
   questionMark('questionMark'),
   exclamationMark('exclamationMark'),
   lowStock('lowStock'),

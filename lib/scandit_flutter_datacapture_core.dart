@@ -4,19 +4,18 @@
  * Copyright (C) 2020- Scandit AG. All rights reserved.
  */
 
+// ignore: unnecessary_library_name
 library scandit_flutter_datacapture_core;
 
-export 'src/camera.dart'
-    show
-        Camera,
-        CameraPosition,
-        CameraPositionDeserializer,
-        CameraSettings,
-        FocusRange,
-        TorchState,
-        VideoResolution,
-        FocusGestureStrategy,
-        TorchStateDeserializer;
+export 'src/source/camera.dart' show Camera;
+export 'src/source/focus_gesture_strategy.dart' show FocusGestureStrategy;
+export 'src/source/focus_range.dart' show FocusRange;
+export 'src/source/camera_position.dart' show CameraPosition;
+export 'src/source/torch_state.dart' show TorchState;
+export 'src/source/video_resolution.dart' show VideoResolution;
+export 'src/source/camera_settings.dart' show CameraSettings;
+export 'src/source/frame_source.dart' show FrameSource, FrameSourceListener, TorchListener;
+export 'src/source/frame_source_state.dart' show FrameSourceState;
 export 'src/common.dart'
     show
         Anchor,
@@ -53,7 +52,7 @@ export 'src/data_capture_version.dart' show DataCaptureVersion;
 export 'src/data_capture_view.dart' show DataCaptureOverlay, DataCaptureView, DataCaptureViewListener;
 export 'src/defaults.dart' show BrushDefaults, NativeBrushDefaults, CameraSettingsDefaults;
 export 'src/feedback.dart' show Feedback, Sound, Vibration;
-export 'src/frame_source.dart' show FrameSource, FrameSourceListener, FrameSourceState, TorchListener;
+
 export 'src/location_selection.dart' show LocationSelection, RadiusLocationSelection, RectangularLocationSelection;
 export 'src/viewfinder.dart'
     show
@@ -72,7 +71,7 @@ export 'src/logo_style.dart' show LogoStyle;
 export 'src/direction.dart' show Direction, DirectionDeserializer;
 export 'src/image_buffer.dart' show ImageBuffer;
 export 'src/frame_data.dart' show FrameData, DefaultFrameData;
-export 'src/image_frame_source.dart' show ImageFrameSource;
+export 'src/source/image_frame_source.dart' show ImageFrameSource;
 export 'src/battery_saving_mode.dart' show BatterySavingMode, BatterySavingModeDeserializer;
 export 'src/scan_intention.dart' show ScanIntention, ScanIntentionSerializer;
 export 'src/widget_to_base64_converter.dart' show WidgetToBase64Converter;

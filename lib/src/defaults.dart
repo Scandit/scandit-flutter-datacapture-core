@@ -7,9 +7,12 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:scandit_flutter_datacapture_core/src/source/camera_position.dart';
+import 'package:scandit_flutter_datacapture_core/src/source/focus_gesture_strategy.dart';
+import 'package:scandit_flutter_datacapture_core/src/source/focus_range.dart';
 import 'package:scandit_flutter_datacapture_core/src/function_names.dart';
+import 'package:scandit_flutter_datacapture_core/src/source/video_resolution.dart';
 
-import 'camera.dart';
 import 'common.dart';
 import 'focus_gesture.dart';
 import 'zoom_gesture.dart';
@@ -33,11 +36,10 @@ class CameraSettingsDefaults {
       {required this.shouldPreferSmoothAutoFocus});
 
   factory CameraSettingsDefaults.fromJSON(Map<String, dynamic> json) {
-    var resolution = VideoResolutionDeserializer.videoResolutionFromJSON(json['preferredResolution']);
+    var resolution = VideoResolution.fromJSON(json['preferredResolution']);
     var zoomFactor = (json['zoomFactor'] as num).toDouble();
     var focusRange = FocusRangeDeserializer.focusRangeFromJSON(json['focusRange']);
-    var focusGestureStrategy =
-        FocusGestureStrategyDeserializer.focusGestureStrategyFromJSON(json['focusGestureStrategy']);
+    var focusGestureStrategy = FocusGestureStrategy.fromJSON(json['focusGestureStrategy']);
     var zoomGestureZoomFactor = (json['zoomGestureZoomFactor'] as num).toDouble();
     var shouldPreferSmoothAutoFocus = json['shouldPreferSmoothAutoFocus'] as bool?;
     var properties = <String, dynamic>{};
@@ -62,11 +64,10 @@ class CameraDefaults {
   factory CameraDefaults.fromJSON(Map<String, dynamic> json) {
     var cameraSettings = CameraSettingsDefaults.fromJSON(json['Settings']);
     String? cameraPositionJSON = json['defaultPosition'];
-    var position =
-        cameraPositionJSON == null ? null : CameraPositionDeserializer.cameraPositionFromJSON(cameraPositionJSON);
+    var position = cameraPositionJSON == null ? null : CameraPosition.fromJSON(cameraPositionJSON);
     var availablePositions = (json['availablePositions'])
         // ignore: unnecessary_lambdas
-        .map((position) => CameraPositionDeserializer.cameraPositionFromJSON(position))
+        .map((position) => CameraPosition.fromJSON(position))
         .toList()
         .cast<CameraPosition>();
     return CameraDefaults(cameraSettings, position, availablePositions);
@@ -227,7 +228,6 @@ class LaserlineViewfinderDefaults {
 
 // ignore: avoid_classes_with_only_static_members
 class Defaults {
-  static MethodChannel channel = const MethodChannel(FunctionNames.methodsChannelName);
   static late CameraDefaults cameraDefaults;
   static late DataCaptureViewDefaults captureViewDefaults;
   static late RectangularViewfinderDefaults rectangularViewfinderDefaults;
@@ -254,7 +254,7 @@ class Defaults {
 
   static Future<dynamic> initializeDefaultsAsync() async {
     if (_isInitialized) return;
-
+    final channel = const MethodChannel(FunctionNames.methodsChannelName);
     String result = await channel.invokeMethod('getDefaults');
     initializeDefaults(result);
   }
