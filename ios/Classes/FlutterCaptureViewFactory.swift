@@ -18,11 +18,10 @@ class FlutterCaptureViewFactory: NSObject, FlutterPlatformViewFactory {
         super.init()
     }
 
-    public func create(
-        withFrame frame: CGRect,
-        viewIdentifier viewId: Int64,
-        arguments args: Any?
-    ) -> FlutterPlatformView {
+
+    public func create(withFrame frame: CGRect,
+                       viewIdentifier viewId: Int64,
+                       arguments args: Any?) -> FlutterPlatformView {
 
         guard let creationArgs = args as? [String: Any] else {
             Log.error("Unable to create DataCaptureView without the JSON.")
@@ -33,13 +32,12 @@ class FlutterCaptureViewFactory: NSObject, FlutterPlatformViewFactory {
             fatalError("Unable to create the DataCaptureView without the json.")
         }
 
+
         let flutterWrapperView = FlutterDataCaptureView(frame: frame)
         flutterWrapperView.factory = self
 
-        coreModule.createDataCaptureView(
-            viewJson: creationJson,
-            result: FlutterLogInsteadOfResult()
-        ) { dcView in
+        coreModule.createDataCaptureView(viewJson: creationJson,
+                                         result: FlutterLogInsteadOfResult()) { dcView in
             guard let dcView = dcView else { return }
             dispatchMain {
                 flutterWrapperView.attachDataCaptureView(dataCaptureView: dcView)
