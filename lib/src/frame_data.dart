@@ -17,7 +17,10 @@ class DefaultFrameData implements FrameData {
 
   DefaultFrameData._(this._orientation, this._imageBuffers);
 
-  factory DefaultFrameData.fromJSON(Map<String, dynamic> json) {
+  factory DefaultFrameData.fromJSON(Map<String, dynamic>? json) {
+    if (json == null) {
+      return DefaultFrameData._(0, []);
+    }
     return DefaultFrameData._(
         json['orientation'],
         (json['imageBuffers'] as List)
