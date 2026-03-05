@@ -18,10 +18,7 @@ class FunctionNames {
   static const String addModeToContext = 'addModeToContext';
   static const String removeModeFromContext = 'removeModeFromContext';
   static const String removeAllModesFromContext = 'removeAllModesFromContext';
-
-  static const String addOverlay = 'addOverlay';
-  static const String removeOverlay = 'removeOverlay';
-  static const String removeAllOverlays = 'removeAllOverlays';
+  static const String getOpenSourceSoftwareLicenseInfo = 'getOpenSourceSoftwareLicenseInfo';
 
   static const String eventsChannelName = 'com.scandit.datacapture.core/event_channel';
   static const String methodsChannelName = 'com.scandit.datacapture.core/method_channel';

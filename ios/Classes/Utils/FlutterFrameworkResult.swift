@@ -18,15 +18,23 @@ public class FlutterFrameworkResult: FrameworksResult {
         self.result(result)
     }
 
+    public func successAndKeepCallback(result: Any? = nil) {
+        success(result: result)
+    }
+
     public func reject(code: String, message: String?, details: Any?) {
         result(FlutterError(code: code, message: message, details: details))
     }
 
     public func reject(error: Error) {
         let error = error as NSError
-        result(FlutterError(code: "\(error.code)",
-                            message: error.localizedDescription,
-                            details: error.userInfo))
+        result(
+            FlutterError(
+                code: "\(error.code)",
+                message: error.localizedDescription,
+                details: error.userInfo
+            )
+        )
     }
 }
 
@@ -37,14 +45,20 @@ public extension FrameworksResult where Self == FlutterFrameworkResult {
 }
 
 public class FlutterLogInsteadOfResult: FrameworksResult {
-    public init() { }
+    public init() {}
 
     public func success(result: Any?) {
         // nop
     }
 
+    public func successAndKeepCallback(result: Any?) {
+        // nop
+    }
+
     public func reject(code: String, message: String?, details: Any?) {
-        print("ErrorCode: \(code); ErrorMessage: \(String(describing: message)); ErrorDetails:\(String(describing: details))")
+        print(
+            "ErrorCode: \(code); ErrorMessage: \(String(describing: message)); ErrorDetails:\(String(describing: details))"
+        )
     }
 
     public func reject(error: Error) {
