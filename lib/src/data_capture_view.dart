@@ -14,8 +14,6 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
-import 'package:scandit_flutter_datacapture_core/src/internal/base_controller.dart';
-import 'package:scandit_flutter_datacapture_core/src/internal/generated/core_method_handler.dart';
 
 import 'control.dart';
 import 'common.dart' as common;
@@ -49,40 +47,12 @@ abstract class DataCaptureViewListener {
 class DataCaptureView extends StatefulWidget with PrivateDataCaptureView {
   PrivateDataCaptureContext? _dataCaptureContext;
 
-  // ignore: use_super_parameters - docs wants it written this way
-  DataCaptureView({
-    required DataCaptureContext dataCaptureContext,
-    common.MarginsWithUnit? scanAreaMargins,
-    common.PointWithUnit? pointOfInterest,
-    common.Anchor? logoAnchor,
-    common.PointWithUnit? logoOffset,
-    FocusGesture? focusGesture,
-    ZoomGesture? zoomGesture,
-    LogoStyle? logoStyle,
-    List<Control>? controls,
-    List<DataCaptureOverlay>? overlays,
-    Key? key,
-  })  : _dataCaptureContext = dataCaptureContext,
-        super(key: key) {
+  DataCaptureView._(this._dataCaptureContext) : super() {
     _dataCaptureContext?.view = this;
-    if (scanAreaMargins != null) _scanAreaMargins = scanAreaMargins;
-    if (pointOfInterest != null) _pointOfInterest = pointOfInterest;
-    if (logoAnchor != null) _logoAnchor = logoAnchor;
-    if (logoOffset != null) _logoOffset = logoOffset;
-    if (focusGesture != null) _focusGesture = focusGesture;
-    if (zoomGesture != null) _zoomGesture = zoomGesture;
-    if (logoStyle != null) _logoStyle = logoStyle;
-    if (controls != null) _controls.addAll(controls);
-    if (overlays != null) {
-      for (var overlay in overlays) {
-        _overlays.add(overlay);
-        overlay.view = this;
-      }
-    }
   }
 
   factory DataCaptureView.forContext(DataCaptureContext dataCaptureContext) {
-    return DataCaptureView(dataCaptureContext: dataCaptureContext);
+    return DataCaptureView._(dataCaptureContext);
   }
 
   @override
@@ -157,22 +127,22 @@ class DataCaptureView extends StatefulWidget with PrivateDataCaptureView {
     _properties[name] = value;
   }
 
-  Future<void> addOverlay(DataCaptureOverlay overlay) {
+  Future<void> addOverlay(DataCaptureOverlay overlay) async {
     if (_overlays.contains(overlay)) {
-      return Future.value(null);
+      return;
     }
     _overlays.add(overlay);
     overlay.view = this;
-    return _update();
+    await _update();
   }
 
-  Future<void> removeOverlay(DataCaptureOverlay overlay) {
+  Future<void> removeOverlay(DataCaptureOverlay overlay) async {
     if (!_overlays.contains(overlay)) {
-      return Future.value(null);
+      return;
     }
     _overlays.remove(overlay);
     overlay.view = null;
-    return _update();
+    await _update();
   }
 
   void addListener(DataCaptureViewListener listener) {
@@ -225,18 +195,18 @@ class DataCaptureView extends StatefulWidget with PrivateDataCaptureView {
   LogoStyle get logoStyle => _logoStyle;
 }
 
-class _DataCaptureViewController extends BaseController {
+class _DataCaptureViewController {
+  final MethodChannel _methodChannel = Defaults.channel;
+
   final EventChannel _viewDidChangeSizeEventChannel = const EventChannel(FunctionNames.eventsChannelName);
-  late final CoreMethodHandler coreMethodHandler;
+
   StreamSubscription? _streamSubscription;
 
   final int _viewId;
 
   final DataCaptureView _view;
 
-  _DataCaptureViewController(this._viewId, this._view) : super(FunctionNames.methodsChannelName) {
-    coreMethodHandler = CoreMethodHandler(methodChannel);
-  }
+  _DataCaptureViewController(this._viewId, this._view);
 
   void _registerListener() {
     _unregisterListener();
@@ -268,19 +238,29 @@ class _DataCaptureViewController extends BaseController {
   }
 
   Future<common.Point> viewPointForFramePoint(common.Point point) {
-    return coreMethodHandler
-        .viewPointForFramePoint(viewId: _viewId, pointJson: jsonEncode(point.toMap()))
+    final functionArgs = {
+      'viewId': _viewId,
+      'point': jsonEncode(point.toMap()),
+    };
+
+    return _methodChannel
+        .invokeMethod(FunctionNames.viewPointForFramePoint, functionArgs)
         .then((value) => common.Point.fromJSON(jsonDecode(value)));
   }
 
   Future<common.Quadrilateral> viewQuadrilateralForFrameQuadrilateral(common.Quadrilateral quadrilateral) {
-    return coreMethodHandler
-        .viewQuadrilateralForFrameQuadrilateral(viewId: _viewId, quadrilateralJson: jsonEncode(quadrilateral.toMap()))
+    final functionArgs = {
+      'viewId': _viewId,
+      'quadrilateral': jsonEncode(quadrilateral.toMap()),
+    };
+
+    return _methodChannel
+        .invokeMethod(FunctionNames.viewQuadrilateralForFrameQuadrilateral, functionArgs)
         .then((value) => common.Quadrilateral.fromJSON(jsonDecode(value)));
   }
 
   Future<void> update(String viewJson) {
-    return coreMethodHandler.updateDataCaptureView(viewJson: viewJson).onError(_onError);
+    return _methodChannel.invokeMethod(FunctionNames.updateDataCaptureView, viewJson).onError(_onError);
   }
 
   void _onError(Object? error, StackTrace? stackTrace) {
@@ -310,19 +290,9 @@ mixin PrivateDataCaptureView implements common.Serializable {
     _update();
   }
 
-  bool _isViewCreated = false;
-
-  Future<void> _update() {
-    if (!_isViewCreated) {
-      return Future.value(null);
-    }
+  Future<void> _update() async {
     var viewJson = jsonEncode(toMap());
-    return _controller?.update(viewJson) ?? Future.value(null);
-  }
-
-  void _onViewCreated() {
-    _isViewCreated = true;
-    _update();
+    return _controller?.update(viewJson);
   }
 
   int get viewId => _controller?._viewId ?? -1;
@@ -364,59 +334,6 @@ class _DataCaptureViewState extends State<DataCaptureView> {
   }
 
   @override
-  void didUpdateWidget(DataCaptureView oldWidget) {
-    super.didUpdateWidget(oldWidget);
-
-    if (oldWidget._dataCaptureContext != widget._dataCaptureContext) {
-      oldWidget._dataCaptureContext?.view = null;
-      widget._dataCaptureContext?.view = widget;
-      widget._update();
-    }
-
-    if (oldWidget._scanAreaMargins != widget._scanAreaMargins) {
-      widget._update();
-    }
-
-    if (oldWidget._pointOfInterest != widget._pointOfInterest) {
-      widget._update();
-    }
-
-    if (oldWidget._logoAnchor != widget._logoAnchor) {
-      widget._update();
-    }
-
-    if (oldWidget._logoOffset != widget._logoOffset) {
-      widget._update();
-    }
-
-    if (oldWidget._focusGesture != widget._focusGesture) {
-      widget._update();
-    }
-
-    if (oldWidget._zoomGesture != widget._zoomGesture) {
-      widget._update();
-    }
-
-    if (oldWidget._logoStyle != widget._logoStyle) {
-      widget._update();
-    }
-
-    if (oldWidget._controls != widget._controls) {
-      widget._update();
-    }
-
-    if (oldWidget._overlays != widget._overlays) {
-      for (var overlay in oldWidget._overlays) {
-        overlay.view = null;
-      }
-      for (var overlay in widget._overlays) {
-        overlay.view = widget;
-      }
-      widget._update();
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
     const viewType = 'com.scandit.DataCaptureView';
 
@@ -442,9 +359,6 @@ class _DataCaptureViewState extends State<DataCaptureView> {
             },
           )
             ..addOnPlatformViewCreatedListener(params.onPlatformViewCreated)
-            ..addOnPlatformViewCreatedListener((int id) {
-              widget._onViewCreated();
-            })
             ..create();
         },
       );
@@ -453,9 +367,6 @@ class _DataCaptureViewState extends State<DataCaptureView> {
         viewType: viewType,
         creationParams: {'DataCaptureView': jsonEncode(widget.toMap())},
         creationParamsCodec: const StandardMessageCodec(),
-        onPlatformViewCreated: (int id) {
-          widget._onViewCreated();
-        },
       );
     }
   }
