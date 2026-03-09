@@ -22,7 +22,7 @@ class FlutterDataCaptureView: UIView, FlutterPlatformView {
     func view() -> UIView {
         self
     }
-    
+
     func attachDataCaptureView(dataCaptureView: DataCaptureView) {
         currentDataCaptureView = dataCaptureView
         if frame != .zero {
