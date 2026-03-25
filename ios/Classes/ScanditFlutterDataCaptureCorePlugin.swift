@@ -30,10 +30,14 @@ enum FunctionName {
 
 public class ScanditFlutterDataCaptureCore: NSObject, FlutterPlugin, DeserializationLifeCycleObserver {
     public static func register(with registrar: FlutterPluginRegistrar) {
-        let eventChannel = FlutterEventChannel(name: "com.scandit.datacapture.core/event_channel",
-                                               binaryMessenger: registrar.messenger())
-        let methodChannel = FlutterMethodChannel(name: "com.scandit.datacapture.core/method_channel",
-                                                 binaryMessenger: registrar.messenger())
+        let eventChannel = FlutterEventChannel(
+            name: "com.scandit.datacapture.core/event_channel",
+            binaryMessenger: registrar.messenger()
+        )
+        let methodChannel = FlutterMethodChannel(
+            name: "com.scandit.datacapture.core/method_channel",
+            binaryMessenger: registrar.messenger()
+        )
 
         let eventEmitter = FlutterEventEmitter(eventChannel: eventChannel)
         let coreModule = CoreModule.create(emitter: eventEmitter)
@@ -98,10 +102,16 @@ public class ScanditFlutterDataCaptureCore: NSObject, FlutterPlugin, Deserializa
         coreModule.viewPointForFramePoint(viewId: viewId, json: pointJSON, result: FlutterFrameworkResult(reply: reply))
     }
 
-    func viewQuadrilateralForFrameQuadrilateral(_ viewId: Int, quadrilateralJSON: String,
-                                                reply: @escaping FlutterResult) {
-        coreModule.viewQuadrilateralForFrameQuadrilateral(viewId: viewId, json: quadrilateralJSON,
-                                                          result: FlutterFrameworkResult(reply: reply))
+    func viewQuadrilateralForFrameQuadrilateral(
+        _ viewId: Int,
+        quadrilateralJSON: String,
+        reply: @escaping FlutterResult
+    ) {
+        coreModule.viewQuadrilateralForFrameQuadrilateral(
+            viewId: viewId,
+            json: quadrilateralJSON,
+            result: FlutterFrameworkResult(reply: reply)
+        )
     }
 
     public func handle(_ methodCall: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -111,73 +121,113 @@ public class ScanditFlutterDataCaptureCore: NSObject, FlutterPlugin, Deserializa
             case FunctionName.getDefaults:
                 self.defaults(reply: result)
             case FunctionName.updateContextFromJSON:
-                let contextString = methodCall.arguments as! String
+                guard let contextString = methodCall.arguments as? String else {
+                    result(FlutterError(code: "-1", message: "Invalid argument", details: nil))
+                    return
+                }
                 self.updateContextFromJSON(jsonString: contextString, reply: result)
             case FunctionName.getCameraState:
-                let cameraPositionJSON = methodCall.arguments as! String
+                guard let cameraPositionJSON = methodCall.arguments as? String else {
+                    result(FlutterError(code: "-1", message: "Invalid argument", details: nil))
+                    return
+                }
                 self.cameraState(for: cameraPositionJSON, reply: result)
             case FunctionName.isTorchAvailable:
-                let cameraPositionJSON = methodCall.arguments as! String
+                guard let cameraPositionJSON = methodCall.arguments as? String else {
+                    result(FlutterError(code: "-1", message: "Invalid argument", details: nil))
+                    return
+                }
                 self.isTorchAvailable(for: cameraPositionJSON, reply: result)
             case FunctionName.contextFromJSON:
-                let contextString = methodCall.arguments as! String
+                guard let contextString = methodCall.arguments as? String else {
+                    result(FlutterError(code: "-1", message: "Invalid argument", details: nil))
+                    return
+                }
                 self.contextFromJSON(jsonString: contextString, reply: result)
             case FunctionName.emitFeedback:
-                let feedbackJSON = methodCall.arguments as! String
+                guard let feedbackJSON = methodCall.arguments as? String else {
+                    result(FlutterError(code: "-1", message: "Invalid argument", details: nil))
+                    return
+                }
                 self.emitFeedback(feedbackJSON, reply: result)
             case FunctionName.viewPointForFramePoint:
                 guard let args = methodCall.arguments as? [String: Any?] else {
-                    result(FlutterError(
-                        code: "-1",
-                        message: "Invalid argument for \(FunctionName.viewPointForFramePoint)",
-                        details: methodCall.arguments)
+                    result(
+                        FlutterError(
+                            code: "-1",
+                            message: "Invalid argument for \(FunctionName.viewPointForFramePoint)",
+                            details: methodCall.arguments
+                        )
                     )
                     return
                 }
-                
+
                 guard let viewId = args["viewId"] as? Int,
-                      let pointJSON = args["point"] as? String else {
-                    result(FlutterError(
-                        code: "-1",
-                        message: "Invalid argument for \(FunctionName.viewPointForFramePoint)",
-                        details: methodCall.arguments)
+                    let pointJSON = args["point"] as? String
+                else {
+                    result(
+                        FlutterError(
+                            code: "-1",
+                            message: "Invalid argument for \(FunctionName.viewPointForFramePoint)",
+                            details: methodCall.arguments
+                        )
                     )
                     return
                 }
                 self.viewPointForFramePoint(viewId, pointJSON: pointJSON, reply: result)
             case FunctionName.viewQuadrilateralForFrameQuadrilateral:
                 guard let args = methodCall.arguments as? [String: Any?] else {
-                    result(FlutterError(
-                        code: "-1",
-                        message: "Invalid argument for \(FunctionName.viewPointForFramePoint)",
-                        details: methodCall.arguments)
+                    result(
+                        FlutterError(
+                            code: "-1",
+                            message: "Invalid argument for \(FunctionName.viewPointForFramePoint)",
+                            details: methodCall.arguments
+                        )
                     )
                     return
                 }
-                
+
                 guard let viewId = args["viewId"] as? Int,
-                      let quadrilateralJSON = args["quadrilateral"] as? String else {
-                    result(FlutterError(
-                        code: "-1",
-                        message: "Invalid argument for \(FunctionName.viewPointForFramePoint)",
-                        details: methodCall.arguments)
+                    let quadrilateralJSON = args["quadrilateral"] as? String
+                else {
+                    result(
+                        FlutterError(
+                            code: "-1",
+                            message: "Invalid argument for \(FunctionName.viewPointForFramePoint)",
+                            details: methodCall.arguments
+                        )
                     )
                     return
                 }
-                self.viewQuadrilateralForFrameQuadrilateral(viewId,quadrilateralJSON: quadrilateralJSON, reply: result)
+                self.viewQuadrilateralForFrameQuadrilateral(viewId, quadrilateralJSON: quadrilateralJSON, reply: result)
             case FunctionName.switchCameraToDesiredState:
-                let desiredStateJson = methodCall.arguments as! String
-                self.coreModule.switchCameraToDesiredState(stateJson: desiredStateJson, result: FlutterFrameworkResult(reply: result))
+                guard let desiredStateJson = methodCall.arguments as? String else {
+                    result(FlutterError(code: "-1", message: "Invalid argument", details: nil))
+                    return
+                }
+                self.coreModule.switchCameraToDesiredState(
+                    stateJson: desiredStateJson,
+                    result: FlutterFrameworkResult(reply: result)
+                )
             case FunctionName.addModeToContext:
-                let modeJson = methodCall.arguments as! String
-                self.coreModule.addModeToContext(modeJson: modeJson, result:  FlutterFrameworkResult(reply: result))
+                guard let modeJson = methodCall.arguments as? String else {
+                    result(FlutterError(code: "-1", message: "Invalid argument", details: nil))
+                    return
+                }
+                self.coreModule.addModeToContext(modeJson: modeJson, result: FlutterFrameworkResult(reply: result))
             case FunctionName.removeModeFromContext:
-                let modeJson = methodCall.arguments as! String
-                self.coreModule.removeModeFromContext(modeJson: modeJson, result:  FlutterFrameworkResult(reply: result))
+                guard let modeJson = methodCall.arguments as? String else {
+                    result(FlutterError(code: "-1", message: "Invalid argument", details: nil))
+                    return
+                }
+                self.coreModule.removeModeFromContext(modeJson: modeJson, result: FlutterFrameworkResult(reply: result))
             case FunctionName.removeAllModesFromContext:
                 self.coreModule.removeAllModes(result: FlutterFrameworkResult(reply: result))
             case FunctionName.updateDataCaptureView:
-                let viewJson = methodCall.arguments as! String
+                guard let viewJson = methodCall.arguments as? String else {
+                    result(FlutterError(code: "-1", message: "Invalid argument", details: nil))
+                    return
+                }
                 self.coreModule.updateDataCaptureView(viewJson: viewJson, result: FlutterFrameworkResult(reply: result))
             case FunctionName.getOpenSourceSoftwareLicenseInfo:
                 self.coreModule.getOpenSourceSoftwareLicenseInfo(result: FlutterFrameworkResult(reply: result))

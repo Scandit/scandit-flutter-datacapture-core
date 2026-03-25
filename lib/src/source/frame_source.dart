@@ -4,34 +4,10 @@
  * Copyright (C) 2020- Scandit AG. All rights reserved.
  */
 
-import 'camera.dart';
-import 'common.dart';
-import 'data_capture_context.dart';
-
-enum FrameSourceState {
-  on('on'),
-  off('off'),
-  starting('starting'),
-  stopping('stopping'),
-  standby('standby'),
-  bootingUp('bootingUp'),
-  wakingUp('wakingUp'),
-  goingToSleep('goingToSleep'),
-  shuttingDown('shuttingDown');
-
-  const FrameSourceState(this._name);
-
-  @override
-  String toString() => _name;
-
-  final String _name;
-}
-
-extension FrameSourceStateDeserializer on FrameSourceState {
-  static FrameSourceState fromJSON(String? jsonValue) {
-    return FrameSourceState.values.firstWhere((element) => element.toString() == jsonValue);
-  }
-}
+import 'package:scandit_flutter_datacapture_core/src/common.dart';
+import 'package:scandit_flutter_datacapture_core/src/data_capture_context.dart';
+import 'package:scandit_flutter_datacapture_core/src/source/frame_source_state.dart';
+import 'package:scandit_flutter_datacapture_core/src/source/torch_state.dart';
 
 abstract class FrameSource implements Serializable {
   FrameSourceState get desiredState;

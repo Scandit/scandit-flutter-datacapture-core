@@ -23,15 +23,24 @@ public class FlutterEventEmitter: NSObject, Emitter, FlutterStreamHandler {
         guard let sink = eventSink else { return }
         var payload = payload
         payload["event"] = name
-        let jsonString = String(data: try! JSONSerialization.data(withJSONObject: payload),
-                                encoding: .utf8)!
-        dispatchMain {
-            sink(jsonString)
+        do {
+            let jsonData = try JSONSerialization.data(withJSONObject: payload)
+            guard let jsonString = String(data: jsonData, encoding: .utf8) else {
+                return
+            }
+            dispatchMain {
+                sink(jsonString)
+            }
+        } catch {
+            // Silently fail - event emission is non-critical
+            return
         }
     }
 
-    public func onListen(withArguments arguments: Any?,
-                         eventSink events: @escaping FlutterEventSink) -> FlutterError? {
+    public func onListen(
+        withArguments arguments: Any?,
+        eventSink events: @escaping FlutterEventSink
+    ) -> FlutterError? {
         eventSink = events
         return nil
     }
@@ -52,8 +61,12 @@ public class FlutterEventEmitter: NSObject, Emitter, FlutterStreamHandler {
     public func hasListener(for event: String) -> Bool {
         true
     }
-    
+
     public func hasViewSpecificListenersForEvent(_ viewId: Int, for event: String) -> Bool {
+        true
+    }
+
+    public func hasModeSpecificListenersForEvent(_ viewId: Int, for event: String) -> Bool {
         true
     }
 }
