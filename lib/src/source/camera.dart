@@ -4,19 +4,23 @@
  * Copyright (C) 2020- Scandit AG. All rights reserved.
  */
 import 'dart:async';
-import 'dart:convert';
 
-import 'package:flutter/services.dart';
 import 'package:scandit_flutter_datacapture_core/src/data_capture_context.dart';
 import 'package:scandit_flutter_datacapture_core/src/defaults.dart';
 import 'package:scandit_flutter_datacapture_core/src/function_names.dart';
 import 'package:scandit_flutter_datacapture_core/src/internal/base_controller.dart';
+import 'package:scandit_flutter_datacapture_core/src/internal/core_plugin_events.dart';
+import 'package:scandit_flutter_datacapture_core/src/internal/event_stream_extensions.dart';
+import 'package:scandit_flutter_datacapture_core/src/internal/flutter_event.dart';
+import 'package:scandit_flutter_datacapture_core/src/internal/generated/core_method_handler.dart';
+import 'package:scandit_flutter_datacapture_core/src/internal/helpers.dart';
 import 'package:scandit_flutter_datacapture_core/src/internal/sdk_logger.dart';
 import 'package:scandit_flutter_datacapture_core/src/source/camera_position.dart';
 import 'package:scandit_flutter_datacapture_core/src/source/camera_settings.dart';
 import 'package:scandit_flutter_datacapture_core/src/source/frame_source.dart';
 import 'package:scandit_flutter_datacapture_core/src/source/frame_source_state.dart';
 import 'package:scandit_flutter_datacapture_core/src/source/torch_state.dart';
+import 'package:scandit_flutter_datacapture_core/src/source/macro_mode.dart';
 
 class Camera implements FrameSource {
   CameraSettings? _settings;
@@ -28,6 +32,7 @@ class Camera implements FrameSource {
 
   final List<FrameSourceListener> _frameSourceListeners = [];
   final List<TorchListener> _torchStateListeners = [];
+  final List<MacroModeListener> _macroModeListeners = [];
 
   CameraPosition get position => _position;
 
@@ -104,6 +109,12 @@ class Camera implements FrameSource {
     return _cameraInstances.putIfAbsent(cameraPosition, () => Camera._(position: cameraPosition));
   }
 
+  static Future<bool> get isMacroModeAvailable async {
+    final handler = getCoreMethodHandler();
+    final result = await handler.isMacroModeAvailable();
+    return result;
+  }
+
   TorchState get desiredTorchState => _desiredTorchState;
 
   set desiredTorchState(TorchState newValue) {
@@ -156,11 +167,33 @@ class Camera implements FrameSource {
   void addTorchListener(TorchListener listener) {
     if (!_torchStateListeners.contains(listener)) {
       _torchStateListeners.add(listener);
+      if (_torchStateListeners.length == 1) {
+        _cameraController.subscribeTorchListener();
+      }
     }
   }
 
   void removeTorchListener(TorchListener listener) {
     _torchStateListeners.remove(listener);
+    if (_torchStateListeners.isEmpty) {
+      _cameraController.unsubscribeTorchListener();
+    }
+  }
+
+  void addMacroModeListener(MacroModeListener listener) {
+    if (!_macroModeListeners.contains(listener)) {
+      _macroModeListeners.add(listener);
+      if (_macroModeListeners.length == 1) {
+        _cameraController.subscribeMacroModeListener();
+      }
+    }
+  }
+
+  void removeMacroModeListener(MacroModeListener listener) {
+    _macroModeListeners.remove(listener);
+    if (_macroModeListeners.isEmpty) {
+      _cameraController.unsubscribeMacroModeListener();
+    }
   }
 
   Future<void> _onChange() async {
@@ -184,6 +217,8 @@ class Camera implements FrameSource {
       'position': _position.toString(),
       'desiredTorchState': _desiredTorchState.toString(),
       'desiredState': _desiredState.toString(),
+      'hasTorchStateListeners': _torchStateListeners.isNotEmpty,
+      'hasMacroModeListeners': _macroModeListeners.isNotEmpty,
     };
     if (_settings != null) {
       json['settings'] = _settings?.toMap();
@@ -195,22 +230,25 @@ class Camera implements FrameSource {
 class _CameraController extends BaseController {
   final Camera camera;
 
-  final EventChannel _cameraEventChannel = const EventChannel(FunctionNames.eventsChannelName);
   StreamSubscription? _stateChangeSubscription;
+  StreamSubscription? _torchStateSubscription;
+  StreamSubscription? _macroModeSubscription;
+  late CoreMethodHandler cameraMethodHandler;
 
   _CameraController(this.camera) : super(FunctionNames.methodsChannelName) {
-    subscribeFrameSourceListener();
+    cameraMethodHandler = CoreMethodHandler(methodChannel);
+    cameraMethodHandler.registerFrameSourceListener().then((value) {
+      subscribeFrameSourceListener();
+    });
+    cameraMethodHandler = CoreMethodHandler(methodChannel);
   }
 
   void subscribeFrameSourceListener() {
     if (_stateChangeSubscription != null) return;
-    _stateChangeSubscription = _cameraEventChannel.receiveBroadcastStream().listen((event) {
-      var eventJSON = jsonDecode(event);
-      var eventName = eventJSON['event'] as String;
-
-      if (eventName == FunctionNames.eventFrameSourceStateChanged) {
-        var state = FrameSourceState.fromJSON(jsonDecode(event)['state'] as String);
-        var cameraPosition = CameraPosition.fromJSON(jsonDecode(event)['cameraPosition'] as String);
+    _stateChangeSubscription = CorePluginEvents.coreEventStream.asFlutterEvents().listen((event) {
+      if (event.isEvent(FunctionNames.eventFrameSourceStateChanged)) {
+        var state = FrameSourceState.fromJSON(event.payload['state'] as String);
+        var cameraPosition = CameraPosition.fromJSON(event.payload['cameraPosition'] as String);
         if (cameraPosition != camera.position) {
           // This event is for the other camera most probably, so we can ignore it
           return;
@@ -220,35 +258,71 @@ class _CameraController extends BaseController {
           _notifyCameraListeners(state);
         }
       }
+    });
+  }
 
-      if (eventName == FunctionNames.eventTorchStateChanged) {
-        var state = TorchState.fromJSON(jsonDecode(event)['state'] as String);
-        if (camera._isActiveCamera) {
-          camera._desiredTorchState = state;
-          if (camera._isActiveCamera) {
-            _notifyTorchListeners(state);
-          }
-        }
+  void subscribeTorchListener() {
+    cameraMethodHandler.registerTorchStateListener().then((value) => _setupTorchSubscription());
+  }
+
+  void _setupTorchSubscription() {
+    if (_torchStateSubscription != null) return;
+    _torchStateSubscription = CorePluginEvents.coreEventStream.asFlutterEvents().listen((event) {
+      if (event.isEvent(FunctionNames.eventTorchStateChanged)) {
+        _handleTorchStateChanged(event);
       }
     });
   }
 
+  void _handleTorchStateChanged(FlutterEvent event) {
+    var state = TorchState.fromJSON(event.payload['state'] as String);
+    if (camera._isActiveCamera) {
+      camera._desiredTorchState = state;
+      _notifyTorchListeners(state);
+    }
+  }
+
   void unsubscribeFrameSourceListener() {
-    _stateChangeSubscription?.cancel();
+    cameraMethodHandler.unregisterFrameSourceListener().then((value) => _stateChangeSubscription?.cancel());
     _stateChangeSubscription = null;
   }
 
-  Future<bool> get isTorchAvailable async {
-    var isTorchAvailableReturn =
-        await methodChannel.invokeMethod<bool>(FunctionNames.isTorchAvailableMethodName, camera.position.toString());
+  void unsubscribeTorchListener() {
+    cameraMethodHandler.unregisterTorchStateListener().then((value) => _torchStateSubscription?.cancel());
+    _torchStateSubscription = null;
+  }
 
-    return isTorchAvailableReturn ?? false;
+  void subscribeMacroModeListener() {
+    cameraMethodHandler.registerMacroModeListener().then((value) => _setupMacroModeSubscription());
+  }
+
+  void _setupMacroModeSubscription() {
+    if (_macroModeSubscription != null) return;
+    _macroModeSubscription = CorePluginEvents.coreEventStream.asFlutterEvents().listen((event) {
+      if (event.isEvent(FunctionNames.eventMacroModeChanged)) {
+        _handleMacroModeChanged(event);
+      }
+    });
+  }
+
+  void _handleMacroModeChanged(FlutterEvent event) {
+    var macroMode = MacroMode.fromJSON(event.payload['macroMode'] as String);
+    if (camera._isActiveCamera) {
+      _notifyMacroModeListeners(macroMode);
+    }
+  }
+
+  void unsubscribeMacroModeListener() {
+    cameraMethodHandler.unregisterMacroModeListener().then((value) => _macroModeSubscription?.cancel());
+    _macroModeSubscription = null;
+  }
+
+  Future<bool> get isTorchAvailable {
+    return cameraMethodHandler.isTorchAvailable(cameraPosition: camera.position.toString());
   }
 
   Future<void> switchCameraToDesiredState(FrameSourceState desiredState) {
-    return methodChannel
-        .invokeMethod(FunctionNames.switchCameraToDesiredState, desiredState.toString())
-        .onError(onError);
+    return cameraMethodHandler.switchCameraToDesiredState(stateJson: desiredState.toString());
   }
 
   void _notifyCameraListeners(FrameSourceState state) {
@@ -263,9 +337,17 @@ class _CameraController extends BaseController {
     }
   }
 
+  void _notifyMacroModeListeners(MacroMode macroMode) {
+    for (var listener in camera._macroModeListeners) {
+      listener.didChangeMacroMode(macroMode);
+    }
+  }
+
   @override
   void dispose() {
     unsubscribeFrameSourceListener();
+    unsubscribeTorchListener();
+    unsubscribeMacroModeListener();
     super.dispose();
   }
 }

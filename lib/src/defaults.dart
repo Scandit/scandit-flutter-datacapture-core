@@ -12,6 +12,7 @@ import 'package:scandit_flutter_datacapture_core/src/source/focus_gesture_strate
 import 'package:scandit_flutter_datacapture_core/src/source/focus_range.dart';
 import 'package:scandit_flutter_datacapture_core/src/function_names.dart';
 import 'package:scandit_flutter_datacapture_core/src/source/video_resolution.dart';
+import 'package:scandit_flutter_datacapture_core/src/source/macro_mode.dart';
 
 import 'common.dart';
 import 'focus_gesture.dart';
@@ -29,11 +30,17 @@ class CameraSettingsDefaults {
   final FocusGestureStrategy focusGestureStrategy;
   final double zoomGestureZoomFactor;
   final bool shouldPreferSmoothAutoFocus;
+  final double torchLevel;
+  final MacroMode macroMode;
+  final bool adaptiveExposure;
   final Map<String, dynamic> properties;
 
   const CameraSettingsDefaults(this.preferredResolution, this.zoomFactor, this.focusRange, this.focusGestureStrategy,
       this.zoomGestureZoomFactor, this.properties,
-      {required this.shouldPreferSmoothAutoFocus});
+      {required this.shouldPreferSmoothAutoFocus,
+      this.torchLevel = 1.0,
+      this.macroMode = MacroMode.auto,
+      this.adaptiveExposure = false});
 
   factory CameraSettingsDefaults.fromJSON(Map<String, dynamic> json) {
     var resolution = VideoResolution.fromJSON(json['preferredResolution']);
@@ -42,6 +49,9 @@ class CameraSettingsDefaults {
     var focusGestureStrategy = FocusGestureStrategy.fromJSON(json['focusGestureStrategy']);
     var zoomGestureZoomFactor = (json['zoomGestureZoomFactor'] as num).toDouble();
     var shouldPreferSmoothAutoFocus = json['shouldPreferSmoothAutoFocus'] as bool?;
+    var torchLevel = (json['torchLevel'] as num?)?.toDouble() ?? 1.0;
+    var macroMode = json['macroMode'] != null ? MacroMode.fromJSON(json['macroMode']) : MacroMode.auto;
+    var adaptiveExposure = json['adaptiveExposure'] as bool? ?? false;
     var properties = <String, dynamic>{};
 
     if (json.containsKey('properties')) {
@@ -49,7 +59,10 @@ class CameraSettingsDefaults {
     }
     return CameraSettingsDefaults(
         resolution, zoomFactor, focusRange, focusGestureStrategy, zoomGestureZoomFactor, properties,
-        shouldPreferSmoothAutoFocus: shouldPreferSmoothAutoFocus ?? false);
+        shouldPreferSmoothAutoFocus: shouldPreferSmoothAutoFocus ?? false,
+        torchLevel: torchLevel,
+        macroMode: macroMode,
+        adaptiveExposure: adaptiveExposure);
   }
 }
 
@@ -83,9 +96,10 @@ class DataCaptureViewDefaults {
   final ZoomGesture? zoomGesture;
   final FocusGesture? focusGesture;
   final LogoStyle logoStyle;
+  final bool? shouldShowZoomNotification;
 
   const DataCaptureViewDefaults(this.scanAreaMargins, this.pointOfInterest, this.logoAnchor, this.logoOffset,
-      this.focusGesture, this.zoomGesture, this.logoStyle);
+      this.focusGesture, this.zoomGesture, this.logoStyle, this.shouldShowZoomNotification);
 
   factory DataCaptureViewDefaults.fromJSON(Map<String, dynamic> json) {
     var scanAreaMargins = MarginsWithUnit.fromJSON(jsonDecode(json['scanAreaMargins']));
@@ -101,8 +115,9 @@ class DataCaptureViewDefaults {
       zoomGesture = ZoomGestureDeserializer.fromJSON(jsonDecode(json['zoomGesture']));
     }
     var logoStyle = LogoStyleDeserializer.fromJSON(json['logoStyle']);
-    return DataCaptureViewDefaults(
-        scanAreaMargins, pointOfInterest, logoAnchor, logoOffset, focusGesture, zoomGesture, logoStyle);
+    var shouldShowZoomNotification = json['shouldShowZoomNotification'] as bool?;
+    return DataCaptureViewDefaults(scanAreaMargins, pointOfInterest, logoAnchor, logoOffset, focusGesture, zoomGesture,
+        logoStyle, shouldShowZoomNotification);
   }
 }
 

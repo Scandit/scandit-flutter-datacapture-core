@@ -8,6 +8,7 @@ import 'package:scandit_flutter_datacapture_core/src/common.dart';
 import 'package:scandit_flutter_datacapture_core/src/data_capture_context.dart';
 import 'package:scandit_flutter_datacapture_core/src/source/frame_source_state.dart';
 import 'package:scandit_flutter_datacapture_core/src/source/torch_state.dart';
+import 'package:scandit_flutter_datacapture_core/src/source/macro_mode.dart';
 
 abstract class FrameSource implements Serializable {
   FrameSourceState get desiredState;
@@ -25,4 +26,8 @@ abstract class FrameSourceListener {
 
 abstract class TorchListener {
   void didChangeTorchToState(TorchState state);
+}
+
+abstract class MacroModeListener {
+  void didChangeMacroMode(MacroMode macroMode);
 }

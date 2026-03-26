@@ -5,9 +5,11 @@
  */
 
 import 'package:scandit_flutter_datacapture_core/src/common.dart';
+import 'package:scandit_flutter_datacapture_core/src/defaults.dart';
 import 'package:scandit_flutter_datacapture_core/src/source/focus_gesture_strategy.dart';
 import 'package:scandit_flutter_datacapture_core/src/source/focus_range.dart';
 import 'package:scandit_flutter_datacapture_core/src/source/video_resolution.dart';
+import 'package:scandit_flutter_datacapture_core/src/source/macro_mode.dart';
 
 class CameraSettings implements Serializable {
   final Map<String, dynamic> _cameraSettingsProperties = <String, dynamic>{};
@@ -27,6 +29,9 @@ class CameraSettings implements Serializable {
   FocusGestureStrategy focusGestureStrategy;
   double zoomGestureZoomFactor;
   bool shouldPreferSmoothAutoFocus;
+  double torchLevel;
+  MacroMode macroMode;
+  bool adaptiveExposure;
 
   void setProperty<T>(String name, T value) {
     if (_focusHiddenProperties.contains(name)) {
@@ -45,7 +50,14 @@ class CameraSettings implements Serializable {
 
   CameraSettings(
       this.preferredResolution, this.zoomFactor, this.focusRange, this.focusGestureStrategy, this.zoomGestureZoomFactor,
-      {required this.shouldPreferSmoothAutoFocus, Map<String, dynamic> properties = const <String, dynamic>{}}) {
+      {required this.shouldPreferSmoothAutoFocus,
+      double? torchLevel,
+      MacroMode? macroMode,
+      bool? adaptiveExposure,
+      Map<String, dynamic> properties = const <String, dynamic>{}})
+      : torchLevel = torchLevel ?? Defaults.cameraDefaults.settings.torchLevel,
+        macroMode = macroMode ?? Defaults.cameraDefaults.settings.macroMode,
+        adaptiveExposure = adaptiveExposure ?? Defaults.cameraDefaults.settings.adaptiveExposure {
     for (var hiddenProperty in properties.entries) {
       setProperty(hiddenProperty.key, hiddenProperty.value);
     }
@@ -63,7 +75,10 @@ class CameraSettings implements Serializable {
         'focusGestureStrategy': focusGestureStrategy.toString(),
         'shouldPreferSmoothAutoFocus': shouldPreferSmoothAutoFocus
       },
-      'zoomGestureZoomFactor': zoomGestureZoomFactor
+      'zoomGestureZoomFactor': zoomGestureZoomFactor,
+      'torchLevel': torchLevel,
+      'macroMode': macroMode.toString(),
+      'adaptiveExposure': adaptiveExposure
     };
     _cameraFocusHiddenProperties.forEach((key, value) {
       json['focus'][key] = value;
