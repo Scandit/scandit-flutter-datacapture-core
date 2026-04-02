@@ -1,16 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
-import 'package:scandit_flutter_datacapture_core/src/data_capture_context.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:scandit_flutter_datacapture_core/src/function_names.dart';
-import 'package:scandit_flutter_datacapture_core/src/internal/base_controller.dart';
-import 'package:scandit_flutter_datacapture_core/src/internal/core_plugin_events.dart';
-import 'package:scandit_flutter_datacapture_core/src/internal/event_stream_extensions.dart';
-import 'package:scandit_flutter_datacapture_core/src/internal/generated/core_method_handler.dart';
-import 'package:scandit_flutter_datacapture_core/src/source/camera_position.dart';
-import 'package:scandit_flutter_datacapture_core/src/source/frame_source_state.dart';
 
+import 'camera.dart';
+import 'defaults.dart';
 import 'frame_source.dart';
 
 class ImageFrameSource extends FrameSource {
@@ -21,10 +17,8 @@ class ImageFrameSource extends FrameSource {
   final String _base64EncodedImage;
   final String _id = UniqueKey().toString();
 
-  DataCaptureContext? _context;
-
   ImageFrameSource._(this._base64EncodedImage) {
-    _controller = _ImageFrameSourceController(this);
+    _controller = _ImageFrameSourceController(this, Defaults.channel);
   }
 
   static ImageFrameSource create(Uint8List bytes) {
@@ -62,21 +56,10 @@ class ImageFrameSource extends FrameSource {
   }
 
   @override
-  Future<void> switchToDesiredState(FrameSourceState state) async {
+  Future<void> switchToDesiredState(FrameSourceState state) {
     _desiredState = state;
-    if (!_isActiveCamera) return;
-    await _controller.switchCameraToDesiredState(state);
+    return _controller.switchCameraToDesiredState(state);
   }
-
-  @override
-  DataCaptureContext? get context => _context;
-
-  @override
-  set context(DataCaptureContext? context) {
-    _context = context;
-  }
-
-  bool get _isActiveCamera => _context != null;
 
   @override
   Map<String, dynamic> toMap() {
@@ -91,28 +74,29 @@ class ImageFrameSource extends FrameSource {
   }
 }
 
-class _ImageFrameSourceController extends BaseController {
+class _ImageFrameSourceController {
   final ImageFrameSource imageFrameSource;
-  late CoreMethodHandler cameraMethodHandler;
+  final MethodChannel methodChannel;
 
+  final EventChannel _stateChangeEventChannel = const EventChannel(FunctionNames.eventsChannelName);
   StreamSubscription? _stateChangeSubscription;
 
-  _ImageFrameSourceController(this.imageFrameSource) : super(FunctionNames.methodsChannelName) {
-    cameraMethodHandler = CoreMethodHandler(methodChannel);
-  }
+  _ImageFrameSourceController(this.imageFrameSource, this.methodChannel);
 
   void subscribeFrameSourceListener() {
     if (_stateChangeSubscription != null) return;
-    _stateChangeSubscription = CorePluginEvents.coreEventStream.asFlutterEvents().listen((event) {
-      if (event.isEvent(FunctionNames.eventFrameSourceStateChanged)) {
-        var state = FrameSourceState.fromJSON(event.payload['state'] as String);
+    _stateChangeSubscription = _stateChangeEventChannel.receiveBroadcastStream().listen((event) {
+      var eventJSON = jsonDecode(event);
+      var eventName = eventJSON['event'] as String;
+      if (eventName == FunctionNames.eventFrameSourceStateChanged) {
+        var state = FrameSourceStateDeserializer.fromJSON(jsonDecode(event)['state'] as String);
         _notifyCameraListeners(state);
       }
     });
   }
 
   Future<void> switchCameraToDesiredState(FrameSourceState desiredState) {
-    return cameraMethodHandler.switchCameraToDesiredState(stateJson: desiredState.toString());
+    return methodChannel.invokeMethod(FunctionNames.switchCameraToDesiredState, desiredState.toString());
   }
 
   void unsubscribeFrameSourceListener() {
