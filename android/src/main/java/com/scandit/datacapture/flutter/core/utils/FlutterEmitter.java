@@ -6,6 +6,7 @@
 package com.scandit.datacapture.flutter.core.utils;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 
 import com.scandit.datacapture.frameworks.core.events.Emitter;
 import com.scandit.datacapture.frameworks.core.utils.DefaultMainThread;
@@ -23,8 +24,11 @@ import java.util.concurrent.atomic.AtomicReference;
 public class FlutterEmitter implements Emitter {
     private final String channelName;
     private final MainThread mainThread;
-    private final CopyOnWriteArrayList<EventChannel.EventSink> sinkEvents = new CopyOnWriteArrayList<>();
-    private final ConcurrentHashMap<Integer, EventChannel> channels = new ConcurrentHashMap<>();
+
+    @VisibleForTesting
+    final CopyOnWriteArrayList<EventChannel.EventSink> sinkEvents = new CopyOnWriteArrayList<>();
+    @VisibleForTesting
+    final ConcurrentHashMap<Integer, EventChannel> channels = new ConcurrentHashMap<>();
 
     public FlutterEmitter(String channelName, MainThread mainThread) {
         this.channelName = channelName;
@@ -67,17 +71,42 @@ public class FlutterEmitter implements Emitter {
     }
 
     @Override
-    public void emit(@NonNull String eventName, java.util.Map<String, Object> payload) {
-        payload.put(FIELD_EVENT_NAME, eventName);
+    public void emit(@NonNull String eventName, @NonNull java.util.Map<String, Object> payload) {
+        // Serialize payload to JSON string
+        String payloadJson = new JSONObject(payload).toString();
+
+        // Create wrapper Map with event name and payload JSON string
+        // This format allows Dart to access eventName without JSON parsing,
+        // while deferring payload parsing until actually needed
+        java.util.Map<String, Object> wrapper = new java.util.HashMap<>();
+        wrapper.put(FIELD_EVENT_NAME, eventName);
+        wrapper.put(FIELD_PAYLOAD, payloadJson);
+        wrapper.put(FIELD_VIEW_ID_NAME, payload.get(FIELD_VIEW_ID_NAME));
+        wrapper.put(FIELD_MODE_ID_NAME, payload.get(FIELD_MODE_ID_NAME));
+
         for (EventChannel.EventSink event : this.sinkEvents) {
-            mainThread.runOnMainThread(() -> event.success(new JSONObject(payload).toString()));
+            mainThread.runOnMainThread(() -> event.success(wrapper));
         }
     }
 
     private static final String FIELD_EVENT_NAME = "event";
+    private static final String FIELD_PAYLOAD = "payload";
+    private static final String FIELD_VIEW_ID_NAME = "viewId";
+    private static final String FIELD_MODE_ID_NAME = "modeId";
+
 
     @Override
     public boolean hasListenersForEvent(@NonNull String s) {
+        return true;
+    }
+
+    @Override
+    public boolean hasViewSpecificListenersForEvent(int viewId, @NonNull String eventName) {
+        return true;
+    }
+
+    @Override
+    public boolean hasModeSpecificListenersForEvent(int viewId, @NonNull String eventName) {
         return true;
     }
 }
