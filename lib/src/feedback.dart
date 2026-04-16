@@ -7,10 +7,10 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:scandit_flutter_datacapture_core/src/internal/base_controller.dart';
-import 'package:scandit_flutter_datacapture_core/src/internal/generated/core_method_handler.dart';
+import 'package:flutter/services.dart';
 
 import 'common.dart';
+import 'defaults.dart';
 import 'function_names.dart';
 
 enum _VibrationType {
@@ -82,8 +82,6 @@ class Sound implements Serializable {
 
   static Sound get defaultSound => Sound(null);
 
-  Sound.fromJSON(Map<String, dynamic> json) : _resource = json['resource'] as String?;
-
   @override
   Map<String, dynamic> toMap() {
     var json = <String, dynamic>{};
@@ -100,7 +98,7 @@ class Feedback implements Serializable {
   late _FeedbackController _controller;
 
   Feedback(this._vibration, this._sound) {
-    _controller = _FeedbackController(this);
+    _controller = _FeedbackController.forFeedback(this);
   }
 
   static Feedback get defaultFeedback => Feedback(Vibration.defaultVibration, Sound.defaultSound);
@@ -126,15 +124,16 @@ class Feedback implements Serializable {
   }
 }
 
-class _FeedbackController extends BaseController {
+class _FeedbackController {
+  final MethodChannel _methodChannel;
   final Feedback _feedback;
-  late final CoreMethodHandler coreMethodHandler;
 
-  _FeedbackController(this._feedback) : super(FunctionNames.methodsChannelName) {
-    coreMethodHandler = CoreMethodHandler(methodChannel);
-  }
+  _FeedbackController._(this._methodChannel, this._feedback);
+
+  _FeedbackController.forFeedback(Feedback feedback) : this._(Defaults.channel, feedback);
+
   void emit() {
-    coreMethodHandler.emitFeedback(feedbackJson: jsonEncode(_feedback.toMap()));
+    _methodChannel.invokeMethod(FunctionNames.emitFeedbackMethodName, jsonEncode(_feedback.toMap()));
   }
 }
 

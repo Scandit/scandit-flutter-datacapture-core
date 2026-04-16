@@ -12,8 +12,6 @@ import 'widget_to_base64_converter.dart';
 abstract class Control extends Serializable {}
 
 class TorchSwitchControl implements Control {
-  TorchSwitchControl();
-
   Image? _torchOffImage;
   String? _torchOffBase64Image;
 
@@ -25,11 +23,6 @@ class TorchSwitchControl implements Control {
 
   Image? _torchOnPressedImage;
   String? _torchOnPressedBase64Image;
-
-  String? accessibilityLabelWhenOff;
-  String? accessibilityHintWhenOff;
-  String? accessibilityLabelWhenOn;
-  String? accessibilityHintWhenOn;
 
   Image? get torchOffImage => _torchOffImage;
   Future<void> setTorchOffImage(Image? image) async {
@@ -64,18 +57,6 @@ class TorchSwitchControl implements Control {
         'off': {'default': _torchOffBase64Image, 'pressed': _torchOffPressedBase64Image}
       }
     };
-    if (accessibilityLabelWhenOff != null) {
-      json['accessibilityLabelWhenOff'] = accessibilityLabelWhenOff;
-    }
-    if (accessibilityHintWhenOff != null) {
-      json['accessibilityHintWhenOff'] = accessibilityHintWhenOff;
-    }
-    if (accessibilityLabelWhenOn != null) {
-      json['accessibilityLabelWhenOn'] = accessibilityLabelWhenOn;
-    }
-    if (accessibilityHintWhenOn != null) {
-      json['accessibilityHintWhenOn'] = accessibilityHintWhenOn;
-    }
     return json;
   }
 }
@@ -92,15 +73,6 @@ class ZoomSwitchControl implements Control {
 
   Image? _zoomedInPressedImage;
   String? _zoomedInPressedBase64Image;
-
-  String? contentDescriptionWhenZoomedOut;
-  String? contentDescriptionWhenZoomedIn;
-  String? accessibilityLabelWhenZoomedOut;
-  String? accessibilityLabelWhenZoomedIn;
-  String? accessibilityHintWhenZoomedOut;
-  String? accessibilityHintWhenZoomedIn;
-
-  ZoomSwitchControl();
 
   Image? get zoomedOutImage => _zoomedOutImage;
   Future<void> setZoomedOutImage(Image? image) async {
@@ -133,13 +105,7 @@ class ZoomSwitchControl implements Control {
       'icon': {
         'zoomedOut': {'default': _zoomedOutBase64Image, 'pressed': _zoomedOutPressedBase64Image},
         'zoomedIn': {'default': _zoomedInBase64Image, 'pressed': _zoomedInPressedBase64Image}
-      },
-      if (contentDescriptionWhenZoomedOut != null) 'contentDescriptionWhenZoomedOut': contentDescriptionWhenZoomedOut,
-      if (contentDescriptionWhenZoomedIn != null) 'contentDescriptionWhenZoomedIn': contentDescriptionWhenZoomedIn,
-      if (accessibilityLabelWhenZoomedOut != null) 'accessibilityLabelWhenZoomedOut': accessibilityLabelWhenZoomedOut,
-      if (accessibilityLabelWhenZoomedIn != null) 'accessibilityLabelWhenZoomedIn': accessibilityLabelWhenZoomedIn,
-      if (accessibilityHintWhenZoomedOut != null) 'accessibilityHintWhenZoomedOut': accessibilityHintWhenZoomedOut,
-      if (accessibilityHintWhenZoomedIn != null) 'accessibilityHintWhenZoomedIn': accessibilityHintWhenZoomedIn,
+      }
     };
   }
 }

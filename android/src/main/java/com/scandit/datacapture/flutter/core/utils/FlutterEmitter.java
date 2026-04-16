@@ -71,29 +71,14 @@ public class FlutterEmitter implements Emitter {
     }
 
     @Override
-    public void emit(@NonNull String eventName, @NonNull java.util.Map<String, Object> payload) {
-        // Serialize payload to JSON string
-        String payloadJson = new JSONObject(payload).toString();
-
-        // Create wrapper Map with event name and payload JSON string
-        // This format allows Dart to access eventName without JSON parsing,
-        // while deferring payload parsing until actually needed
-        java.util.Map<String, Object> wrapper = new java.util.HashMap<>();
-        wrapper.put(FIELD_EVENT_NAME, eventName);
-        wrapper.put(FIELD_PAYLOAD, payloadJson);
-        wrapper.put(FIELD_VIEW_ID_NAME, payload.get(FIELD_VIEW_ID_NAME));
-        wrapper.put(FIELD_MODE_ID_NAME, payload.get(FIELD_MODE_ID_NAME));
-
+    public void emit(@NonNull String eventName, java.util.Map<String, Object> payload) {
+        payload.put(FIELD_EVENT_NAME, eventName);
         for (EventChannel.EventSink event : this.sinkEvents) {
-            mainThread.runOnMainThread(() -> event.success(wrapper));
+            mainThread.runOnMainThread(() -> event.success(new JSONObject(payload).toString()));
         }
     }
 
     private static final String FIELD_EVENT_NAME = "event";
-    private static final String FIELD_PAYLOAD = "payload";
-    private static final String FIELD_VIEW_ID_NAME = "viewId";
-    private static final String FIELD_MODE_ID_NAME = "modeId";
-
 
     @Override
     public boolean hasListenersForEvent(@NonNull String s) {
@@ -102,11 +87,6 @@ public class FlutterEmitter implements Emitter {
 
     @Override
     public boolean hasViewSpecificListenersForEvent(int viewId, @NonNull String eventName) {
-        return true;
-    }
-
-    @Override
-    public boolean hasModeSpecificListenersForEvent(int viewId, @NonNull String eventName) {
         return true;
     }
 }

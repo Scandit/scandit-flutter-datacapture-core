@@ -7,13 +7,9 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:scandit_flutter_datacapture_core/src/source/camera_position.dart';
-import 'package:scandit_flutter_datacapture_core/src/source/focus_gesture_strategy.dart';
-import 'package:scandit_flutter_datacapture_core/src/source/focus_range.dart';
 import 'package:scandit_flutter_datacapture_core/src/function_names.dart';
-import 'package:scandit_flutter_datacapture_core/src/source/video_resolution.dart';
-import 'package:scandit_flutter_datacapture_core/src/source/macro_mode.dart';
 
+import 'camera.dart';
 import 'common.dart';
 import 'focus_gesture.dart';
 import 'zoom_gesture.dart';
@@ -30,28 +26,20 @@ class CameraSettingsDefaults {
   final FocusGestureStrategy focusGestureStrategy;
   final double zoomGestureZoomFactor;
   final bool shouldPreferSmoothAutoFocus;
-  final double torchLevel;
-  final MacroMode macroMode;
-  final bool adaptiveExposure;
   final Map<String, dynamic> properties;
 
   const CameraSettingsDefaults(this.preferredResolution, this.zoomFactor, this.focusRange, this.focusGestureStrategy,
       this.zoomGestureZoomFactor, this.properties,
-      {required this.shouldPreferSmoothAutoFocus,
-      this.torchLevel = 1.0,
-      this.macroMode = MacroMode.auto,
-      this.adaptiveExposure = false});
+      {required this.shouldPreferSmoothAutoFocus});
 
   factory CameraSettingsDefaults.fromJSON(Map<String, dynamic> json) {
-    var resolution = VideoResolution.fromJSON(json['preferredResolution']);
+    var resolution = VideoResolutionDeserializer.videoResolutionFromJSON(json['preferredResolution']);
     var zoomFactor = (json['zoomFactor'] as num).toDouble();
     var focusRange = FocusRangeDeserializer.focusRangeFromJSON(json['focusRange']);
-    var focusGestureStrategy = FocusGestureStrategy.fromJSON(json['focusGestureStrategy']);
+    var focusGestureStrategy =
+        FocusGestureStrategyDeserializer.focusGestureStrategyFromJSON(json['focusGestureStrategy']);
     var zoomGestureZoomFactor = (json['zoomGestureZoomFactor'] as num).toDouble();
     var shouldPreferSmoothAutoFocus = json['shouldPreferSmoothAutoFocus'] as bool?;
-    var torchLevel = (json['torchLevel'] as num?)?.toDouble() ?? 1.0;
-    var macroMode = json['macroMode'] != null ? MacroMode.fromJSON(json['macroMode']) : MacroMode.auto;
-    var adaptiveExposure = json['adaptiveExposure'] as bool? ?? false;
     var properties = <String, dynamic>{};
 
     if (json.containsKey('properties')) {
@@ -59,10 +47,7 @@ class CameraSettingsDefaults {
     }
     return CameraSettingsDefaults(
         resolution, zoomFactor, focusRange, focusGestureStrategy, zoomGestureZoomFactor, properties,
-        shouldPreferSmoothAutoFocus: shouldPreferSmoothAutoFocus ?? false,
-        torchLevel: torchLevel,
-        macroMode: macroMode,
-        adaptiveExposure: adaptiveExposure);
+        shouldPreferSmoothAutoFocus: shouldPreferSmoothAutoFocus ?? false);
   }
 }
 
@@ -77,10 +62,11 @@ class CameraDefaults {
   factory CameraDefaults.fromJSON(Map<String, dynamic> json) {
     var cameraSettings = CameraSettingsDefaults.fromJSON(json['Settings']);
     String? cameraPositionJSON = json['defaultPosition'];
-    var position = cameraPositionJSON == null ? null : CameraPosition.fromJSON(cameraPositionJSON);
+    var position =
+        cameraPositionJSON == null ? null : CameraPositionDeserializer.cameraPositionFromJSON(cameraPositionJSON);
     var availablePositions = (json['availablePositions'])
         // ignore: unnecessary_lambdas
-        .map((position) => CameraPosition.fromJSON(position))
+        .map((position) => CameraPositionDeserializer.cameraPositionFromJSON(position))
         .toList()
         .cast<CameraPosition>();
     return CameraDefaults(cameraSettings, position, availablePositions);
@@ -96,10 +82,9 @@ class DataCaptureViewDefaults {
   final ZoomGesture? zoomGesture;
   final FocusGesture? focusGesture;
   final LogoStyle logoStyle;
-  final bool? shouldShowZoomNotification;
 
   const DataCaptureViewDefaults(this.scanAreaMargins, this.pointOfInterest, this.logoAnchor, this.logoOffset,
-      this.focusGesture, this.zoomGesture, this.logoStyle, this.shouldShowZoomNotification);
+      this.focusGesture, this.zoomGesture, this.logoStyle);
 
   factory DataCaptureViewDefaults.fromJSON(Map<String, dynamic> json) {
     var scanAreaMargins = MarginsWithUnit.fromJSON(jsonDecode(json['scanAreaMargins']));
@@ -115,9 +100,8 @@ class DataCaptureViewDefaults {
       zoomGesture = ZoomGestureDeserializer.fromJSON(jsonDecode(json['zoomGesture']));
     }
     var logoStyle = LogoStyleDeserializer.fromJSON(json['logoStyle']);
-    var shouldShowZoomNotification = json['shouldShowZoomNotification'] as bool?;
-    return DataCaptureViewDefaults(scanAreaMargins, pointOfInterest, logoAnchor, logoOffset, focusGesture, zoomGesture,
-        logoStyle, shouldShowZoomNotification);
+    return DataCaptureViewDefaults(
+        scanAreaMargins, pointOfInterest, logoAnchor, logoOffset, focusGesture, zoomGesture, logoStyle);
   }
 }
 
@@ -243,6 +227,7 @@ class LaserlineViewfinderDefaults {
 
 // ignore: avoid_classes_with_only_static_members
 class Defaults {
+  static MethodChannel channel = const MethodChannel(FunctionNames.methodsChannelName);
   static late CameraDefaults cameraDefaults;
   static late DataCaptureViewDefaults captureViewDefaults;
   static late RectangularViewfinderDefaults rectangularViewfinderDefaults;
@@ -269,7 +254,7 @@ class Defaults {
 
   static Future<dynamic> initializeDefaultsAsync() async {
     if (_isInitialized) return;
-    final channel = const MethodChannel(FunctionNames.methodsChannelName);
+
     String result = await channel.invokeMethod('getDefaults');
     initializeDefaults(result);
   }
