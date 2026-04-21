@@ -14,7 +14,6 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
-import 'package:scandit_flutter_datacapture_core/src/internal/base_controller.dart';
 
 import 'control.dart';
 import 'common.dart' as common;
@@ -128,22 +127,22 @@ class DataCaptureView extends StatefulWidget with PrivateDataCaptureView {
     _properties[name] = value;
   }
 
-  Future<void> addOverlay(DataCaptureOverlay overlay) {
+  Future<void> addOverlay(DataCaptureOverlay overlay) async {
     if (_overlays.contains(overlay)) {
-      return Future.value(null);
+      return;
     }
     _overlays.add(overlay);
     overlay.view = this;
-    return _update();
+    await _update();
   }
 
-  Future<void> removeOverlay(DataCaptureOverlay overlay) {
+  Future<void> removeOverlay(DataCaptureOverlay overlay) async {
     if (!_overlays.contains(overlay)) {
-      return Future.value(null);
+      return;
     }
     _overlays.remove(overlay);
     overlay.view = null;
-    return _update();
+    await _update();
   }
 
   void addListener(DataCaptureViewListener listener) {
@@ -196,7 +195,9 @@ class DataCaptureView extends StatefulWidget with PrivateDataCaptureView {
   LogoStyle get logoStyle => _logoStyle;
 }
 
-class _DataCaptureViewController extends BaseController {
+class _DataCaptureViewController {
+  final MethodChannel _methodChannel = Defaults.channel;
+
   final EventChannel _viewDidChangeSizeEventChannel = const EventChannel(FunctionNames.eventsChannelName);
 
   StreamSubscription? _streamSubscription;
@@ -205,7 +206,7 @@ class _DataCaptureViewController extends BaseController {
 
   final DataCaptureView _view;
 
-  _DataCaptureViewController(this._viewId, this._view) : super(FunctionNames.methodsChannelName);
+  _DataCaptureViewController(this._viewId, this._view);
 
   void _registerListener() {
     _unregisterListener();
@@ -242,7 +243,7 @@ class _DataCaptureViewController extends BaseController {
       'point': jsonEncode(point.toMap()),
     };
 
-    return methodChannel
+    return _methodChannel
         .invokeMethod(FunctionNames.viewPointForFramePoint, functionArgs)
         .then((value) => common.Point.fromJSON(jsonDecode(value)));
   }
@@ -253,13 +254,13 @@ class _DataCaptureViewController extends BaseController {
       'quadrilateral': jsonEncode(quadrilateral.toMap()),
     };
 
-    return methodChannel
+    return _methodChannel
         .invokeMethod(FunctionNames.viewQuadrilateralForFrameQuadrilateral, functionArgs)
         .then((value) => common.Quadrilateral.fromJSON(jsonDecode(value)));
   }
 
   Future<void> update(String viewJson) {
-    return methodChannel.invokeMethod(FunctionNames.updateDataCaptureView, viewJson).onError(_onError);
+    return _methodChannel.invokeMethod(FunctionNames.updateDataCaptureView, viewJson).onError(_onError);
   }
 
   void _onError(Object? error, StackTrace? stackTrace) {
@@ -289,19 +290,9 @@ mixin PrivateDataCaptureView implements common.Serializable {
     _update();
   }
 
-  bool _isViewCreated = false;
-
-  Future<void> _update() {
-    if (!_isViewCreated) {
-      return Future.value(null);
-    }
+  Future<void> _update() async {
     var viewJson = jsonEncode(toMap());
-    return _controller?.update(viewJson) ?? Future.value(null);
-  }
-
-  void _onViewCreated() {
-    _isViewCreated = true;
-    _update();
+    return _controller?.update(viewJson);
   }
 
   int get viewId => _controller?._viewId ?? -1;
@@ -368,9 +359,6 @@ class _DataCaptureViewState extends State<DataCaptureView> {
             },
           )
             ..addOnPlatformViewCreatedListener(params.onPlatformViewCreated)
-            ..addOnPlatformViewCreatedListener((int id) {
-              widget._onViewCreated();
-            })
             ..create();
         },
       );
@@ -379,9 +367,6 @@ class _DataCaptureViewState extends State<DataCaptureView> {
         viewType: viewType,
         creationParams: {'DataCaptureView': jsonEncode(widget.toMap())},
         creationParamsCodec: const StandardMessageCodec(),
-        onPlatformViewCreated: (int id) {
-          widget._onViewCreated();
-        },
       );
     }
   }
