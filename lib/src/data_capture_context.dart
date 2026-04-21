@@ -10,14 +10,14 @@ import 'dart:developer' as developer;
 import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:scandit_flutter_datacapture_core/src/frame_data_settings.dart';
+import 'package:scandit_flutter_datacapture_core/src/internal/base_controller.dart';
+import 'package:scandit_flutter_datacapture_core/src/source/frame_source.dart';
 
 import 'open_source_software_license_info.dart';
 import 'common.dart';
 import 'context_status.dart';
-import 'data_capture_component.dart';
 import 'data_capture_view.dart';
 import 'defaults.dart';
-import 'frame_source.dart';
 import 'function_names.dart';
 
 abstract class DataCaptureContextCreationOptions {
@@ -112,7 +112,7 @@ class DataCaptureContext with PrivateDataCaptureContext implements Serializable 
 
   FrameSource? get frameSource => _frameSource;
 
-  Future<void> setFrameSource(FrameSource frameSource) {
+  Future<void> setFrameSource(FrameSource? frameSource) {
     _frameSource?.context = null;
     _frameSource = frameSource;
     _frameSource?.context = this;
@@ -154,11 +154,11 @@ class DataCaptureContext with PrivateDataCaptureContext implements Serializable 
   static DataCaptureContext get sharedInstance => _instance;
 
   Future<void> addMode(DataCaptureMode mode) async {
-    if (modes.contains(mode)) {
+    if (_modes.contains(mode)) {
       return;
     }
 
-    modes.add(mode);
+    _modes.add(mode);
     await _controller.addModeToContext(mode);
     mode._context = this;
   }
@@ -167,30 +167,30 @@ class DataCaptureContext with PrivateDataCaptureContext implements Serializable 
     // Remove all modes first to avoid conflicts
     await removeAllModes();
     // Add the new mode
-    modes.add(mode);
+    _modes.add(mode);
     await _controller.addModeToContext(mode);
     mode._context = this;
   }
 
   Future<void> removeCurrentMode() async {
-    if (modes.isEmpty) {
+    if (_modes.isEmpty) {
       return;
     }
 
-    if (modes.length > 1) {
+    if (_modes.length > 1) {
       developer.log(
           'Warning: removeCurrentMode() called with multiple modes active. Consider using removeMode() for specific mode removal. Only the first mode will be removed.',
           name: 'DataCaptureContext');
     }
 
-    final mode = modes.first;
-    modes.remove(mode);
+    final mode = _modes.first;
+    _modes.remove(mode);
     mode._context = null;
     await _controller.removeModeFromContext(mode);
   }
 
   Future<void> removeMode(DataCaptureMode mode) async {
-    if (!modes.remove(mode)) {
+    if (!_modes.remove(mode)) {
       return;
     }
 
@@ -199,7 +199,7 @@ class DataCaptureContext with PrivateDataCaptureContext implements Serializable 
   }
 
   Future<void> removeAllModes() async {
-    if (modes.isEmpty) {
+    if (_modes.isEmpty) {
       return;
     }
 
@@ -208,10 +208,10 @@ class DataCaptureContext with PrivateDataCaptureContext implements Serializable 
   }
 
   void _clearAllModes() {
-    for (final mode in modes) {
+    for (final mode in _modes) {
       mode._context = null;
     }
-    modes.clear();
+    _modes.clear();
   }
 
   void addListener(DataCaptureContextListener listener) {
@@ -233,14 +233,10 @@ class DataCaptureContext with PrivateDataCaptureContext implements Serializable 
   }
 
   static Future<OpenSourceSoftwareLicenseInfo> getOpenSourceSoftwareLicenseInfo() {
-    return Defaults.channel
+    final methodChannel = const MethodChannel(FunctionNames.methodsChannelName);
+    return methodChannel
         .invokeMethod(FunctionNames.getOpenSourceSoftwareLicenseInfo)
         .then((value) => OpenSourceSoftwareLicenseInfo(value));
-  }
-
-  @Deprecated('Deprecated. No need to add the component to the DataCaptureContext in oder to use it.')
-  Future<void> addComponent(DataCaptureComponent component) {
-    return Future.value(null);
   }
 
   Future<void> applySettings(DataCaptureContextSettings settings) {
@@ -277,8 +273,10 @@ abstract class DataCaptureContextListener {
 
 mixin PrivateDataCaptureContext {
   late _DataCaptureContextController _controller;
-  final List<DataCaptureMode> modes = [];
+  final List<DataCaptureMode> _modes = [];
   final List<DataCaptureContextListener> _listeners = [];
+
+  List<DataCaptureMode> get modes => List.unmodifiable(_modes);
 
   PrivateDataCaptureView? view;
 
@@ -287,9 +285,8 @@ mixin PrivateDataCaptureContext {
   }
 }
 
-class _DataCaptureContextController {
+class _DataCaptureContextController extends BaseController {
   final DataCaptureContext context;
-  final MethodChannel methodChannel = Defaults.channel;
 
   final EventChannel _contextEventsChannel = const EventChannel(FunctionNames.eventsChannelName);
   StreamSubscription? _contextEventsSubscription;
@@ -298,7 +295,7 @@ class _DataCaptureContextController {
     return context;
   }
 
-  _DataCaptureContextController(this.context);
+  _DataCaptureContextController(this.context) : super(FunctionNames.methodsChannelName);
 
   Future<void> initialize() {
     var encoded = jsonEncode(context.toMap());
@@ -353,11 +350,9 @@ class _DataCaptureContextController {
   }
 
   void _notifyListenersOfDeserializationError(PlatformException error, String json) {
-    _notifyListenersOfDidChangeStatus(ContextStatus.fromJSON({
-      "message": error.message,
-      "code": int.parse(error.code),
-      "isValid": false,
-    }));
+    _notifyListenersOfDidChangeStatus(
+      ContextStatus.fromJSON({"message": error.message, "code": int.parse(error.code), "isValid": false}),
+    );
   }
 
   void _notifyListenersOfObservationStarted() {
