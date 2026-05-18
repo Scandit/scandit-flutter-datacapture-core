@@ -6,7 +6,8 @@
 
 enum ScanIntention {
   manual('manual'),
-  smart('smart');
+  smart('smart'),
+  smartSelection('smartSelection');
 
   const ScanIntention(this._name);
 
