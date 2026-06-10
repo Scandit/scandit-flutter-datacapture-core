@@ -8,7 +8,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:scandit_flutter_datacapture_core/src/internal/base_controller.dart';
-import 'package:scandit_flutter_datacapture_core/src/internal/generated/core_method_handler.dart';
 
 import 'common.dart';
 import 'function_names.dart';
@@ -128,13 +127,11 @@ class Feedback implements Serializable {
 
 class _FeedbackController extends BaseController {
   final Feedback _feedback;
-  late final CoreMethodHandler coreMethodHandler;
 
-  _FeedbackController(this._feedback) : super(FunctionNames.methodsChannelName) {
-    coreMethodHandler = CoreMethodHandler(methodChannel);
-  }
+  _FeedbackController(this._feedback) : super(FunctionNames.methodsChannelName);
+
   void emit() {
-    coreMethodHandler.emitFeedback(feedbackJson: jsonEncode(_feedback.toMap()));
+    methodChannel.invokeMethod(FunctionNames.emitFeedbackMethodName, jsonEncode(_feedback.toMap()));
   }
 }
 

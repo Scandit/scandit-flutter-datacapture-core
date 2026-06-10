@@ -28,12 +28,12 @@ android {
 }
 
 dependencies {
-    def sdk_version = "8.4.0"
+    def sdk_version = "8.1.5"
 
-    println("Version of the native sdk used in this build: ${safeExtGet('frameworks_sdk_version', sdk_version)}")
+    println("Version of the native sdk used in this build: ${safeExtGet('global_sdk_version', sdk_version)}")
     if (findProject(':scandit-datacapture-frameworks-core') != null) {
         api project(":scandit-datacapture-frameworks-core")
     } else {
-        api "com.scandit.datacapture.frameworks:core:${safeExtGet('frameworks_sdk_version', sdk_version)}"
+        api "com.scandit.datacapture.frameworks:core:${safeExtGet('global_sdk_version', sdk_version)}"
     }
 }

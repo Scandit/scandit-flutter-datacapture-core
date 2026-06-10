@@ -1,9 +1,5 @@
 import 'dart:math';
 
-import 'package:flutter/services.dart';
-import 'package:scandit_flutter_datacapture_core/src/function_names.dart';
-import 'package:scandit_flutter_datacapture_core/src/internal/generated/core_method_handler.dart';
-
 String generateIdentifier() {
   final Random random = Random();
   final List<int> bytes = List<int>.generate(16, (_) => random.nextInt(256));
@@ -21,8 +17,4 @@ String generateIdentifier() {
       '${toHex(bytes[6])}${toHex(bytes[7])}-'
       '${toHex(bytes[8])}${toHex(bytes[9])}-'
       '${toHex(bytes[10])}${toHex(bytes[11])}${toHex(bytes[12])}${toHex(bytes[13])}${toHex(bytes[14])}${toHex(bytes[15])}';
-}
-
-CoreMethodHandler getCoreMethodHandler() {
-  return CoreMethodHandler(const MethodChannel(FunctionNames.methodsChannelName));
 }

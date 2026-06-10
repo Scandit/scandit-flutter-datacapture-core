@@ -14,9 +14,7 @@ export 'src/source/camera_position.dart' show CameraPosition;
 export 'src/source/torch_state.dart' show TorchState;
 export 'src/source/video_resolution.dart' show VideoResolution;
 export 'src/source/camera_settings.dart' show CameraSettings;
-export 'src/source/frame_source.dart'
-    show FrameSource, FrameSourceListener, TorchListener, MacroModeListener, ZoomListener;
-export 'src/source/zoom_switch_orientation.dart' show ZoomSwitchOrientation;
+export 'src/source/frame_source.dart' show FrameSource, FrameSourceListener, TorchListener;
 export 'src/source/frame_source_state.dart' show FrameSourceState;
 export 'src/common.dart'
     show
@@ -52,9 +50,6 @@ export 'src/data_capture_context.dart'
         DataCaptureMode;
 export 'src/data_capture_version.dart' show DataCaptureVersion;
 export 'src/data_capture_view.dart' show DataCaptureOverlay, DataCaptureView, DataCaptureViewListener;
-export 'src/internal/view_attachable.dart' show ViewAttachable;
-export 'src/internal/flutter_event.dart' show FlutterEvent;
-export 'src/internal/event_stream_extensions.dart' show EventStreamExtensions, FlutterEventStreamExtensions;
 export 'src/defaults.dart' show BrushDefaults, NativeBrushDefaults, CameraSettingsDefaults;
 export 'src/feedback.dart' show Feedback, Sound, Vibration;
 
@@ -69,8 +64,8 @@ export 'src/viewfinder.dart'
         RectangularViewfinderAnimation,
         LaserlineViewfinder;
 export 'src/scandit_flutter_datacapture_core.dart' show ScanditFlutterDataCaptureCore;
-export 'src/focus_gesture.dart' show FocusGesture, FocusGestureListener, TapToFocus;
-export 'src/zoom_gesture.dart' show ZoomGesture, ZoomGestureListener, SwipeToZoom, PinchToZoom;
+export 'src/focus_gesture.dart' show FocusGesture, TapToFocus;
+export 'src/zoom_gesture.dart' show ZoomGesture, SwipeToZoom;
 export 'src/control.dart' show Control, TorchSwitchControl, ZoomSwitchControl;
 export 'src/logo_style.dart' show LogoStyle;
 export 'src/direction.dart' show Direction, DirectionDeserializer;
@@ -91,5 +86,3 @@ export 'src/scandit_icon.dart'
         ScanditIconTypeSerializer;
 export 'src/text_alignment.dart' show TextAlignment, TextAlignmentSerializer;
 export 'src/font_family.dart' show FontFamily, FontFamilySerializer;
-export 'src/clustering_mode.dart' show ClusteringMode;
-export 'src/source/macro_mode.dart' show MacroMode;
