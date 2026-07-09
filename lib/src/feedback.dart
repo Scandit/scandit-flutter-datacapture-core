@@ -17,6 +17,7 @@ enum _VibrationType {
   defaultVibration('default'),
   selectionHaptic('selectionHaptic'),
   successHaptic('successHaptic'),
+  failureHaptic('failureHaptic'),
   impactHaptic('impactHaptic'),
   waveForm('waveForm');
 
@@ -40,6 +41,8 @@ class Vibration implements Serializable {
   static Vibration get selectionHapticFeedback => Vibration._(_VibrationType.selectionHaptic);
 
   static Vibration get successHapticFeedback => Vibration._(_VibrationType.successHaptic);
+
+  static Vibration get failureHapticFeedback => Vibration._(_VibrationType.failureHaptic);
 
   static Vibration get impactHapticFeedback => Vibration._(_VibrationType.impactHaptic);
 
@@ -161,6 +164,9 @@ extension FeedbackDeserializer on Feedback {
             break;
           case 'successHaptic':
             vibration = Vibration.successHapticFeedback;
+            break;
+          case 'failureHaptic':
+            vibration = Vibration.failureHapticFeedback;
             break;
           case 'impactHaptic':
             vibration = Vibration.impactHapticFeedback;

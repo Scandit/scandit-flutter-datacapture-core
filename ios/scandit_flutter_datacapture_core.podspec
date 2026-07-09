@@ -44,7 +44,7 @@ Pod::Spec.new do |s|
   # Only add native framework dependency when not using SPM
   # SPM handles these dependencies via Package.swift
   unless spm_enabled
-  s.dependency "scandit-datacapture-frameworks-core", '= 8.4.1'
+  s.dependency "scandit-datacapture-frameworks-core", '= 8.5.0'
   end
 
   # Flutter.framework does not contain a i386 slice.

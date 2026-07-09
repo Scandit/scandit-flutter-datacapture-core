@@ -102,6 +102,22 @@ class Camera implements FrameSource {
     return camera;
   }
 
+  static Camera? withSettings(CameraSettings settings) {
+    final camera = defaultCamera;
+    if (camera != null) {
+      camera.applySettings(settings);
+    }
+    return camera;
+  }
+
+  static Camera? atPositionWithSettings(CameraPosition position, CameraSettings settings) {
+    final camera = atPosition(position);
+    if (camera != null) {
+      camera.applySettings(settings);
+    }
+    return camera;
+  }
+
   static Camera? atPosition(CameraPosition cameraPosition) {
     if (Defaults.cameraDefaults.availablePositions.contains(cameraPosition) == false) {
       return null;
