@@ -6,9 +6,7 @@
 
 enum ScanIntention {
   manual('manual'),
-  smart('smart'),
-  @Deprecated('Use SelectionMode.auto instead. Will be removed in 9.0.')
-  smartSelection('smartSelection');
+  smart('smart');
 
   const ScanIntention(this._name);
 

@@ -19,8 +19,6 @@ import io.flutter.plugin.common.MethodChannel;
 
 import org.json.JSONObject;
 
-import com.scandit.datacapture.flutter.core.utils.FlutterMethodCall;
-
 public class DataCaptureCoreMethodHandler implements MethodChannel.MethodCallHandler {
 
     public static final String EVENT_CHANNEL_NAME = "com.scandit.datacapture.core/event_channel";
@@ -46,17 +44,74 @@ public class DataCaptureCoreMethodHandler implements MethodChannel.MethodCallHan
                 result.success(new JSONObject(getSharedModule().getDefaults()).toString());
                 break;
 
-            case "executeCore":
+            case "createContextFromJSON":
                 assert call.arguments() != null;
-                CoreModule module = getSharedModule();
-                boolean handled = module.execute(
-                        new FlutterMethodCall(call),
-                        new FlutterResult(result),
-                        module
+                getSharedModule().createContextFromJson(call.arguments(), new FlutterResult(result));
+                break;
+
+            case "updateContextFromJSON":
+                mainThread.runOnMainThread(() -> {
+                    assert call.arguments() != null;
+                    getSharedModule().updateContextFromJson(call.arguments(), new FlutterResult(result));
+                });
+                break;
+
+            case "getCameraState":
+                assert call.arguments() != null;
+                getSharedModule().getCameraState(call.arguments(), new FlutterResult(result));
+                break;
+
+            case "isTorchAvailable":
+                assert call.arguments() != null;
+                getSharedModule().isTorchAvailable(call.arguments(), new FlutterResult(result));
+                break;
+
+            case "emitFeedback":
+                assert call.arguments() != null;
+                getSharedModule().emitFeedback(call.arguments(), new FlutterResult(result));
+                break;
+
+            case "viewPointForFramePoint":
+                assert call.arguments() != null;
+                getSharedModule().viewPointForFramePoint(call.arguments(), new FlutterResult(result));
+                break;
+
+            case "viewQuadrilateralForFrameQuadrilateral":
+                assert call.arguments() != null;
+                getSharedModule().viewQuadrilateralForFrameQuadrilateral(
+                        call.arguments(),
+                        new FlutterResult(result)
                 );
-                if (!handled) {
-                    result.error("METHOD_NOT_FOUND", "Unknown Core method", null);
-                }
+                break;
+
+            case "switchCameraToDesiredState":
+                assert call.arguments() != null;
+                getSharedModule().switchCameraToDesiredState(
+                        call.arguments(),
+                        new FlutterResult(result)
+                );
+                break;
+
+            case "addModeToContext":
+                assert call.arguments() != null;
+                getSharedModule().addModeToContext(call.arguments(), new FlutterResult(result));
+                break;
+
+            case "removeModeFromContext":
+                assert call.arguments() != null;
+                getSharedModule().removeModeFromContext(call.arguments(), new FlutterResult(result));
+                break;
+
+            case "removeAllModesFromContext":
+                getSharedModule().removeAllModes(new FlutterResult(result));
+                break;
+
+            case "updateDataCaptureView":
+                assert call.arguments() != null;
+                getSharedModule().updateDataCaptureView(
+                        call.arguments(),
+                        new FlutterResult(result)
+                );
                 break;
 
             default:
@@ -65,16 +120,16 @@ public class DataCaptureCoreMethodHandler implements MethodChannel.MethodCallHan
         }
     }
 
-    private volatile CoreModule module;
+    private volatile CoreModule sharedModuleInstance;
 
     private CoreModule getSharedModule() {
-        if (module == null) {
+        if (sharedModuleInstance == null) {
             synchronized (this) {
-                if (module == null) {
-                    module = (CoreModule) this.serviceLocator.resolve(CoreModule.class.getSimpleName());
+                if (sharedModuleInstance == null) {
+                    sharedModuleInstance = (CoreModule)this.serviceLocator.resolve(CoreModule.class.getName());
                 }
             }
         }
-        return module;
+        return sharedModuleInstance;
     }
 }
