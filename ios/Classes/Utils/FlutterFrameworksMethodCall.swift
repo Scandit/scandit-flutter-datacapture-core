@@ -17,12 +17,7 @@ public class FlutterFrameworksMethodCall: FrameworksMethodCall {
     }
 
     public var method: String {
-        if hasArgument(key: "methodName") {
-            if let methodName: String = argument(key: "methodName") {
-                return methodName
-            }
-        }
-        return call.method
+        call.method
     }
 
     public func arguments() -> [String: Any] {
@@ -78,23 +73,5 @@ public class FlutterFrameworksMethodCall: FrameworksMethodCall {
             return false
         }
         return argumentsDict.keys.contains(key)
-    }
-}
-
-public extension FlutterMethodCall {
-    func params() -> [String: Any]? {
-        arguments as? [String: Any]
-    }
-
-    func intValue(for key: String, from params: [String: Any]) -> Int? {
-        params[key] as? Int
-    }
-
-    func stringValue(for key: String, from params: [String: Any]) -> String? {
-        params[key] as? String
-    }
-
-    func boolValue(for key: String, from params: [String: Any], default defaultValue: Bool = false) -> Bool {
-        params[key] as? Bool ?? defaultValue
     }
 }

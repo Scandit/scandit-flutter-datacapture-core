@@ -84,11 +84,11 @@ public abstract class BaseFlutterPlugin implements FlutterPlugin {
 
     protected void registerModule(FrameworkModule module) {
         serviceLocator.register(module);
-        modules.add(module.getClass().getSimpleName());
+        modules.add(module.getClass().getName());
     }
 
     protected <T extends FrameworkModule> T resolveModule(Class<T> type) {
-        return type.cast(serviceLocator.resolve(type.getSimpleName()));
+        return type.cast(serviceLocator.resolve(type.getName()));
     }
 
     protected void removeModuleByName(String moduleName) {

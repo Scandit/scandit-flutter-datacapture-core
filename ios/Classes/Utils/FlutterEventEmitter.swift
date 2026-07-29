@@ -21,32 +21,15 @@ public class FlutterEventEmitter: NSObject, Emitter, FlutterStreamHandler {
 
     public func emit(name: String, payload: [String: Any?]) {
         guard let sink = eventSink else { return }
-
+        var payload = payload
+        payload["event"] = name
         do {
-            // Serialize payload to JSON string
-            let payloadData = try JSONSerialization.data(withJSONObject: payload)
-            guard let payloadString = String(data: payloadData, encoding: .utf8) else {
+            let jsonData = try JSONSerialization.data(withJSONObject: payload)
+            guard let jsonString = String(data: jsonData, encoding: .utf8) else {
                 return
             }
-
-            // Create wrapper Dictionary with event name, payload JSON string,
-            // and optional modeId/viewId for efficient filtering
-            var wrapper: [String: Any] = [
-                "event": name,
-                "payload": payloadString,
-            ]
-
-            // Include modeId and viewId at root level if present in payload
-            // This allows Dart to filter events without decoding the payload JSON
-            if let modeId = payload["modeId"] {
-                wrapper["modeId"] = modeId
-            }
-            if let viewId = payload["viewId"] {
-                wrapper["viewId"] = viewId
-            }
-
             dispatchMain {
-                sink(wrapper)
+                sink(jsonString)
             }
         } catch {
             // Silently fail - event emission is non-critical

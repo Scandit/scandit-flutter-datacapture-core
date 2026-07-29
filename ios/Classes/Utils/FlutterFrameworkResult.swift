@@ -18,10 +18,6 @@ public class FlutterFrameworkResult: FrameworksResult {
         self.result(result)
     }
 
-    public func successAndKeepCallback(result: Any? = nil) {
-        success(result: result)
-    }
-
     public func reject(code: String, message: String?, details: Any?) {
         result(FlutterError(code: code, message: message, details: details))
     }
@@ -48,10 +44,6 @@ public class FlutterLogInsteadOfResult: FrameworksResult {
     public init() {}
 
     public func success(result: Any?) {
-        // nop
-    }
-
-    public func successAndKeepCallback(result: Any?) {
         // nop
     }
 

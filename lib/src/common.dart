@@ -275,8 +275,6 @@ class SizeWithUnit implements Serializable {
   final DoubleWithUnit _height;
   DoubleWithUnit get height => _height;
 
-  static SizeWithUnit get zero => SizeWithUnit(DoubleWithUnit.zero, DoubleWithUnit.zero);
-
   const SizeWithUnit(this._width, this._height);
 
   SizeWithUnit.fromJSON(Map<String, dynamic> json)
@@ -295,8 +293,6 @@ class SizeWithAspect implements Serializable {
 
   final double _aspect;
   double get aspect => _aspect;
-
-  static SizeWithAspect get zero => SizeWithAspect(DoubleWithUnit.zero, 0.0);
 
   const SizeWithAspect(this._size, this._aspect);
 
@@ -342,8 +338,6 @@ class Brush implements Serializable {
   double get strokeWidth => _strokeWidth;
 
   Brush(this._fillColor, this._strokeColor, this._strokeWidth);
-
-  Brush.defaultBrush() : this(_transparent, _transparent, 0);
 
   static Brush get transparent => Brush(_transparent, _transparent, 0);
 

@@ -10,10 +10,6 @@ enum LogoStyle {
 
   const LogoStyle(this._name);
 
-  static LogoStyle fromJSON(String jsonValue) {
-    return LogoStyle.values.firstWhere((element) => element.toString() == jsonValue);
-  }
-
   @override
   String toString() => _name;
 
@@ -21,5 +17,7 @@ enum LogoStyle {
 }
 
 extension LogoStyleDeserializer on LogoStyle {
-  static LogoStyle fromJSON(String jsonValue) => LogoStyle.fromJSON(jsonValue);
+  static LogoStyle fromJSON(String jsonValue) {
+    return LogoStyle.values.firstWhere((element) => element.toString() == jsonValue);
+  }
 }
