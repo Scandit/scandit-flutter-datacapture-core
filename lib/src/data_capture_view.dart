@@ -15,6 +15,9 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:scandit_flutter_datacapture_core/src/internal/base_controller.dart';
+import 'package:scandit_flutter_datacapture_core/src/internal/event_stream_extensions.dart';
+import 'package:scandit_flutter_datacapture_core/src/internal/generated/core_method_handler.dart';
+import 'package:scandit_flutter_datacapture_core/src/internal/core_plugin_events.dart';
 
 import 'control.dart';
 import 'common.dart' as common;
@@ -22,6 +25,7 @@ import 'data_capture_context.dart';
 import 'defaults.dart';
 import 'focus_gesture.dart';
 import 'function_names.dart';
+import 'internal/view_attachable.dart';
 import 'zoom_gesture.dart';
 import 'logo_style.dart';
 
@@ -48,12 +52,55 @@ abstract class DataCaptureViewListener {
 class DataCaptureView extends StatefulWidget with PrivateDataCaptureView {
   PrivateDataCaptureContext? _dataCaptureContext;
 
-  DataCaptureView._(this._dataCaptureContext) : super() {
+  // ignore: use_super_parameters - docs wants it written this way
+  DataCaptureView({
+    required DataCaptureContext dataCaptureContext,
+    common.MarginsWithUnit? scanAreaMargins,
+    common.PointWithUnit? pointOfInterest,
+    common.Anchor? logoAnchor,
+    common.PointWithUnit? logoOffset,
+    FocusGesture? focusGesture,
+    ZoomGesture? zoomGesture,
+    List<ZoomGesture>? zoomGestures,
+    LogoStyle? logoStyle,
+    bool? shouldShowZoomNotification,
+    List<Control>? controls,
+    List<DataCaptureOverlay>? overlays,
+    Key? key,
+  })  : _dataCaptureContext = dataCaptureContext,
+        super(key: key) {
     _dataCaptureContext?.view = this;
+    if (scanAreaMargins != null) _scanAreaMargins = scanAreaMargins;
+    if (pointOfInterest != null) _pointOfInterest = pointOfInterest;
+    if (logoAnchor != null) _logoAnchor = logoAnchor;
+    if (logoOffset != null) _logoOffset = logoOffset;
+    if (focusGesture != null) _focusGesture = focusGesture;
+    // zoomGestures takes precedence; fall back to wrapping singular zoomGesture
+    if (zoomGestures != null) {
+      _zoomGestures = List.of(zoomGestures);
+    } else if (zoomGesture != null) {
+      _zoomGestures = [zoomGesture];
+    }
+    if (logoStyle != null) _logoStyle = logoStyle;
+    if (shouldShowZoomNotification != null) _shouldShowZoomNotification = shouldShowZoomNotification;
+    if (controls != null) _controls.addAll(controls);
+    if (overlays != null) {
+      for (var overlay in overlays) {
+        _overlays.add(overlay);
+        overlay.view = this;
+      }
+    }
+    // Register the focusGesture (either provided or default) as an attachable
+    if (_focusGesture != null) {
+      registerAttachable(_focusGesture!);
+    }
+    for (final gesture in _zoomGestures) {
+      registerAttachable(gesture);
+    }
   }
 
   factory DataCaptureView.forContext(DataCaptureContext dataCaptureContext) {
-    return DataCaptureView._(dataCaptureContext);
+    return DataCaptureView(dataCaptureContext: dataCaptureContext);
   }
 
   @override
@@ -111,17 +158,39 @@ class DataCaptureView extends StatefulWidget with PrivateDataCaptureView {
   }
 
   set focusGesture(FocusGesture? newValue) {
+    if (_focusGesture != null) {
+      unregisterAttachable(_focusGesture!);
+    }
     _focusGesture = newValue;
+    if (newValue != null) {
+      registerAttachable(newValue);
+    }
     _update();
   }
 
+  List<ZoomGesture> get zoomGestures {
+    return _zoomGestures;
+  }
+
+  set zoomGestures(List<ZoomGesture> newValue) {
+    for (final gesture in _zoomGestures) {
+      unregisterAttachable(gesture);
+    }
+    _zoomGestures = List.of(newValue);
+    for (final gesture in _zoomGestures) {
+      registerAttachable(gesture);
+    }
+    _update();
+  }
+
+  /// @deprecated Use [zoomGestures] instead. Will be removed in a future version.
   ZoomGesture? get zoomGesture {
     return _zoomGesture;
   }
 
+  /// @deprecated Use [zoomGestures] instead. Will be removed in a future version.
   set zoomGesture(ZoomGesture? newValue) {
-    _zoomGesture = newValue;
-    _update();
+    zoomGestures = newValue != null ? [newValue] : [];
   }
 
   void setProperty<T>(String name, T value) {
@@ -176,6 +245,7 @@ class DataCaptureView extends StatefulWidget with PrivateDataCaptureView {
   Future<void> addControl(Control control) {
     if (!_controls.contains(control)) {
       _controls.add(control);
+      if (control is ViewAttachable) registerAttachable(control as ViewAttachable);
       return _update();
     }
     return Future.value(null);
@@ -183,6 +253,7 @@ class DataCaptureView extends StatefulWidget with PrivateDataCaptureView {
 
   Future<void> removeControl(Control control) {
     if (_controls.remove(control)) {
+      if (control is ViewAttachable) unregisterAttachable(control as ViewAttachable);
       return _update();
     }
     return Future.value(null);
@@ -194,33 +265,37 @@ class DataCaptureView extends StatefulWidget with PrivateDataCaptureView {
   }
 
   LogoStyle get logoStyle => _logoStyle;
+
+  bool get shouldShowZoomNotification {
+    return _shouldShowZoomNotification;
+  }
+
+  set shouldShowZoomNotification(bool newValue) {
+    _shouldShowZoomNotification = newValue;
+    _update();
+  }
 }
 
 class _DataCaptureViewController extends BaseController {
-  final EventChannel _viewDidChangeSizeEventChannel = const EventChannel(FunctionNames.eventsChannelName);
-
+  late final CoreMethodHandler coreMethodHandler;
   StreamSubscription? _streamSubscription;
 
   final int _viewId;
 
   final DataCaptureView _view;
 
-  _DataCaptureViewController(this._viewId, this._view) : super(FunctionNames.methodsChannelName);
+  _DataCaptureViewController(this._viewId, this._view) : super(FunctionNames.methodsChannelName) {
+    coreMethodHandler = CoreMethodHandler(methodChannel);
+  }
 
   void _registerListener() {
     _unregisterListener();
 
-    _streamSubscription = _viewDidChangeSizeEventChannel.receiveBroadcastStream().listen((event) {
-      var eventJSON = jsonDecode(event as String);
-      var eventName = eventJSON['event'] as String;
-
-      if (eventName == FunctionNames.eventDataCaptureViewSizeChanged) {
-        final viewId = eventJSON['viewId'] as int;
-        if (viewId == _viewId) {
-          var size = common.Size.fromJSON(eventJSON['size']);
-          var orientation = common.OrientationDeserializer.fromJSON(eventJSON['orientation']);
-          _notifyListenersOfViewDidChangeSize(size, orientation);
-        }
+    _streamSubscription = CorePluginEvents.coreEventStream.asFlutterEvents().forView(_viewId).listen((event) {
+      if (event.isEvent(FunctionNames.eventDataCaptureViewSizeChanged)) {
+        var size = common.Size.fromJSON(event.payload['size']);
+        var orientation = common.OrientationDeserializer.fromJSON(event.payload['orientation']);
+        _notifyListenersOfViewDidChangeSize(size, orientation);
       }
     });
   }
@@ -230,6 +305,12 @@ class _DataCaptureViewController extends BaseController {
     _streamSubscription = null;
   }
 
+  @override
+  void dispose() {
+    _unregisterListener();
+    super.dispose();
+  }
+
   void _notifyListenersOfViewDidChangeSize(common.Size size, common.Orientation orientation) {
     for (var listener in _view._listeners) {
       listener.didChangeSize(_view, size, orientation);
@@ -237,29 +318,19 @@ class _DataCaptureViewController extends BaseController {
   }
 
   Future<common.Point> viewPointForFramePoint(common.Point point) {
-    final functionArgs = {
-      'viewId': _viewId,
-      'point': jsonEncode(point.toMap()),
-    };
-
-    return methodChannel
-        .invokeMethod(FunctionNames.viewPointForFramePoint, functionArgs)
+    return coreMethodHandler
+        .viewPointForFramePoint(viewId: _viewId, pointJson: jsonEncode(point.toMap()))
         .then((value) => common.Point.fromJSON(jsonDecode(value)));
   }
 
   Future<common.Quadrilateral> viewQuadrilateralForFrameQuadrilateral(common.Quadrilateral quadrilateral) {
-    final functionArgs = {
-      'viewId': _viewId,
-      'quadrilateral': jsonEncode(quadrilateral.toMap()),
-    };
-
-    return methodChannel
-        .invokeMethod(FunctionNames.viewQuadrilateralForFrameQuadrilateral, functionArgs)
+    return coreMethodHandler
+        .viewQuadrilateralForFrameQuadrilateral(viewId: _viewId, quadrilateralJson: jsonEncode(quadrilateral.toMap()))
         .then((value) => common.Quadrilateral.fromJSON(jsonDecode(value)));
   }
 
   Future<void> update(String viewJson) {
-    return methodChannel.invokeMethod(FunctionNames.updateDataCaptureView, viewJson).onError(_onError);
+    return coreMethodHandler.updateDataCaptureView(viewJson: viewJson).onError(_onError);
   }
 
   void _onError(Object? error, StackTrace? stackTrace) {
@@ -276,13 +347,48 @@ mixin PrivateDataCaptureView implements common.Serializable {
   final List<DataCaptureViewListener> _listeners = [];
   final List<Control> _controls = [];
   LogoStyle _logoStyle = Defaults.captureViewDefaults.logoStyle;
+  bool _shouldShowZoomNotification = Defaults.captureViewDefaults.shouldShowZoomNotification ?? true;
   final Map<String, dynamic> _properties = {};
 
   _DataCaptureViewController? _controller;
 
   FocusGesture? _focusGesture = Defaults.captureViewDefaults.focusGesture;
-  ZoomGesture? _zoomGesture = Defaults.captureViewDefaults.zoomGesture;
+  List<ZoomGesture> _zoomGestures = List.of(Defaults.captureViewDefaults.zoomGestures);
+  ZoomGesture? get _zoomGesture => _zoomGestures.isNotEmpty ? _zoomGestures.first : null;
   final List<DataCaptureOverlay> _overlays = [];
+
+  final List<ViewAttachable> _attachables = [];
+
+  /// Registers a [ViewAttachable] component with this view.
+  ///
+  /// If the view is already initialized, [ViewAttachable.onViewInitialized]
+  /// will be called immediately. Otherwise, it will be called when
+  /// the view's controller is ready.
+  void registerAttachable(ViewAttachable attachable) {
+    if (_attachables.contains(attachable)) return;
+
+    _attachables.add(attachable);
+    attachable.onAttachToView(this as DataCaptureView);
+
+    if (_controller != null) {
+      attachable.onViewInitialized(viewId);
+    }
+  }
+
+  /// Unregisters a [ViewAttachable] component from this view.
+  void unregisterAttachable(ViewAttachable attachable) {
+    if (_attachables.remove(attachable)) {
+      attachable.onDetachFromView();
+    }
+  }
+
+  /// Called when the view's controller is initialized.
+  /// Notifies all registered attachables that the viewId is available.
+  void _initializeAttachables() {
+    for (final attachable in _attachables) {
+      attachable.onViewInitialized(viewId);
+    }
+  }
 
   void removeAllOverlays() {
     _overlays.clear();
@@ -315,8 +421,10 @@ mixin PrivateDataCaptureView implements common.Serializable {
       'logoOffset': _logoOffset.toMap(),
       'focusGesture': _focusGesture?.toMap(),
       'zoomGesture': _zoomGesture?.toMap(),
+      'zoomGestures': _zoomGestures.map((e) => e.toMap()).toList(),
       'controls': _controls.map((e) => e.toMap()).toList(),
       'logoStyle': _logoStyle.toString(),
+      'shouldShowZoomNotification': _shouldShowZoomNotification,
       'overlays': _overlays.map((overlay) => overlay.toMap()).toList(),
       'viewId': _controller?._viewId ?? 0,
     };
@@ -339,7 +447,70 @@ class _DataCaptureViewState extends State<DataCaptureView> {
     super.initState();
     _controller = _DataCaptureViewController(_viewId, widget);
     widget._controller = _controller;
-    // subscribe to events here
+    widget._initializeAttachables();
+  }
+
+  @override
+  void didUpdateWidget(DataCaptureView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget._dataCaptureContext != widget._dataCaptureContext) {
+      oldWidget._dataCaptureContext?.view = null;
+      widget._dataCaptureContext?.view = widget;
+      widget._update();
+    }
+
+    if (oldWidget._scanAreaMargins != widget._scanAreaMargins) {
+      widget._update();
+    }
+
+    if (oldWidget._pointOfInterest != widget._pointOfInterest) {
+      widget._update();
+    }
+
+    if (oldWidget._logoAnchor != widget._logoAnchor) {
+      widget._update();
+    }
+
+    if (oldWidget._logoOffset != widget._logoOffset) {
+      widget._update();
+    }
+
+    if (oldWidget._focusGesture != widget._focusGesture) {
+      widget._update();
+    }
+
+    if (oldWidget._zoomGesture != widget._zoomGesture) {
+      widget._update();
+    }
+
+    if (oldWidget._logoStyle != widget._logoStyle) {
+      widget._update();
+    }
+
+    if (oldWidget._shouldShowZoomNotification != widget._shouldShowZoomNotification) {
+      widget._update();
+    }
+
+    if (oldWidget._controls != widget._controls) {
+      widget._update();
+    }
+
+    if (oldWidget._overlays != widget._overlays) {
+      for (var overlay in oldWidget._overlays) {
+        overlay.view = null;
+      }
+      for (var overlay in widget._overlays) {
+        overlay.view = widget;
+      }
+      widget._update();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   @override

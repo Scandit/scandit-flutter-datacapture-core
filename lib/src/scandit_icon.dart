@@ -31,7 +31,11 @@ enum ScanditIconType {
   starFilled('starFilled'),
   starHalfFilled('starHalfFilled'),
   starOutlined('starOutlined'),
-  print('print');
+  print('print'),
+  plus('plus'),
+  minus('minus'),
+  delete('delete'),
+  slash('slash');
 
   const ScanditIconType(this._name);
 
