@@ -281,8 +281,14 @@ class _CameraController extends BaseController {
     if (_stateChangeSubscription != null) return;
     _stateChangeSubscription = CorePluginEvents.coreEventStream.asFlutterEvents().listen((event) {
       if (event.isEvent(FunctionNames.eventFrameSourceStateChanged)) {
+        var cameraPositionJson = event.payload['cameraPosition'] as String?;
+        if (cameraPositionJson == null) {
+          // State change of a non-camera frame source (e.g. SequenceFrameSource);
+          // those events carry no cameraPosition.
+          return;
+        }
         var state = FrameSourceState.fromJSON(event.payload['state'] as String);
-        var cameraPosition = CameraPosition.fromJSON(event.payload['cameraPosition'] as String);
+        var cameraPosition = CameraPosition.fromJSON(cameraPositionJson);
         if (cameraPosition != camera.position) {
           // This event is for the other camera most probably, so we can ignore it
           return;

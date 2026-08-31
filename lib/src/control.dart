@@ -4,6 +4,8 @@
  * Copyright (C) 2021- Scandit AG. All rights reserved.
  */
 
+import 'dart:convert';
+
 import 'package:flutter/widgets.dart';
 
 import 'common.dart';
@@ -70,6 +72,91 @@ class TorchSwitchControl implements Control {
         'off': {'default': _torchOffBase64Image, 'pressed': _torchOffPressedBase64Image}
       }
     };
+    if (accessibilityLabelWhenOff != null) {
+      json['accessibilityLabelWhenOff'] = accessibilityLabelWhenOff;
+    }
+    if (accessibilityHintWhenOff != null) {
+      json['accessibilityHintWhenOff'] = accessibilityHintWhenOff;
+    }
+    if (accessibilityLabelWhenOn != null) {
+      json['accessibilityLabelWhenOn'] = accessibilityLabelWhenOn;
+    }
+    if (accessibilityHintWhenOn != null) {
+      json['accessibilityHintWhenOn'] = accessibilityHintWhenOn;
+    }
+    return json;
+  }
+}
+
+class MacroModeControl implements Control {
+  MacroModeControl();
+
+  String? _autoBase64Image = Defaults.macroModeControlDefaults.autoBase64Image;
+  String? _offBase64Image = Defaults.macroModeControlDefaults.offBase64Image;
+  String? _onBase64Image = Defaults.macroModeControlDefaults.onBase64Image;
+
+  String? accessibilityLabelWhenAuto = Defaults.macroModeControlDefaults.accessibilityLabelWhenAuto;
+  String? accessibilityHintWhenAuto = Defaults.macroModeControlDefaults.accessibilityHintWhenAuto;
+  String? accessibilityLabelWhenOff = Defaults.macroModeControlDefaults.accessibilityLabelWhenOff;
+  String? accessibilityHintWhenOff = Defaults.macroModeControlDefaults.accessibilityHintWhenOff;
+  String? accessibilityLabelWhenOn = Defaults.macroModeControlDefaults.accessibilityLabelWhenOn;
+  String? accessibilityHintWhenOn = Defaults.macroModeControlDefaults.accessibilityHintWhenOn;
+
+  static Image? get defaultAutoImage => _imageFromBase64(Defaults.macroModeControlDefaults.autoBase64Image);
+  static Image? get defaultOffImage => _imageFromBase64(Defaults.macroModeControlDefaults.offBase64Image);
+  static Image? get defaultOnImage => _imageFromBase64(Defaults.macroModeControlDefaults.onBase64Image);
+
+  Image? get autoImage => _imageFromBase64(_autoBase64Image);
+  set autoImage(Image? newValue) => _autoBase64Image = _base64FromImage(newValue, (v) => _autoBase64Image = v);
+
+  Image? get offImage => _imageFromBase64(_offBase64Image);
+  set offImage(Image? newValue) => _offBase64Image = _base64FromImage(newValue, (v) => _offBase64Image = v);
+
+  Image? get onImage => _imageFromBase64(_onBase64Image);
+  set onImage(Image? newValue) => _onBase64Image = _base64FromImage(newValue, (v) => _onBase64Image = v);
+
+  // A Flutter Image can only be rendered to bytes asynchronously in the general
+  // case, but the common path — app-provided bytes and the native default icons,
+  // which both arrive as Image.memory — already holds the encoded bytes, so we
+  // encode those synchronously and avoid a race where toMap() serializes a stale
+  // value before an async conversion completes. Asset/network-backed images
+  // (rare for control icons) fall back to the async render path.
+  static String? _base64FromImage(Image? image, void Function(String?) onConverted) {
+    if (image == null) {
+      return null;
+    }
+    final provider = image.image;
+    if (provider is MemoryImage) {
+      return base64Encode(provider.bytes);
+    }
+    image.base64String.then(onConverted);
+    return null;
+  }
+
+  static Image? _imageFromBase64(String? base64) {
+    if (base64 == null || base64.isEmpty) {
+      return null;
+    }
+    // Remove whitespaces to avoid errors when decoding.
+    return Image.memory(base64Decode(base64.replaceAll(RegExp(r'\s+'), '')));
+  }
+
+  @override
+  Map<String, dynamic> toMap() {
+    var json = <String, dynamic>{
+      'type': 'macro',
+      'icon': {
+        'auto': _autoBase64Image,
+        'off': _offBase64Image,
+        'on': _onBase64Image,
+      }
+    };
+    if (accessibilityLabelWhenAuto != null) {
+      json['accessibilityLabelWhenAuto'] = accessibilityLabelWhenAuto;
+    }
+    if (accessibilityHintWhenAuto != null) {
+      json['accessibilityHintWhenAuto'] = accessibilityHintWhenAuto;
+    }
     if (accessibilityLabelWhenOff != null) {
       json['accessibilityLabelWhenOff'] = accessibilityLabelWhenOff;
     }

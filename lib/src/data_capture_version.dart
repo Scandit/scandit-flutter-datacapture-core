@@ -10,5 +10,5 @@ import 'defaults.dart';
 class DataCaptureVersion {
   static String get sdkVersion => Defaults.sdkVersion;
 
-  static String get pluginVersion => "8.5.3";
+  static String get pluginVersion => "8.6.0";
 }

@@ -6,7 +6,7 @@
 
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:scandit_flutter_datacapture_core/src/source/camera_position.dart';
 import 'package:scandit_flutter_datacapture_core/src/source/focus_gesture_strategy.dart';
 import 'package:scandit_flutter_datacapture_core/src/source/focus_range.dart';
@@ -161,6 +161,49 @@ class ZoomSwitchControlDefaults {
 }
 
 @immutable
+class MacroModeControlDefaults {
+  final String? autoBase64Image;
+  final String? offBase64Image;
+  final String? onBase64Image;
+  final String? accessibilityLabelWhenAuto;
+  final String? accessibilityHintWhenAuto;
+  final String? accessibilityLabelWhenOff;
+  final String? accessibilityHintWhenOff;
+  final String? accessibilityLabelWhenOn;
+  final String? accessibilityHintWhenOn;
+
+  const MacroModeControlDefaults({
+    this.autoBase64Image,
+    this.offBase64Image,
+    this.onBase64Image,
+    this.accessibilityLabelWhenAuto,
+    this.accessibilityHintWhenAuto,
+    this.accessibilityLabelWhenOff,
+    this.accessibilityHintWhenOff,
+    this.accessibilityLabelWhenOn,
+    this.accessibilityHintWhenOn,
+  });
+
+  factory MacroModeControlDefaults.fromJSON(Map<String, dynamic>? json) {
+    if (json == null) {
+      return const MacroModeControlDefaults();
+    }
+    final icon = json['icon'] as Map<String, dynamic>?;
+    return MacroModeControlDefaults(
+      autoBase64Image: icon?['auto'] as String?,
+      offBase64Image: icon?['off'] as String?,
+      onBase64Image: icon?['on'] as String?,
+      accessibilityLabelWhenAuto: json['accessibilityLabelWhenAuto'] as String?,
+      accessibilityHintWhenAuto: json['accessibilityHintWhenAuto'] as String?,
+      accessibilityLabelWhenOff: json['accessibilityLabelWhenOff'] as String?,
+      accessibilityHintWhenOff: json['accessibilityHintWhenOff'] as String?,
+      accessibilityLabelWhenOn: json['accessibilityLabelWhenOn'] as String?,
+      accessibilityHintWhenOn: json['accessibilityHintWhenOn'] as String?,
+    );
+  }
+}
+
+@immutable
 class BrushDefaults {
   final Color fillColor;
   final Color strokeColor;
@@ -291,6 +334,7 @@ class Defaults {
   static late AimerViewfinderDefaults aimerViewfinderDefaults;
   static late LaserlineViewfinderDefaults laserlineViewfinderDefaults;
   static late ZoomSwitchControlDefaults zoomSwitchControlDefaults;
+  static MacroModeControlDefaults macroModeControlDefaults = const MacroModeControlDefaults();
   static bool _isInitialized = false;
 
   static void initializeDefaults(String defaultsJSON) {
@@ -305,6 +349,7 @@ class Defaults {
     aimerViewfinderDefaults = AimerViewfinderDefaults.fromJSON(defaults['AimerViewfinder']);
     laserlineViewfinderDefaults = LaserlineViewfinderDefaults.fromJSON(defaults['LaserlineViewfinder']);
     zoomSwitchControlDefaults = ZoomSwitchControlDefaults.fromJSON(defaults['ZoomSwitchControl']);
+    macroModeControlDefaults = MacroModeControlDefaults.fromJSON(defaults['MacroModeControl'] as Map<String, dynamic>?);
     _isInitialized = true;
   }
 
