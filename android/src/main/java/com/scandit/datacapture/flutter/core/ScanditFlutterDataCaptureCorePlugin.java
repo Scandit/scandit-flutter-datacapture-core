@@ -13,7 +13,6 @@ import com.scandit.datacapture.flutter.core.utils.FlutterEmitter;
 import com.scandit.datacapture.frameworks.core.CoreModule;
 import com.scandit.datacapture.frameworks.core.FrameworkModule;
 import com.scandit.datacapture.frameworks.core.locator.ServiceLocator;
-import com.scandit.datacapture.frameworks.core.result.NoopFrameworksResult;
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.embedding.engine.plugins.activity.ActivityAware;
@@ -79,7 +78,8 @@ public class ScanditFlutterDataCaptureCorePlugin extends BaseFlutterPlugin imple
 
         coreModule = CoreModule.create(coreEmitter);
         coreModule.onCreate(binding.getApplicationContext());
-        coreModule.subscribeContextListener(new NoopFrameworksResult());
+        coreModule.registerDataCaptureContextListener();
+        coreModule.registerFrameSourceListener();
 
         registerModule(coreModule);
     }

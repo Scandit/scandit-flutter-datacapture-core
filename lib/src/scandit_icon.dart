@@ -20,7 +20,7 @@ enum ScanditIconType {
   chevronDown('chevronDown'),
   chevronLeft('chevronLeft'),
   chevronRight('chevronRight'),
-  xMark('xMark'),
+  xMark('xmark'),
   questionMark('questionMark'),
   exclamationMark('exclamationMark'),
   lowStock('lowStock'),
@@ -31,11 +31,7 @@ enum ScanditIconType {
   starFilled('starFilled'),
   starHalfFilled('starHalfFilled'),
   starOutlined('starOutlined'),
-  print('print'),
-  plus('plus'),
-  minus('minus'),
-  delete('delete'),
-  slash('slash');
+  print('print');
 
   const ScanditIconType(this._name);
 
