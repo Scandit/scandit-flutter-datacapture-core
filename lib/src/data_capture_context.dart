@@ -10,14 +10,17 @@ import 'dart:developer' as developer;
 import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:scandit_flutter_datacapture_core/src/frame_data_settings.dart';
+import 'package:scandit_flutter_datacapture_core/src/internal/base_controller.dart';
+import 'package:scandit_flutter_datacapture_core/src/internal/core_plugin_events.dart';
+import 'package:scandit_flutter_datacapture_core/src/internal/event_stream_extensions.dart';
+import 'package:scandit_flutter_datacapture_core/src/internal/generated/core_method_handler.dart';
+import 'package:scandit_flutter_datacapture_core/src/source/frame_source.dart';
 
 import 'open_source_software_license_info.dart';
 import 'common.dart';
 import 'context_status.dart';
-import 'data_capture_component.dart';
 import 'data_capture_view.dart';
 import 'defaults.dart';
-import 'frame_source.dart';
 import 'function_names.dart';
 
 abstract class DataCaptureContextCreationOptions {
@@ -112,7 +115,7 @@ class DataCaptureContext with PrivateDataCaptureContext implements Serializable 
 
   FrameSource? get frameSource => _frameSource;
 
-  Future<void> setFrameSource(FrameSource frameSource) {
+  Future<void> setFrameSource(FrameSource? frameSource) {
     _frameSource?.context = null;
     _frameSource = frameSource;
     _frameSource?.context = this;
@@ -154,11 +157,11 @@ class DataCaptureContext with PrivateDataCaptureContext implements Serializable 
   static DataCaptureContext get sharedInstance => _instance;
 
   Future<void> addMode(DataCaptureMode mode) async {
-    if (modes.contains(mode)) {
+    if (_modes.contains(mode)) {
       return;
     }
 
-    modes.add(mode);
+    _modes.add(mode);
     await _controller.addModeToContext(mode);
     mode._context = this;
   }
@@ -167,30 +170,30 @@ class DataCaptureContext with PrivateDataCaptureContext implements Serializable 
     // Remove all modes first to avoid conflicts
     await removeAllModes();
     // Add the new mode
-    modes.add(mode);
+    _modes.add(mode);
     await _controller.addModeToContext(mode);
     mode._context = this;
   }
 
   Future<void> removeCurrentMode() async {
-    if (modes.isEmpty) {
+    if (_modes.isEmpty) {
       return;
     }
 
-    if (modes.length > 1) {
+    if (_modes.length > 1) {
       developer.log(
           'Warning: removeCurrentMode() called with multiple modes active. Consider using removeMode() for specific mode removal. Only the first mode will be removed.',
           name: 'DataCaptureContext');
     }
 
-    final mode = modes.first;
-    modes.remove(mode);
+    final mode = _modes.first;
+    _modes.remove(mode);
     mode._context = null;
     await _controller.removeModeFromContext(mode);
   }
 
   Future<void> removeMode(DataCaptureMode mode) async {
-    if (!modes.remove(mode)) {
+    if (!_modes.remove(mode)) {
       return;
     }
 
@@ -199,7 +202,7 @@ class DataCaptureContext with PrivateDataCaptureContext implements Serializable 
   }
 
   Future<void> removeAllModes() async {
-    if (modes.isEmpty) {
+    if (_modes.isEmpty) {
       return;
     }
 
@@ -208,10 +211,10 @@ class DataCaptureContext with PrivateDataCaptureContext implements Serializable 
   }
 
   void _clearAllModes() {
-    for (final mode in modes) {
+    for (final mode in _modes) {
       mode._context = null;
     }
-    modes.clear();
+    _modes.clear();
   }
 
   void addListener(DataCaptureContextListener listener) {
@@ -233,14 +236,8 @@ class DataCaptureContext with PrivateDataCaptureContext implements Serializable 
   }
 
   static Future<OpenSourceSoftwareLicenseInfo> getOpenSourceSoftwareLicenseInfo() {
-    return Defaults.channel
-        .invokeMethod(FunctionNames.getOpenSourceSoftwareLicenseInfo)
-        .then((value) => OpenSourceSoftwareLicenseInfo(value));
-  }
-
-  @Deprecated('Deprecated. No need to add the component to the DataCaptureContext in oder to use it.')
-  Future<void> addComponent(DataCaptureComponent component) {
-    return Future.value(null);
+    var coreMethodHandler = CoreMethodHandler(const MethodChannel(FunctionNames.methodsChannelName));
+    return coreMethodHandler.getOpenSourceSoftwareLicenseInfo().then((value) => OpenSourceSoftwareLicenseInfo(value));
   }
 
   Future<void> applySettings(DataCaptureContextSettings settings) {
@@ -277,8 +274,10 @@ abstract class DataCaptureContextListener {
 
 mixin PrivateDataCaptureContext {
   late _DataCaptureContextController _controller;
-  final List<DataCaptureMode> modes = [];
+  final List<DataCaptureMode> _modes = [];
   final List<DataCaptureContextListener> _listeners = [];
+
+  List<DataCaptureMode> get modes => List.unmodifiable(_modes);
 
   PrivateDataCaptureView? view;
 
@@ -287,63 +286,78 @@ mixin PrivateDataCaptureContext {
   }
 }
 
-class _DataCaptureContextController {
+class _DataCaptureContextController extends BaseController {
   final DataCaptureContext context;
-  final MethodChannel methodChannel = Defaults.channel;
+  late final CoreMethodHandler coreMethodHandler;
 
-  final EventChannel _contextEventsChannel = const EventChannel(FunctionNames.eventsChannelName);
   StreamSubscription? _contextEventsSubscription;
 
   PrivateDataCaptureContext get _privateContext {
     return context;
   }
 
-  _DataCaptureContextController(this.context);
+  _DataCaptureContextController(this.context) : super(FunctionNames.methodsChannelName) {
+    coreMethodHandler = CoreMethodHandler(methodChannel);
+  }
 
-  Future<void> initialize() {
+  Future<void> initialize() async {
     var encoded = jsonEncode(context.toMap());
-    return methodChannel.invokeMethod(FunctionNames.createContextFromJSONMethodName, encoded).catchError((error) {
-      _notifyListenersOfDeserializationError(error, "Init - $encoded");
-    });
+    try {
+      await coreMethodHandler.createContextFromJson(contextJson: encoded);
+    } catch (error) {
+      if (error is PlatformException) {
+        _notifyListenersOfDeserializationError(error, "Init - $encoded");
+      }
+    }
   }
 
-  Future<void> updateContextFromJSON() {
+  Future<void> updateContextFromJSON() async {
     var encoded = jsonEncode(context.toMap());
-    return methodChannel
-        .invokeMethod(FunctionNames.updateContextFromJSONMethodName, encoded)
-        // ignore: unnecessary_lambdas
-        .catchError((error) {
-      _notifyListenersOfDeserializationError(error, "Update - $encoded");
-    });
+    try {
+      await coreMethodHandler.updateContextFromJson(contextJson: encoded);
+    } catch (error) {
+      if (error is PlatformException) {
+        _notifyListenersOfDeserializationError(error, "Update - $encoded");
+      }
+    }
   }
 
-  Future<void> addModeToContext(DataCaptureMode mode) {
+  Future<void> addModeToContext(DataCaptureMode mode) async {
     var encoded = jsonEncode(mode.toMap());
-    return methodChannel
-        .invokeMethod(FunctionNames.addModeToContext, encoded)
-        // ignore: unnecessary_lambdas
-        .catchError((error) {
-      _notifyListenersOfDeserializationError(error, "AddMode - $encoded");
-    });
+    try {
+      await coreMethodHandler.addModeToContext(modeJson: encoded);
+    } catch (error) {
+      if (error is PlatformException) {
+        _notifyListenersOfDeserializationError(error, "AddMode - $encoded");
+      }
+    }
   }
 
-  Future<void> removeModeFromContext(DataCaptureMode mode) {
+  Future<void> removeModeFromContext(DataCaptureMode mode) async {
     var encoded = jsonEncode(mode.toMap());
-    return methodChannel
-        .invokeMethod(FunctionNames.removeModeFromContext, encoded)
-        // ignore: unnecessary_lambdas
-        .catchError((error) {
-      _notifyListenersOfDeserializationError(error, "RemoveMode - $encoded");
-    });
+    try {
+      await coreMethodHandler.removeModeFromContext(modeJson: encoded);
+    } catch (error) {
+      if (error is PlatformException) {
+        _notifyListenersOfDeserializationError(error, "RemoveMode - $encoded");
+      }
+    }
   }
 
-  Future<void> removeAllModes() {
-    return methodChannel
-        .invokeMethod(FunctionNames.removeAllModesFromContext)
-        // ignore: unnecessary_lambdas
-        .catchError((error) {
-      _notifyListenersOfDeserializationError(error, "RemoveAllModes");
-    });
+  Future<void> removeAllModes() async {
+    try {
+      await coreMethodHandler.removeAllModes();
+    } catch (error) {
+      if (error is PlatformException) {
+        _notifyListenersOfDeserializationError(error, "RemoveAllModes");
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    cancelSubscribers();
+    super.dispose();
   }
 
   void _notifyListenersOfDidChangeStatus(ContextStatus contextStatus) {
@@ -353,11 +367,9 @@ class _DataCaptureContextController {
   }
 
   void _notifyListenersOfDeserializationError(PlatformException error, String json) {
-    _notifyListenersOfDidChangeStatus(ContextStatus.fromJSON({
-      "message": error.message,
-      "code": int.parse(error.code),
-      "isValid": false,
-    }));
+    _notifyListenersOfDidChangeStatus(
+      ContextStatus.fromJSON({"message": error.message, "code": int.parse(error.code), "isValid": false}),
+    );
   }
 
   void _notifyListenersOfObservationStarted() {
@@ -367,19 +379,16 @@ class _DataCaptureContextController {
   }
 
   void initSubscribers() {
-    _contextEventsSubscription = _contextEventsChannel.receiveBroadcastStream().listen((event) {
-      var eventJSON = jsonDecode(event);
-      var eventName = eventJSON['event'] as String;
-
-      if (eventName == FunctionNames.eventDataCaptureContextObservationStarted) {
+    _contextEventsSubscription = CorePluginEvents.coreEventStream.asFlutterEvents().listen((event) {
+      if (event.isEvent(FunctionNames.eventDataCaptureContextObservationStarted)) {
         Map<String, dynamic>? licenseInfoJSON =
-            eventJSON.containsKey('licenseInfo') ? jsonDecode(eventJSON['licenseInfo']) : null;
+            event.payload.containsKey('licenseInfo') ? jsonDecode(event.payload['licenseInfo']) : null;
         context._licenseInfo = licenseInfoJSON == null ? null : LicenseInfo.fromJSON(licenseInfoJSON);
         _notifyListenersOfObservationStarted();
       }
 
-      if (eventName == FunctionNames.eventDataCaptureContextOnStatusChanged) {
-        Map<String, dynamic> statusInfo = jsonDecode(eventJSON['status']);
+      if (event.isEvent(FunctionNames.eventDataCaptureContextOnStatusChanged)) {
+        Map<String, dynamic> statusInfo = jsonDecode(event.payload['status']);
         var status = ContextStatus.fromJSON(statusInfo);
         _notifyListenersOfDidChangeStatus(status);
       }
