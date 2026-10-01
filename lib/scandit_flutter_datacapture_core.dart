@@ -49,14 +49,16 @@ export 'src/data_capture_context.dart'
         DataCaptureContextCreationOptions,
         DataCaptureContextListener,
         DataCaptureContextSettings,
-        DataCaptureMode;
+        DataCaptureMode,
+        Expiration,
+        LicenseInfo;
 export 'src/data_capture_version.dart' show DataCaptureVersion;
 export 'src/data_capture_view.dart' show DataCaptureOverlay, DataCaptureView, DataCaptureViewListener;
 export 'src/internal/view_attachable.dart' show ViewAttachable;
 export 'src/internal/flutter_event.dart' show FlutterEvent;
 export 'src/internal/event_stream_extensions.dart' show EventStreamExtensions, FlutterEventStreamExtensions;
 export 'src/defaults.dart' show BrushDefaults, NativeBrushDefaults, CameraSettingsDefaults;
-export 'src/feedback.dart' show Feedback, Sound, Vibration;
+export 'src/feedback.dart' show Feedback, Sound, Vibration, WaveFormVibration;
 
 export 'src/location_selection.dart' show LocationSelection, RadiusLocationSelection, RectangularLocationSelection;
 export 'src/viewfinder.dart'
@@ -71,14 +73,17 @@ export 'src/viewfinder.dart'
 export 'src/scandit_flutter_datacapture_core.dart' show ScanditFlutterDataCaptureCore;
 export 'src/focus_gesture.dart' show FocusGesture, FocusGestureListener, TapToFocus;
 export 'src/zoom_gesture.dart' show ZoomGesture, ZoomGestureListener, SwipeToZoom, PinchToZoom;
-export 'src/control.dart' show Control, TorchSwitchControl, ZoomSwitchControl;
+export 'src/control.dart' show Control, TorchSwitchControl, ZoomSwitchControl, MacroModeControl;
 export 'src/logo_style.dart' show LogoStyle;
 export 'src/direction.dart' show Direction, DirectionDeserializer;
 export 'src/image_buffer.dart' show ImageBuffer;
 export 'src/frame_data.dart' show FrameData, DefaultFrameData;
+export 'src/frame_data_settings.dart' show FrameDataSettings, FrameDataSettingsBuilder;
 export 'src/source/image_frame_source.dart' show ImageFrameSource;
+export 'src/source/sequence_frame_source.dart' show SequenceFrameSource;
 export 'src/battery_saving_mode.dart' show BatterySavingMode, BatterySavingModeDeserializer;
 export 'src/scan_intention.dart' show ScanIntention, ScanIntentionSerializer;
+export 'src/selection_mode.dart' show SelectionMode;
 export 'src/widget_to_base64_converter.dart' show WidgetToBase64Converter;
 export 'src/open_source_software_license_info.dart' show OpenSourceSoftwareLicenseInfo;
 export 'src/scandit_icon.dart'

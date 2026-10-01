@@ -71,6 +71,27 @@ class CoreMethodHandler {
     return await executeCore('CoreModule', 'unregisterFrameSourceListener', {});
   }
 
+  /// Adds an NV21 frame to the tracked sequence frame source with the given id
+  Future<void> addFrameToSequenceFrameSource(
+      {required String frameSourceId, required int width, required int height, required String frameData}) async {
+    final params = {
+      'frameSourceId': frameSourceId,
+      'width': width,
+      'height': height,
+      'frameData': frameData,
+    };
+    return await executeCore('CoreModule', 'addFrameToSequenceFrameSource', params);
+  }
+
+  /// Returns the current state of the tracked sequence frame source with the given id
+  Future<Map<String, dynamic>> getSequenceFrameSourceState({required String frameSourceId}) async {
+    final params = {
+      'frameSourceId': frameSourceId,
+    };
+    final result = await executeCore('CoreModule', 'getSequenceFrameSourceState', params);
+    return jsonDecode(result) as Map<String, dynamic>;
+  }
+
   /// Registers a persistent listener for torch state change events
   Future<void> registerTorchStateListener() async {
     return await executeCore('CoreModule', 'registerTorchStateListener', {});
