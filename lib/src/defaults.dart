@@ -6,20 +6,18 @@
 
 import 'dart:convert';
 
-import 'package:flutter/widgets.dart';
+import 'package:flutter/foundation.dart';
 import 'package:scandit_flutter_datacapture_core/src/source/camera_position.dart';
 import 'package:scandit_flutter_datacapture_core/src/source/focus_gesture_strategy.dart';
 import 'package:scandit_flutter_datacapture_core/src/source/focus_range.dart';
 import 'package:scandit_flutter_datacapture_core/src/function_names.dart';
 import 'package:scandit_flutter_datacapture_core/src/source/video_resolution.dart';
-import 'package:scandit_flutter_datacapture_core/src/source/macro_mode.dart';
 
 import 'common.dart';
 import 'focus_gesture.dart';
 import 'zoom_gesture.dart';
 import 'viewfinder.dart';
 import 'logo_style.dart';
-import 'source/zoom_switch_orientation.dart';
 
 import 'package:flutter/services.dart';
 
@@ -31,17 +29,11 @@ class CameraSettingsDefaults {
   final FocusGestureStrategy focusGestureStrategy;
   final double zoomGestureZoomFactor;
   final bool shouldPreferSmoothAutoFocus;
-  final double torchLevel;
-  final MacroMode macroMode;
-  final bool adaptiveExposure;
   final Map<String, dynamic> properties;
 
   const CameraSettingsDefaults(this.preferredResolution, this.zoomFactor, this.focusRange, this.focusGestureStrategy,
       this.zoomGestureZoomFactor, this.properties,
-      {required this.shouldPreferSmoothAutoFocus,
-      this.torchLevel = 1.0,
-      this.macroMode = MacroMode.auto,
-      this.adaptiveExposure = false});
+      {required this.shouldPreferSmoothAutoFocus});
 
   factory CameraSettingsDefaults.fromJSON(Map<String, dynamic> json) {
     var resolution = VideoResolution.fromJSON(json['preferredResolution']);
@@ -50,9 +42,6 @@ class CameraSettingsDefaults {
     var focusGestureStrategy = FocusGestureStrategy.fromJSON(json['focusGestureStrategy']);
     var zoomGestureZoomFactor = (json['zoomGestureZoomFactor'] as num).toDouble();
     var shouldPreferSmoothAutoFocus = json['shouldPreferSmoothAutoFocus'] as bool?;
-    var torchLevel = (json['torchLevel'] as num?)?.toDouble() ?? 1.0;
-    var macroMode = json['macroMode'] != null ? MacroMode.fromJSON(json['macroMode']) : MacroMode.auto;
-    var adaptiveExposure = json['adaptiveExposure'] as bool? ?? false;
     var properties = <String, dynamic>{};
 
     if (json.containsKey('properties')) {
@@ -60,10 +49,7 @@ class CameraSettingsDefaults {
     }
     return CameraSettingsDefaults(
         resolution, zoomFactor, focusRange, focusGestureStrategy, zoomGestureZoomFactor, properties,
-        shouldPreferSmoothAutoFocus: shouldPreferSmoothAutoFocus ?? false,
-        torchLevel: torchLevel,
-        macroMode: macroMode,
-        adaptiveExposure: adaptiveExposure);
+        shouldPreferSmoothAutoFocus: shouldPreferSmoothAutoFocus ?? false);
   }
 }
 
@@ -95,14 +81,11 @@ class DataCaptureViewDefaults {
   final Anchor logoAnchor;
   final PointWithUnit logoOffset;
   final ZoomGesture? zoomGesture;
-  final List<ZoomGesture> zoomGestures;
   final FocusGesture? focusGesture;
   final LogoStyle logoStyle;
-  final bool? shouldShowZoomNotification;
 
   const DataCaptureViewDefaults(this.scanAreaMargins, this.pointOfInterest, this.logoAnchor, this.logoOffset,
-      this.focusGesture, this.zoomGesture, this.logoStyle, this.shouldShowZoomNotification,
-      {this.zoomGestures = const []});
+      this.focusGesture, this.zoomGesture, this.logoStyle);
 
   factory DataCaptureViewDefaults.fromJSON(Map<String, dynamic> json) {
     var scanAreaMargins = MarginsWithUnit.fromJSON(jsonDecode(json['scanAreaMargins']));
@@ -117,89 +100,9 @@ class DataCaptureViewDefaults {
     if (json.containsKey('zoomGesture')) {
       zoomGesture = ZoomGestureDeserializer.fromJSON(jsonDecode(json['zoomGesture']));
     }
-    List<ZoomGesture> zoomGestures;
-    if (json.containsKey('zoomGestures')) {
-      zoomGestures = ZoomGestureDeserializer.fromJSONArray(json['zoomGestures'] as List<dynamic>);
-    } else if (zoomGesture != null) {
-      zoomGestures = [zoomGesture];
-    } else {
-      zoomGestures = [];
-    }
     var logoStyle = LogoStyleDeserializer.fromJSON(json['logoStyle']);
-    var shouldShowZoomNotification = json['shouldShowZoomNotification'] as bool?;
-    return DataCaptureViewDefaults(scanAreaMargins, pointOfInterest, logoAnchor, logoOffset, focusGesture, zoomGesture,
-        logoStyle, shouldShowZoomNotification,
-        zoomGestures: zoomGestures);
-  }
-}
-
-@immutable
-class ZoomSwitchControlDefaults {
-  final ZoomSwitchOrientation orientation;
-  final bool isAlwaysExpanded;
-  final bool isExpanded;
-  final String accessibilityLabel;
-  final String accessibilityHint;
-
-  const ZoomSwitchControlDefaults({
-    required this.orientation,
-    required this.isAlwaysExpanded,
-    required this.isExpanded,
-    required this.accessibilityLabel,
-    required this.accessibilityHint,
-  });
-
-  factory ZoomSwitchControlDefaults.fromJSON(Map<String, dynamic> json) {
-    return ZoomSwitchControlDefaults(
-      orientation: ZoomSwitchOrientation.fromJSON(json['orientation'] as String),
-      isAlwaysExpanded: json['isAlwaysExpanded'] as bool,
-      isExpanded: json['isExpanded'] as bool,
-      accessibilityLabel: json['accessibilityLabel'] as String,
-      accessibilityHint: json['accessibilityHint'] as String? ?? '',
-    );
-  }
-}
-
-@immutable
-class MacroModeControlDefaults {
-  final String? autoBase64Image;
-  final String? offBase64Image;
-  final String? onBase64Image;
-  final String? accessibilityLabelWhenAuto;
-  final String? accessibilityHintWhenAuto;
-  final String? accessibilityLabelWhenOff;
-  final String? accessibilityHintWhenOff;
-  final String? accessibilityLabelWhenOn;
-  final String? accessibilityHintWhenOn;
-
-  const MacroModeControlDefaults({
-    this.autoBase64Image,
-    this.offBase64Image,
-    this.onBase64Image,
-    this.accessibilityLabelWhenAuto,
-    this.accessibilityHintWhenAuto,
-    this.accessibilityLabelWhenOff,
-    this.accessibilityHintWhenOff,
-    this.accessibilityLabelWhenOn,
-    this.accessibilityHintWhenOn,
-  });
-
-  factory MacroModeControlDefaults.fromJSON(Map<String, dynamic>? json) {
-    if (json == null) {
-      return const MacroModeControlDefaults();
-    }
-    final icon = json['icon'] as Map<String, dynamic>?;
-    return MacroModeControlDefaults(
-      autoBase64Image: icon?['auto'] as String?,
-      offBase64Image: icon?['off'] as String?,
-      onBase64Image: icon?['on'] as String?,
-      accessibilityLabelWhenAuto: json['accessibilityLabelWhenAuto'] as String?,
-      accessibilityHintWhenAuto: json['accessibilityHintWhenAuto'] as String?,
-      accessibilityLabelWhenOff: json['accessibilityLabelWhenOff'] as String?,
-      accessibilityHintWhenOff: json['accessibilityHintWhenOff'] as String?,
-      accessibilityLabelWhenOn: json['accessibilityLabelWhenOn'] as String?,
-      accessibilityHintWhenOn: json['accessibilityHintWhenOn'] as String?,
-    );
+    return DataCaptureViewDefaults(
+        scanAreaMargins, pointOfInterest, logoAnchor, logoOffset, focusGesture, zoomGesture, logoStyle);
   }
 }
 
@@ -333,8 +236,6 @@ class Defaults {
   static late String deviceId;
   static late AimerViewfinderDefaults aimerViewfinderDefaults;
   static late LaserlineViewfinderDefaults laserlineViewfinderDefaults;
-  static late ZoomSwitchControlDefaults zoomSwitchControlDefaults;
-  static MacroModeControlDefaults macroModeControlDefaults = const MacroModeControlDefaults();
   static bool _isInitialized = false;
 
   static void initializeDefaults(String defaultsJSON) {
@@ -348,8 +249,6 @@ class Defaults {
     deviceId = defaults['deviceID'] as String;
     aimerViewfinderDefaults = AimerViewfinderDefaults.fromJSON(defaults['AimerViewfinder']);
     laserlineViewfinderDefaults = LaserlineViewfinderDefaults.fromJSON(defaults['LaserlineViewfinder']);
-    zoomSwitchControlDefaults = ZoomSwitchControlDefaults.fromJSON(defaults['ZoomSwitchControl']);
-    macroModeControlDefaults = MacroModeControlDefaults.fromJSON(defaults['MacroModeControl'] as Map<String, dynamic>?);
     _isInitialized = true;
   }
 
