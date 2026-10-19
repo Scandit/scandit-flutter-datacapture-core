@@ -2,10 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 import 'package:scandit_flutter_datacapture_core/src/data_capture_context.dart';
 import 'package:scandit_flutter_datacapture_core/src/function_names.dart';
 import 'package:scandit_flutter_datacapture_core/src/internal/base_controller.dart';
+import 'package:scandit_flutter_datacapture_core/src/internal/core_plugin_events.dart';
+import 'package:scandit_flutter_datacapture_core/src/internal/event_stream_extensions.dart';
+import 'package:scandit_flutter_datacapture_core/src/internal/generated/core_method_handler.dart';
 import 'package:scandit_flutter_datacapture_core/src/source/camera_position.dart';
 import 'package:scandit_flutter_datacapture_core/src/source/frame_source_state.dart';
 
@@ -91,26 +93,32 @@ class ImageFrameSource extends FrameSource {
 
 class _ImageFrameSourceController extends BaseController {
   final ImageFrameSource imageFrameSource;
+  late CoreMethodHandler cameraMethodHandler;
 
-  final EventChannel _stateChangeEventChannel = const EventChannel(FunctionNames.eventsChannelName);
   StreamSubscription? _stateChangeSubscription;
 
-  _ImageFrameSourceController(this.imageFrameSource) : super(FunctionNames.methodsChannelName);
+  _ImageFrameSourceController(this.imageFrameSource) : super(FunctionNames.methodsChannelName) {
+    cameraMethodHandler = CoreMethodHandler(methodChannel);
+  }
+
+  @override
+  void dispose() {
+    unsubscribeFrameSourceListener();
+    super.dispose();
+  }
 
   void subscribeFrameSourceListener() {
     if (_stateChangeSubscription != null) return;
-    _stateChangeSubscription = _stateChangeEventChannel.receiveBroadcastStream().listen((event) {
-      var eventJSON = jsonDecode(event);
-      var eventName = eventJSON['event'] as String;
-      if (eventName == FunctionNames.eventFrameSourceStateChanged) {
-        var state = FrameSourceState.fromJSON(jsonDecode(event)['state'] as String);
+    _stateChangeSubscription = CorePluginEvents.coreEventStream.asFlutterEvents().listen((event) {
+      if (event.isEvent(FunctionNames.eventFrameSourceStateChanged)) {
+        var state = FrameSourceState.fromJSON(event.payload['state'] as String);
         _notifyCameraListeners(state);
       }
     });
   }
 
   Future<void> switchCameraToDesiredState(FrameSourceState desiredState) {
-    return methodChannel.invokeMethod(FunctionNames.switchCameraToDesiredState, desiredState.toString());
+    return cameraMethodHandler.switchCameraToDesiredState(stateJson: desiredState.toString());
   }
 
   void unsubscribeFrameSourceListener() {

@@ -43,7 +43,7 @@ public class ScanditPlatformViewFactory extends PlatformViewFactory {
             throw new IllegalArgumentException("Unable to create the DataCaptureView without the json.");
         }
 
-        CoreModule coreModule = (CoreModule) this.serviceLocator.resolve(CoreModule.class.getName());
+        CoreModule coreModule = (CoreModule) this.serviceLocator.resolve(CoreModule.class.getSimpleName());
         if (coreModule == null) {
             throw new IllegalArgumentException("Unable to create the DataCaptureView. Core module not initialized.");
         }

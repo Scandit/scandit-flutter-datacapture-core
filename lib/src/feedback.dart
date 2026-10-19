@@ -8,6 +8,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:scandit_flutter_datacapture_core/src/internal/base_controller.dart';
+import 'package:scandit_flutter_datacapture_core/src/internal/generated/core_method_handler.dart';
 
 import 'common.dart';
 import 'function_names.dart';
@@ -16,6 +17,7 @@ enum _VibrationType {
   defaultVibration('default'),
   selectionHaptic('selectionHaptic'),
   successHaptic('successHaptic'),
+  failureHaptic('failureHaptic'),
   impactHaptic('impactHaptic'),
   waveForm('waveForm');
 
@@ -39,6 +41,8 @@ class Vibration implements Serializable {
   static Vibration get selectionHapticFeedback => Vibration._(_VibrationType.selectionHaptic);
 
   static Vibration get successHapticFeedback => Vibration._(_VibrationType.successHaptic);
+
+  static Vibration get failureHapticFeedback => Vibration._(_VibrationType.failureHaptic);
 
   static Vibration get impactHapticFeedback => Vibration._(_VibrationType.impactHaptic);
 
@@ -127,11 +131,13 @@ class Feedback implements Serializable {
 
 class _FeedbackController extends BaseController {
   final Feedback _feedback;
+  late final CoreMethodHandler coreMethodHandler;
 
-  _FeedbackController(this._feedback) : super(FunctionNames.methodsChannelName);
-
+  _FeedbackController(this._feedback) : super(FunctionNames.methodsChannelName) {
+    coreMethodHandler = CoreMethodHandler(methodChannel);
+  }
   void emit() {
-    methodChannel.invokeMethod(FunctionNames.emitFeedbackMethodName, jsonEncode(_feedback.toMap()));
+    coreMethodHandler.emitFeedback(feedbackJson: jsonEncode(_feedback.toMap()));
   }
 }
 
@@ -158,6 +164,9 @@ extension FeedbackDeserializer on Feedback {
             break;
           case 'successHaptic':
             vibration = Vibration.successHapticFeedback;
+            break;
+          case 'failureHaptic':
+            vibration = Vibration.failureHapticFeedback;
             break;
           case 'impactHaptic':
             vibration = Vibration.impactHapticFeedback;

@@ -29,6 +29,9 @@ public class FlutterMethodCall implements FrameworksMethodCall {
     @NonNull
     @Override
     public String getMethod() {
+        if (hasArgument("methodName")) {
+            return argument("methodName");
+        }
         return call.method;
     }
 
@@ -68,7 +71,7 @@ public class FlutterMethodCall implements FrameworksMethodCall {
                 return longValue;
             }
         }
-        
+
         return value;
     }
 }
