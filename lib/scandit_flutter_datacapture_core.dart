@@ -73,13 +73,14 @@ export 'src/viewfinder.dart'
 export 'src/scandit_flutter_datacapture_core.dart' show ScanditFlutterDataCaptureCore;
 export 'src/focus_gesture.dart' show FocusGesture, FocusGestureListener, TapToFocus;
 export 'src/zoom_gesture.dart' show ZoomGesture, ZoomGestureListener, SwipeToZoom, PinchToZoom;
-export 'src/control.dart' show Control, TorchSwitchControl, ZoomSwitchControl;
+export 'src/control.dart' show Control, TorchSwitchControl, ZoomSwitchControl, MacroModeControl;
 export 'src/logo_style.dart' show LogoStyle;
 export 'src/direction.dart' show Direction, DirectionDeserializer;
 export 'src/image_buffer.dart' show ImageBuffer;
 export 'src/frame_data.dart' show FrameData, DefaultFrameData;
 export 'src/frame_data_settings.dart' show FrameDataSettings, FrameDataSettingsBuilder;
 export 'src/source/image_frame_source.dart' show ImageFrameSource;
+export 'src/source/sequence_frame_source.dart' show SequenceFrameSource;
 export 'src/battery_saving_mode.dart' show BatterySavingMode, BatterySavingModeDeserializer;
 export 'src/scan_intention.dart' show ScanIntention, ScanIntentionSerializer;
 export 'src/selection_mode.dart' show SelectionMode;

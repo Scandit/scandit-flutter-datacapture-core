@@ -395,6 +395,17 @@ mixin PrivateDataCaptureView implements common.Serializable {
     _update();
   }
 
+  // The macro mode control only exists on iOS; the Android control
+  // deserializer rejects the 'macro' type, which aborts the whole view
+  // deserialization and leaves the camera preview blank (SDC-33291).
+  //
+  // Uses defaultTargetPlatform rather than Platform.isIOS (the convention
+  // elsewhere in this file) so tests can simulate both platforms via
+  // debugDefaultTargetPlatformOverride; dart:io's Platform is not mockable.
+  Iterable<Control> get _serializableControls => defaultTargetPlatform == TargetPlatform.iOS
+      ? _controls
+      : _controls.where((control) => control is! MacroModeControl);
+
   bool _isViewCreated = false;
 
   Future<void> _update() {
@@ -422,7 +433,7 @@ mixin PrivateDataCaptureView implements common.Serializable {
       'focusGesture': _focusGesture?.toMap(),
       'zoomGesture': _zoomGesture?.toMap(),
       'zoomGestures': _zoomGestures.map((e) => e.toMap()).toList(),
-      'controls': _controls.map((e) => e.toMap()).toList(),
+      'controls': _serializableControls.map((e) => e.toMap()).toList(),
       'logoStyle': _logoStyle.toString(),
       'shouldShowZoomNotification': _shouldShowZoomNotification,
       'overlays': _overlays.map((overlay) => overlay.toMap()).toList(),
@@ -453,6 +464,8 @@ class _DataCaptureViewState extends State<DataCaptureView> {
   @override
   void didUpdateWidget(DataCaptureView oldWidget) {
     super.didUpdateWidget(oldWidget);
+
+    widget._controller = _controller;
 
     if (oldWidget._dataCaptureContext != widget._dataCaptureContext) {
       oldWidget._dataCaptureContext?.view = null;
