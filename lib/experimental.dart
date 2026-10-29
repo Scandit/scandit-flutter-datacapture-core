@@ -10,7 +10,3 @@ export 'src/experimental/camera_owner.dart' show CameraOwner;
 export 'src/experimental/camera_ownership_manager.dart' show CameraOwnershipManager;
 export 'src/experimental/camera_ownership_helper.dart' show CameraOwnershipHelper;
 export 'src/experimental/camera_ownership_extensions.dart' show CameraOwnershipExtensions;
-
-// Experimental frame-processing profiling overlay
-// This API is subject to change and may be removed in future versions
-export 'src/experimental/profiling_overlay.dart' show ProfilingOverlay;
