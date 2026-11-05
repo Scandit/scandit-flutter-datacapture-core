@@ -26,6 +26,7 @@ class FunctionNames {
   static const String eventMacroModeChanged = 'MacroModeListener.onMacroModeChanged';
   static const String eventDataCaptureContextObservationStarted = 'DataCaptureContextListener.onObservationStarted';
   static const String eventDataCaptureContextOnStatusChanged = 'DataCaptureContextListener.onStatusChanged';
+  static const String eventDataCaptureContextOnFrameSourceChanged = 'DataCaptureContextListener.onFrameSourceChanged';
   static const String eventDataCaptureViewSizeChanged = 'DataCaptureViewListener.onSizeChanged';
   static const String eventFocusGesture = 'FocusGestureListener.onFocusGesture';
   static const String eventZoomInGesture = 'ZoomGestureListener.onZoomInGesture';

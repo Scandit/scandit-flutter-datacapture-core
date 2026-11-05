@@ -4,13 +4,37 @@
  * Copyright (C) 2021- Scandit AG. All rights reserved.
  */
 
+/// Enumeration for different directions.
+///
+/// Added in version 6.11.0
 enum Direction {
+  /// Direction left to right.
+  ///
+  /// Added in version 6.11.0
   leftToRight('leftToRight'),
+  /// Direction right to left.
+  ///
+  /// Added in version 6.11.0
   rightToLeft('rightToLeft'),
+  /// Direction horizontal.
+  ///
+  /// Added in version 6.11.0
   horizontal('horizontal'),
+  /// Direction top to bottom.
+  ///
+  /// Added in version 6.11.0
   topToBottom('topToBottom'),
+  /// Direction bottom to top.
+  ///
+  /// Added in version 6.11.0
   bottomToTop('bottomToTop'),
+  /// Direction vertical.
+  ///
+  /// Added in version 6.11.0
   vertical('vertical'),
+  /// No direction.
+  ///
+  /// Added in version 6.11.0
   none('none');
 
   const Direction(this._name);

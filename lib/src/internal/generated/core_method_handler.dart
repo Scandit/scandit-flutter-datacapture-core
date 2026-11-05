@@ -52,13 +52,22 @@ class CoreMethodHandler {
       'cameraPosition': cameraPosition,
     };
     final result = await executeCore('CoreModule', 'isTorchAvailable', params);
-    return result == 'true';
+    return result == true;
+  }
+
+  /// Checks if torch level is available for the camera
+  Future<bool> isTorchLevelAvailable({required String cameraPosition}) async {
+    final params = {
+      'cameraPosition': cameraPosition,
+    };
+    final result = await executeCore('CoreModule', 'isTorchLevelAvailable', params);
+    return result == true;
   }
 
   /// Checks if macro mode is available for the current device
   Future<bool> isMacroModeAvailable() async {
     final result = await executeCore('CoreModule', 'isMacroModeAvailable', {});
-    return result == 'true';
+    return result == true;
   }
 
   /// Registers a persistent listener for frame source state change events
@@ -69,6 +78,27 @@ class CoreMethodHandler {
   /// Unregisters the frame source event listener
   Future<void> unregisterFrameSourceListener() async {
     return await executeCore('CoreModule', 'unregisterFrameSourceListener', {});
+  }
+
+  /// Adds an NV21 frame to the tracked sequence frame source with the given id
+  Future<void> addFrameToSequenceFrameSource(
+      {required String frameSourceId, required int width, required int height, required String frameData}) async {
+    final params = {
+      'frameSourceId': frameSourceId,
+      'width': width,
+      'height': height,
+      'frameData': frameData,
+    };
+    return await executeCore('CoreModule', 'addFrameToSequenceFrameSource', params);
+  }
+
+  /// Returns the current state of the tracked sequence frame source with the given id
+  Future<Map<String, dynamic>> getSequenceFrameSourceState({required String frameSourceId}) async {
+    final params = {
+      'frameSourceId': frameSourceId,
+    };
+    final result = await executeCore('CoreModule', 'getSequenceFrameSourceState', params);
+    return jsonDecode(result) as Map<String, dynamic>;
   }
 
   /// Registers a persistent listener for torch state change events
@@ -306,5 +336,25 @@ class CoreMethodHandler {
       'feedbackJson': feedbackJson,
     };
     return await executeCore('CoreModule', 'emitFeedback', params);
+  }
+
+  /// Registers a listener for an event with the global listener registry
+  Future<void> addListener({required String eventName, int? viewId, int? modeId}) async {
+    final params = {
+      'eventName': eventName,
+      if (viewId != null) 'viewId': viewId,
+      if (modeId != null) 'modeId': modeId,
+    };
+    return await executeCore('CoreModule', 'addListener', params);
+  }
+
+  /// Removes a listener for an event from the global listener registry
+  Future<void> removeListener({required String eventName, int? viewId, int? modeId}) async {
+    final params = {
+      'eventName': eventName,
+      if (viewId != null) 'viewId': viewId,
+      if (modeId != null) 'modeId': modeId,
+    };
+    return await executeCore('CoreModule', 'removeListener', params);
   }
 }

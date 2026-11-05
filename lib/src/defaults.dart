@@ -5,8 +5,9 @@
  */
 
 import 'dart:convert';
+import 'dart:io' show Platform;
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:scandit_flutter_datacapture_core/src/source/camera_position.dart';
 import 'package:scandit_flutter_datacapture_core/src/source/focus_gesture_strategy.dart';
 import 'package:scandit_flutter_datacapture_core/src/source/focus_range.dart';
@@ -20,8 +21,13 @@ import 'zoom_gesture.dart';
 import 'viewfinder.dart';
 import 'logo_style.dart';
 import 'source/zoom_switch_orientation.dart';
+import 'generated/core_generated_defaults.dart';
+import 'internal/logging/logging_method_channel.dart';
 
-import 'package:flutter/services.dart';
+// Picks the platform-split value of a generated default (e.g. focusRange,
+// which differs between Android and iOS native defaults). Kept private:
+// nothing else in this package needs platform-conditional static defaults.
+T _platformDefault<T>({required T android, required T ios}) => Platform.isIOS ? ios : android;
 
 @immutable
 class CameraSettingsDefaults {
@@ -161,6 +167,49 @@ class ZoomSwitchControlDefaults {
 }
 
 @immutable
+class MacroModeControlDefaults {
+  final String? autoBase64Image;
+  final String? offBase64Image;
+  final String? onBase64Image;
+  final String? accessibilityLabelWhenAuto;
+  final String? accessibilityHintWhenAuto;
+  final String? accessibilityLabelWhenOff;
+  final String? accessibilityHintWhenOff;
+  final String? accessibilityLabelWhenOn;
+  final String? accessibilityHintWhenOn;
+
+  const MacroModeControlDefaults({
+    this.autoBase64Image,
+    this.offBase64Image,
+    this.onBase64Image,
+    this.accessibilityLabelWhenAuto,
+    this.accessibilityHintWhenAuto,
+    this.accessibilityLabelWhenOff,
+    this.accessibilityHintWhenOff,
+    this.accessibilityLabelWhenOn,
+    this.accessibilityHintWhenOn,
+  });
+
+  factory MacroModeControlDefaults.fromJSON(Map<String, dynamic>? json) {
+    if (json == null) {
+      return const MacroModeControlDefaults();
+    }
+    final icon = json['icon'] as Map<String, dynamic>?;
+    return MacroModeControlDefaults(
+      autoBase64Image: icon?['auto'] as String?,
+      offBase64Image: icon?['off'] as String?,
+      onBase64Image: icon?['on'] as String?,
+      accessibilityLabelWhenAuto: json['accessibilityLabelWhenAuto'] as String?,
+      accessibilityHintWhenAuto: json['accessibilityHintWhenAuto'] as String?,
+      accessibilityLabelWhenOff: json['accessibilityLabelWhenOff'] as String?,
+      accessibilityHintWhenOff: json['accessibilityHintWhenOff'] as String?,
+      accessibilityLabelWhenOn: json['accessibilityLabelWhenOn'] as String?,
+      accessibilityHintWhenOn: json['accessibilityHintWhenOn'] as String?,
+    );
+  }
+}
+
+@immutable
 class BrushDefaults {
   final Color fillColor;
   final Color strokeColor;
@@ -280,38 +329,208 @@ class LaserlineViewfinderDefaults {
   }
 }
 
+// Builds the static (platform-fixed, non-device-dependent) portion of
+// CameraSettingsDefaults straight from the generated consts - no
+// method-channel call involved. Kept private: only Defaults needs it, and
+// exposing it would let callers bypass Defaults.cameraDefaults.
+CameraSettingsDefaults _buildStaticCameraSettingsDefaults() {
+  final focusRange = _platformDefault(
+    android: CameraSettingsGeneratedDefaults.focusRangeAndroid,
+    ios: CameraSettingsGeneratedDefaults.focusRangeIos,
+  );
+  return CameraSettingsDefaults(
+    VideoResolution.fromJSON(CameraSettingsGeneratedDefaults.preferredResolution),
+    CameraSettingsGeneratedDefaults.zoomFactor,
+    FocusRangeDeserializer.focusRangeFromJSON(focusRange),
+    FocusGestureStrategy.fromJSON(CameraSettingsGeneratedDefaults.focusGestureStrategy),
+    CameraSettingsGeneratedDefaults.zoomGestureZoomFactor,
+    // Both wrappers DO emit a 'properties' key unconditionally
+    // (CameraSettingsDefaults.kt:26, .swift:40), but for a freshly constructed
+    // CameraSettings its contents null-filter to an empty map
+    // (CameraSettingsPropertiesDefaults.kt:73, .swift:56), so the original
+    // fromJSON path produced an empty map here too. Note this holds only for
+    // CameraSettings: RecommendedCameraSettings does carry properties.* values,
+    // which is why those stay on the native path.
+    const <String, dynamic>{},
+    shouldPreferSmoothAutoFocus: CameraSettingsGeneratedDefaults.shouldPreferSmoothAutoFocus,
+    torchLevel: CameraSettingsGeneratedDefaults.torchLevel,
+    macroMode: MacroMode.fromJSON(CameraSettingsGeneratedDefaults.macroMode),
+    adaptiveExposure: CameraSettingsGeneratedDefaults.adaptiveExposure,
+  );
+}
+
+DataCaptureViewDefaults _buildStaticCaptureViewDefaults() {
+  final zoomGesture = ZoomGestureDeserializer.fromJSON(DataCaptureViewGeneratedDefaults.zoomGesture);
+  return DataCaptureViewDefaults(
+    MarginsWithUnit.fromJSON(DataCaptureViewGeneratedDefaults.scanAreaMargins),
+    PointWithUnit.fromJSON(DataCaptureViewGeneratedDefaults.pointOfInterest),
+    AnchorDeserializer.fromJSON(DataCaptureViewGeneratedDefaults.logoAnchor),
+    PointWithUnit.fromJSON(DataCaptureViewGeneratedDefaults.logoOffset),
+    FocusGestureDeserializer.fromJSON(DataCaptureViewGeneratedDefaults.focusGesture),
+    zoomGesture,
+    LogoStyleDeserializer.fromJSON(DataCaptureViewGeneratedDefaults.logoStyle),
+    DataCaptureViewGeneratedDefaults.shouldShowZoomNotification,
+    zoomGestures: DataCaptureViewGeneratedDefaults.zoomGestures
+        .map((gesture) => ZoomGestureDeserializer.fromJSON(gesture as Map<String, dynamic>))
+        .whereType<ZoomGesture>()
+        .toList(),
+  );
+}
+
+RectangularViewfinderStyleDefaults _buildStaticRectangularViewfinderStyleDefaults({
+  required RectangularViewfinderStyle style,
+  required Map<String, Object?> size,
+  required String color,
+  required String lineStyle,
+  required double dimming,
+  required Map<String, Object?> animation,
+  required double disabledDimming,
+  required String disabledColor,
+}) {
+  return RectangularViewfinderStyleDefaults(
+    style,
+    SizeWithUnitAndAspect.fromJSON(size),
+    ColorDeserializer.fromRgbaHex(color),
+    dimming,
+    RectangularViewfinderLineStyleDeserializer.fromJSON(lineStyle),
+    RectangularViewfinderAnimation(isLooping: animation['looping'] as bool),
+    disabledDimming,
+    ColorDeserializer.fromRgbaHex(disabledColor),
+  );
+}
+
+RectangularViewfinderDefaults _buildStaticRectangularViewfinderDefaults() {
+  final styles = <RectangularViewfinderStyle, RectangularViewfinderStyleDefaults>{
+    RectangularViewfinderStyle.rounded: _buildStaticRectangularViewfinderStyleDefaults(
+      style: RectangularViewfinderStyle.rounded,
+      size: RectangularViewfinderGeneratedDefaults.stylesRoundedSize,
+      color: RectangularViewfinderGeneratedDefaults.stylesRoundedColor,
+      lineStyle: RectangularViewfinderGeneratedDefaults.stylesRoundedLineStyle,
+      dimming: RectangularViewfinderGeneratedDefaults.stylesRoundedDimming,
+      animation: RectangularViewfinderGeneratedDefaults.stylesRoundedAnimation,
+      disabledDimming: RectangularViewfinderGeneratedDefaults.stylesRoundedDisabledDimming,
+      disabledColor: RectangularViewfinderGeneratedDefaults.stylesRoundedDisabledColor,
+    ),
+    RectangularViewfinderStyle.square: _buildStaticRectangularViewfinderStyleDefaults(
+      style: RectangularViewfinderStyle.square,
+      size: RectangularViewfinderGeneratedDefaults.stylesSquareSize,
+      color: RectangularViewfinderGeneratedDefaults.stylesSquareColor,
+      lineStyle: RectangularViewfinderGeneratedDefaults.stylesSquareLineStyle,
+      dimming: RectangularViewfinderGeneratedDefaults.stylesSquareDimming,
+      animation: RectangularViewfinderGeneratedDefaults.stylesSquareAnimation,
+      disabledDimming: RectangularViewfinderGeneratedDefaults.stylesSquareDisabledDimming,
+      disabledColor: RectangularViewfinderGeneratedDefaults.stylesSquareDisabledColor,
+    ),
+  };
+  final defaultStyle =
+      styles[RectangularViewfinderStyleDeserializer.fromJSON(RectangularViewfinderGeneratedDefaults.defaultStyle)];
+  if (defaultStyle == null) {
+    throw Exception("Default style not found for RectangularViewfinder");
+  }
+  return RectangularViewfinderDefaults(defaultStyle, styles);
+}
+
+BrushDefaults _buildStaticBrushDefaults() {
+  return BrushDefaults(
+    ColorDeserializer.fromRgbaHex(BrushGeneratedDefaults.fillColor),
+    ColorDeserializer.fromRgbaHex(BrushGeneratedDefaults.strokeColor),
+    BrushGeneratedDefaults.strokeWidth,
+  );
+}
+
+AimerViewfinderDefaults _buildStaticAimerViewfinderDefaults() {
+  return AimerViewfinderDefaults(
+    ColorDeserializer.fromRgbaHex(AimerViewfinderGeneratedDefaults.frameColor),
+    ColorDeserializer.fromRgbaHex(AimerViewfinderGeneratedDefaults.dotColor),
+  );
+}
+
+LaserlineViewfinderDefaults _buildStaticLaserlineViewfinderDefaults() {
+  return LaserlineViewfinderDefaults(
+    DoubleWithUnit.fromJSON(LaserlineViewfinderGeneratedDefaults.width),
+    ColorDeserializer.fromRgbaHex(LaserlineViewfinderGeneratedDefaults.enabledColor),
+    ColorDeserializer.fromRgbaHex(LaserlineViewfinderGeneratedDefaults.disabledColor),
+  );
+}
+
+ZoomSwitchControlDefaults _buildStaticZoomSwitchControlDefaults({required String accessibilityLabel}) {
+  return ZoomSwitchControlDefaults(
+    orientation: ZoomSwitchOrientation.fromJSON(ZoomSwitchControlGeneratedDefaults.orientation),
+    isAlwaysExpanded: ZoomSwitchControlGeneratedDefaults.isAlwaysExpanded,
+    isExpanded: ZoomSwitchControlGeneratedDefaults.isExpanded,
+    accessibilityLabel: accessibilityLabel,
+    // iOS-only field: Android's ZoomSwitchControlDefaults.kt emits no
+    // accessibilityHint, so native's blob left it at '' there.
+    accessibilityHint: _platformDefault(android: '', ios: ZoomSwitchControlGeneratedDefaults.accessibilityHint),
+  );
+}
+
 // ignore: avoid_classes_with_only_static_members
 class Defaults {
-  static late CameraDefaults cameraDefaults;
-  static late DataCaptureViewDefaults captureViewDefaults;
-  static late RectangularViewfinderDefaults rectangularViewfinderDefaults;
-  static late BrushDefaults brushDefaults;
+  // Statically sourced from generated/core_generated_defaults.dart - byte
+  // identical to the native getDefaults() response, available immediately,
+  // no method-channel round trip needed. See SDC-32174.
+  static DataCaptureViewDefaults captureViewDefaults = _buildStaticCaptureViewDefaults();
+  static RectangularViewfinderDefaults rectangularViewfinderDefaults = _buildStaticRectangularViewfinderDefaults();
+  static BrushDefaults brushDefaults = _buildStaticBrushDefaults();
+  static AimerViewfinderDefaults aimerViewfinderDefaults = _buildStaticAimerViewfinderDefaults();
+  static LaserlineViewfinderDefaults laserlineViewfinderDefaults = _buildStaticLaserlineViewfinderDefaults();
+
+  // orientation/isAlwaysExpanded/isExpanded/accessibilityHint are static;
+  // accessibilityLabel is device-dependent (contains the current zoom
+  // level) and is only ever set by initializeDefaults from the native
+  // getDefaults() response - '' until then.
+  static ZoomSwitchControlDefaults zoomSwitchControlDefaults =
+      _buildStaticZoomSwitchControlDefaults(accessibilityLabel: '');
+
+  // Camera.Settings is static and readable immediately; defaultPosition/
+  // availablePositions are device-dependent and stay null/empty until
+  // initializeDefaults populates them from the native getDefaults() response.
+  static CameraDefaults cameraDefaults =
+      CameraDefaults(_buildStaticCameraSettingsDefaults(), null, const <CameraPosition>[]);
+
+  // Fully dynamic: only ever known from the native getDefaults() response.
   static late String sdkVersion;
   static late String deviceId;
-  static late AimerViewfinderDefaults aimerViewfinderDefaults;
-  static late LaserlineViewfinderDefaults laserlineViewfinderDefaults;
-  static late ZoomSwitchControlDefaults zoomSwitchControlDefaults;
+  static MacroModeControlDefaults macroModeControlDefaults = const MacroModeControlDefaults();
+
   static bool _isInitialized = false;
 
   static void initializeDefaults(String defaultsJSON) {
     _isInitialized = false;
     Map<String, dynamic> defaults = jsonDecode(defaultsJSON);
-    cameraDefaults = CameraDefaults.fromJSON(defaults['Camera']);
-    captureViewDefaults = DataCaptureViewDefaults.fromJSON(defaults['DataCaptureView']);
-    rectangularViewfinderDefaults = RectangularViewfinderDefaults.fromJSON(defaults['RectangularViewfinder']);
-    brushDefaults = BrushDefaults.fromJSON(defaults['Brush']);
+
+    final cameraJSON = defaults['Camera'] as Map<String, dynamic>?;
+    String? cameraPositionJSON = cameraJSON?['defaultPosition'] as String?;
+    var defaultPosition = cameraPositionJSON == null ? null : CameraPosition.fromJSON(cameraPositionJSON);
+    var availablePositions = ((cameraJSON?['availablePositions'] as List<dynamic>?) ?? const <dynamic>[])
+        // ignore: unnecessary_lambdas
+        .map((position) => CameraPosition.fromJSON(position))
+        .toList()
+        .cast<CameraPosition>();
+    cameraDefaults = CameraDefaults(_buildStaticCameraSettingsDefaults(), defaultPosition, availablePositions);
+
     sdkVersion = defaults['Version'] as String;
     deviceId = defaults['deviceID'] as String;
-    aimerViewfinderDefaults = AimerViewfinderDefaults.fromJSON(defaults['AimerViewfinder']);
-    laserlineViewfinderDefaults = LaserlineViewfinderDefaults.fromJSON(defaults['LaserlineViewfinder']);
-    zoomSwitchControlDefaults = ZoomSwitchControlDefaults.fromJSON(defaults['ZoomSwitchControl']);
+
+    final zoomSwitchControlJSON = defaults['ZoomSwitchControl'] as Map<String, dynamic>?;
+    zoomSwitchControlDefaults = _buildStaticZoomSwitchControlDefaults(
+      accessibilityLabel:
+          zoomSwitchControlJSON?['accessibilityLabel'] as String? ?? zoomSwitchControlDefaults.accessibilityLabel,
+    );
+
+    macroModeControlDefaults = MacroModeControlDefaults.fromJSON(defaults['MacroModeControl'] as Map<String, dynamic>?);
     _isInitialized = true;
   }
 
   static Future<dynamic> initializeDefaultsAsync() async {
     if (_isInitialized) return;
-    final channel = const MethodChannel(FunctionNames.methodsChannelName);
-    String result = await channel.invokeMethod('getDefaults');
+    final channel = const LoggingMethodChannel(FunctionNames.methodsChannelName);
+    // Narrow endpoint: only the residual keys read below (Version, deviceID, the
+    // device-probed camera positions, the localized ZoomSwitchControl label and
+    // the MacroModeControl block). It is the only defaults endpoint - the
+    // full-blob getDefaults was removed in SDC-32178.
+    String result = await channel.invokeMethod('getDynamicDefaults');
     initializeDefaults(result);
   }
 }

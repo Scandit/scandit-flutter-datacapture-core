@@ -1,8 +1,8 @@
 import 'dart:math';
 
-import 'package:flutter/services.dart';
 import 'package:scandit_flutter_datacapture_core/src/function_names.dart';
 import 'package:scandit_flutter_datacapture_core/src/internal/generated/core_method_handler.dart';
+import 'package:scandit_flutter_datacapture_core/src/internal/logging/logging_method_channel.dart';
 
 String generateIdentifier() {
   final Random random = Random();
@@ -24,5 +24,5 @@ String generateIdentifier() {
 }
 
 CoreMethodHandler getCoreMethodHandler() {
-  return CoreMethodHandler(const MethodChannel(FunctionNames.methodsChannelName));
+  return CoreMethodHandler(const LoggingMethodChannel(FunctionNames.methodsChannelName));
 }
