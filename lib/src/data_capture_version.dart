@@ -19,5 +19,5 @@ class DataCaptureVersion {
   /// Returns the version of the Scandit Data Capture Plugin.
   ///
   /// Added in version 6.7.0
-  static String get pluginVersion => "8.7.0";
+  static String get pluginVersion => "8.7.1";
 }

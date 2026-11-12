@@ -41,7 +41,7 @@ abstract class DataCaptureContextCreationOptions {
 
 /// Capture modes are restricted to the set of data captures modes provided by the Scandit Data Capture SDK. It is not available for implementing custom data capture modes.
 ///
-/// Capture modes need to be associated with a data capture context ([DataCaptureContext]) after they have been created using [DataCaptureContext.addMode]. Modes can be removed again using [DataCaptureContext.removeMode].
+/// Capture modes need to be associated with a data capture context ([DataCaptureContext]) after they have been created using [DataCaptureContext.setMode]. Modes can be removed again using [DataCaptureContext.removeAllModes].
 ///
 /// A data capture context can only be associated with one mode at a time. If multiple modes are associated with the same context, the context will not process any frames and report an error.
 ///
@@ -61,7 +61,8 @@ abstract class DataCaptureContextCreationOptions {
 /// var dataCaptureContext = ...;
 /// var settings = BarcodeCaptureSettings();
 /// settings.enableSymbology(Symbology.qr, true);
-/// var barcodeCapture = BarcodeCapture.forContext(dataCaptureContext, settings);
+/// var barcodeCapture = BarcodeCapture(settings);
+/// dataCaptureContext.setMode(barcodeCapture);
 /// // Capture modes are enabled by default. The next line is not strictly necessary and
 /// // is only listed to make you aware of the possibility to enable/disable modes.
 /// barcodeCapture.isEnabled = true;
