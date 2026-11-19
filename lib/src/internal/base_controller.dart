@@ -1,16 +1,15 @@
 import 'dart:developer' as developer;
 import 'package:flutter/services.dart';
 
-import 'logging/logging_method_channel.dart';
-
 abstract class BaseController {
   final MethodChannel methodChannel;
 
-  BaseController(String methodChannelName) : methodChannel = LoggingMethodChannel(methodChannelName);
+  BaseController(String methodChannelName) : methodChannel = MethodChannel(methodChannelName);
 
-  Never onError(Object error, StackTrace stackTrace) {
+  void onError(Object? error, StackTrace? stackTrace) {
+    if (error == null) return;
     developer.log(error.toString());
-    Error.throwWithStackTrace(error, stackTrace);
+    throw error;
   }
 
   void dispose() {

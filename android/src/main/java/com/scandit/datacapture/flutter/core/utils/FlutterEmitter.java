@@ -109,9 +109,4 @@ public class FlutterEmitter implements Emitter {
     public boolean hasModeSpecificListenersForEvent(int viewId, @NonNull String eventName) {
         return true;
     }
-
-    @Override
-    public boolean hasRegisteredViewListenersForEvent(int viewId, @NonNull String eventName) {
-        return false;
-    }
 }

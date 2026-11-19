@@ -10,7 +10,7 @@ import ScanditCaptureCoreDeserializer
 import ScanditFrameworksCore
 
 enum FunctionName {
-    static let getDynamicDefaults = "getDynamicDefaults"
+    static let getDefaults = "getDefaults"
 }
 
 public class ScanditFlutterDataCaptureCore: NSObject, FlutterPlugin, DeserializationLifeCycleObserver {
@@ -60,16 +60,11 @@ public class ScanditFlutterDataCaptureCore: NSObject, FlutterPlugin, Deserializa
         coreModule.didStop()
     }
 
-    /// Only the defaults Dart cannot source from its generated static consts.
-    func dynamicDefaults(reply: FlutterReply) {
-        serialize(defaults: coreModule.getDynamicDefaults(), reply: reply)
-    }
-
-    private func serialize(defaults: [String: Any?], reply: FlutterReply) {
+    func defaults(reply: FlutterReply) {
         do {
             let defaultsJSONString = String(
                 data: try JSONSerialization.data(
-                    withJSONObject: defaults,
+                    withJSONObject: coreModule.getDefaults(),
                     options: []
                 ),
                 encoding: .utf8
@@ -82,8 +77,8 @@ public class ScanditFlutterDataCaptureCore: NSObject, FlutterPlugin, Deserializa
 
     public func handle(_ methodCall: FlutterMethodCall, result: @escaping FlutterResult) {
         switch methodCall.method {
-        case FunctionName.getDynamicDefaults:
-            self.dynamicDefaults(reply: result)
+        case FunctionName.getDefaults:
+            self.defaults(reply: result)
         case "executeCore":
             let handled = self.coreModule.execute(
                 FlutterFrameworksMethodCall(methodCall),
