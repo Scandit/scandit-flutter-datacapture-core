@@ -9,6 +9,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
 
+/// Added in version 6.14.0
 class ImageBuffer {
   final Uint8List _imageBytes;
 
@@ -37,6 +38,9 @@ class ImageBuffer {
 
   Image? _cachedImage;
 
+  /// Converts the video frame to a UIImage that can be visualized in the UI, or stored on disk. The returned image has the same dimensions as the video frame.
+  ///
+  /// Added in version 6.14.0
   Image get image {
     var cachedImage = _cachedImage;
     if (cachedImage == null) {
@@ -51,9 +55,18 @@ class ImageBuffer {
     return cachedImage;
   }
 
+  /// The jpeg compressed image data for the image buffer.
+  ///
+  /// Added in version 6.22.1
   Uint8List get data => _imageBytes;
 
+  /// Width of the image buffer in pixels (non-subsampled).
+  ///
+  /// Added in version 6.14.0
   int get width => _width;
 
+  /// Height of the image buffer in pixels (non-subsampled).
+  ///
+  /// Added in version 6.14.0
   int get height => _heigth;
 }

@@ -9,21 +9,58 @@ import 'package:scandit_flutter_datacapture_core/src/internal/generated/core_met
 import 'package:scandit_flutter_datacapture_core/src/internal/core_plugin_events.dart';
 import 'package:scandit_flutter_datacapture_core/src/function_names.dart';
 
+/// Listener for observing the zoom gesture. This listener is typically used when you want to react to zoom gestures being triggered to update UI elements or similar.
+///
+/// Added in version 8.3.0
 abstract class ZoomGestureListener {
+  /// Called when a zoom in gesture is triggered.
+  ///
+  /// Added in version 8.3.0
   void didZoomInGesture(ZoomGesture zoomGesture);
+  /// Called when a zoom out gesture is triggered.
+  ///
+  /// Added in version 8.3.0
   void didZoomOutGesture(ZoomGesture zoomGesture);
 }
 
+/// Common interface for all the zoom gestures.
+///
+/// Added in version 6.7.0
 abstract class ZoomGesture extends Serializable with ViewAttachable, PrivateZoomGesture {
+  /// Adds the listener to this gesture.
+  ///
+  /// In case the same listener is already observing this instance, calling this method will not add the listener again.
+  ///
+  /// Added in version 8.3.0
   void addListener(ZoomGestureListener listener);
+  /// Removes a previously added listener from this gesture.
+  ///
+  /// In case the listener is not currently observing this instance, calling this method has no effect.
+  ///
+  /// Added in version 8.3.0
   void removeListener(ZoomGestureListener listener);
+  /// Triggers a zoom in as if the zoom in gesture was performed.
+  ///
+  /// Added in version 8.3.0
   Future<void> triggerZoomIn();
+  /// Triggers a zoom out as if the zoom out gesture was performed.
+  ///
+  /// Added in version 8.3.0
   Future<void> triggerZoomOut();
 }
 
+/// Pinch to zoom gesture.
+///
+/// Added in version 8.4.0
 class PinchToZoom extends Serializable with ViewAttachable, PrivateZoomGesture implements ZoomGesture {
+  /// Constructs a new PinchToZoom instance. The zoom levels can be changed in the [CameraSettings] via the CameraSettings.ZoomLevels property.
+  ///
+  /// Added in version 8.4.0
   PinchToZoom();
 
+  /// Implemented from [ZoomGesture]. See [ZoomGesture.addListener].
+  ///
+  /// Added in version 8.4.0
   @override
   void addListener(ZoomGestureListener listener) {
     if (!_listeners.contains(listener)) {
@@ -35,6 +72,9 @@ class PinchToZoom extends Serializable with ViewAttachable, PrivateZoomGesture i
     }
   }
 
+  /// Implemented from [ZoomGesture]. See [ZoomGesture.removeListener].
+  ///
+  /// Added in version 8.4.0
   @override
   void removeListener(ZoomGestureListener listener) {
     if (_listeners.remove(listener)) {
@@ -44,11 +84,17 @@ class PinchToZoom extends Serializable with ViewAttachable, PrivateZoomGesture i
     }
   }
 
+  /// Implemented from [ZoomGesture]. See [ZoomGesture.triggerZoomIn].
+  ///
+  /// Added in version 8.4.0
   @override
   Future<void> triggerZoomIn() async {
     await _controller?.triggerZoomIn();
   }
 
+  /// Implemented from [ZoomGesture]. See [ZoomGesture.triggerZoomOut].
+  ///
+  /// Added in version 8.4.0
   @override
   Future<void> triggerZoomOut() async {
     await _controller?.triggerZoomOut();
@@ -60,9 +106,18 @@ class PinchToZoom extends Serializable with ViewAttachable, PrivateZoomGesture i
   }
 }
 
+/// Swipe to zoom gesture.
+///
+/// Added in version 6.7.0
 class SwipeToZoom extends Serializable with ViewAttachable, PrivateZoomGesture implements ZoomGesture {
+  /// Constructs a new SwipeToZoom instance. The zoom levels can be changed in the [CameraSettings] via the CameraSettings.ZoomLevels property.
+  ///
+  /// Added in version 6.7.0
   SwipeToZoom();
 
+  /// Implemented from [ZoomGesture]. See [ZoomGesture.addListener].
+  ///
+  /// Added in version 8.3.0
   @override
   void addListener(ZoomGestureListener listener) {
     if (!_listeners.contains(listener)) {
@@ -74,6 +129,9 @@ class SwipeToZoom extends Serializable with ViewAttachable, PrivateZoomGesture i
     }
   }
 
+  /// Implemented from [ZoomGesture]. See [ZoomGesture.removeListener].
+  ///
+  /// Added in version 8.3.0
   @override
   void removeListener(ZoomGestureListener listener) {
     if (_listeners.remove(listener)) {
@@ -83,11 +141,17 @@ class SwipeToZoom extends Serializable with ViewAttachable, PrivateZoomGesture i
     }
   }
 
+  /// Implemented from [ZoomGesture]. See [ZoomGesture.triggerZoomIn].
+  ///
+  /// Added in version 8.3.0
   @override
   Future<void> triggerZoomIn() async {
     await _controller?.triggerZoomIn();
   }
 
+  /// Implemented from [ZoomGesture]. See [ZoomGesture.triggerZoomOut].
+  ///
+  /// Added in version 8.3.0
   @override
   Future<void> triggerZoomOut() async {
     await _controller?.triggerZoomOut();
@@ -136,6 +200,10 @@ class _ZoomGestureController extends BaseController {
     if (_streamSubscription != null) {
       return;
     }
+    // Both events also carry a `zoomGesture` field (the serialized ZoomGesture); it is
+    // wire-present but unconsumed here -- this controller already reuses the local
+    // ZoomGesture/PrivateZoomGesture it was constructed with, so there is nothing to
+    // reconstruct it into.
     _streamSubscription = CorePluginEvents.coreEventStream.asFlutterEvents().forView(_viewId).listen((event) {
       if (event.isEvent(FunctionNames.eventZoomInGesture)) {
         notifyZoomInListeners();

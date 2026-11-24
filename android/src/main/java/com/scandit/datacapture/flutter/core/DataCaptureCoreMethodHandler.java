@@ -42,8 +42,9 @@ public class DataCaptureCoreMethodHandler implements MethodChannel.MethodCallHan
     @Override
     public void onMethodCall(MethodCall call, @NonNull MethodChannel.Result result) {
         switch (call.method) {
-            case "getDefaults":
-                result.success(new JSONObject(getSharedModule().getDefaults()).toString());
+            // Only the defaults Dart cannot source from its generated static consts.
+            case "getDynamicDefaults":
+                result.success(new JSONObject(getSharedModule().getDynamicDefaults()).toString());
                 break;
 
             case "executeCore":

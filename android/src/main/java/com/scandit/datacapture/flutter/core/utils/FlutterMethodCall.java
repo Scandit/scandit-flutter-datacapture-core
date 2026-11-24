@@ -49,7 +49,7 @@ public class FlutterMethodCall implements FrameworksMethodCall {
 
 
     @Override
-    public @NotNull Map<@NotNull String, @Nullable Object> arguments() {
+    public @NotNull Map<String, Object> arguments() {
         return Objects.requireNonNull(call.arguments());
     }
 

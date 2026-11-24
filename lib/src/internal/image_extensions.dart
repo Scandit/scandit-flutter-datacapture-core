@@ -8,7 +8,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
 /// Extension on String to provide image creation utilities for the Scandit SDK
 extension ScanditImageExtensions on String {

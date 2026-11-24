@@ -2,30 +2,71 @@ import 'package:scandit_flutter_datacapture_core/src/internal/view_attachable.da
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'common.dart';
 import 'package:scandit_flutter_datacapture_core/src/internal/base_controller.dart';
 import 'package:scandit_flutter_datacapture_core/src/internal/event_stream_extensions.dart';
+import 'package:scandit_flutter_datacapture_core/src/internal/flutter_event.dart';
 import 'package:scandit_flutter_datacapture_core/src/internal/generated/core_method_handler.dart';
 import 'package:scandit_flutter_datacapture_core/src/internal/core_plugin_events.dart';
+import 'package:scandit_flutter_datacapture_core/src/internal/generated/schema_types.dart' as schema;
+import 'package:scandit_flutter_datacapture_core/src/internal/tolerant_payload_parser.dart';
 import 'package:scandit_flutter_datacapture_core/src/function_names.dart';
 
+/// Listener for observing the focus gesture. This listener is typically used when you want to react to focus gestures being triggered to update UI elements or similar.
+///
+/// Added in version 8.3.0
 abstract class FocusGestureListener {
+  /// Triggers a focus as if the gesture was executed.
+  ///
+  /// Added in version 8.3.0
   void didFocusGesture(FocusGesture focusGesture, PointWithUnit point);
 }
 
+/// Common interface for all the focus gestures.
+///
+/// Added in version 6.7.0
 abstract class FocusGesture extends Serializable with ViewAttachable, PrivateFocusGesture {
+  /// If enabled triggering the focus gesture will also show a visual indicator. Defaults to *true*.
+  ///
+  /// Added in version 8.3.0
   bool showUIIndicator = true;
+  /// Adds the listener to this gesture.
+  ///
+  /// In case the same listener is already observing this instance, calling this method will not add the listener again.
+  ///
+  /// Added in version 8.3.0
   void addListener(FocusGestureListener listener);
+  /// Removes a previously added listener from this gesture.
+  ///
+  /// In case the listener is not currently observing this instance, calling this method has no effect.
+  ///
+  /// Added in version 8.3.0
   void removeListener(FocusGestureListener listener);
+  /// Triggers a focus as if the focus gesture was performed.
+  ///
+  /// Added in version 8.3.0
   Future<void> triggerFocus(PointWithUnit point);
 }
 
+/// Tap to focus gesture.
+///
+/// Added in version 6.7.0
 class TapToFocus extends Serializable with ViewAttachable, PrivateFocusGesture implements FocusGesture {
+  /// If enabled triggering the focus gesture will also show a visual indicator. Defaults to *true*.
+  ///
+  /// Added in version 8.3.0
   @override
   bool showUIIndicator;
 
+  /// Constructs a new TapToFocus instance. The focus strategy can be changed in the [CameraSettings] through [CameraSettings.focusGestureStrategy].
+  ///
+  /// Added in version 6.7.0
   TapToFocus({bool? showUIIndicator}) : showUIIndicator = showUIIndicator ?? true;
 
+  /// Implemented from [FocusGesture]. See [FocusGesture.addListener].
+  ///
+  /// Added in version 8.3.0
   @override
   void addListener(FocusGestureListener listener) {
     if (!_listeners.contains(listener)) {
@@ -37,6 +78,9 @@ class TapToFocus extends Serializable with ViewAttachable, PrivateFocusGesture i
     }
   }
 
+  /// Implemented from [FocusGesture]. See [FocusGesture.removeListener].
+  ///
+  /// Added in version 8.3.0
   @override
   void removeListener(FocusGestureListener listener) {
     if (_listeners.remove(listener)) {
@@ -46,6 +90,9 @@ class TapToFocus extends Serializable with ViewAttachable, PrivateFocusGesture i
     }
   }
 
+  /// Implemented from [FocusGesture]. See [FocusGesture.triggerFocus].
+  ///
+  /// Added in version 8.3.0
   @override
   Future<void> triggerFocus(PointWithUnit point) async {
     await _controller?.triggerFocus(point);
@@ -96,11 +143,43 @@ class _FocusGestureController extends BaseController {
     }
     _streamSubscription = CorePluginEvents.coreEventStream.asFlutterEvents().forView(_viewId).listen((event) {
       if (event.isEvent(FunctionNames.eventFocusGesture)) {
-        final pointJson = event.payload['point'] as Map<String, dynamic>;
-        final point = PointWithUnit.fromJSON(pointJson);
-        notifyListeners(point);
+        _handleFocusGesture(event);
       }
     });
+  }
+
+  void _handleFocusGesture(FlutterEvent event) {
+    final payload = parsePayloadTolerantly<schema.FocusGestureListenerOnFocusGesture>(
+      event.payload,
+      (raw) => schema.FocusGestureListenerOnFocusGesture.fromJson(raw),
+      (raw) {
+        final map = raw is Map ? raw : const <String, dynamic>{};
+        // `point` is required and is itself an embedded JSON string; a missing/non-string value
+        // cannot be decoded, so decline rather than guessing a placeholder point.
+        if (map['point'] is! String) return null;
+        return schema.FocusGestureListenerOnFocusGesture(
+          viewId: map['viewId'] is int ? map['viewId'] as int : _viewId,
+          focusGesture: map['focusGesture'] is String ? map['focusGesture'] as String : '',
+          point: map['point'] as String,
+          event: FunctionNames.eventFocusGesture,
+        );
+      },
+      'onFocusGesture',
+      'FocusGestureController',
+    );
+    if (payload == null) return;
+
+    // `point` is wire-encoded as a JSON *string* (Kotlin: point.toJson(); Swift:
+    // pointWithUnit.jsonString), not a nested map -- decode it before constructing PointWithUnit.
+    // `focusGesture` is wire-present but unconsumed here: this controller already has the local
+    // FocusGesture instance it was constructed with, so there is nothing to reconstruct it into.
+    try {
+      final pointJson = jsonDecode(payload.point) as Map<String, dynamic>;
+      final point = PointWithUnit.fromJSON(pointJson);
+      notifyListeners(point);
+    } catch (error) {
+      developer.log('FocusGestureController onFocusGesture: point payload declined: $error');
+    }
   }
 
   void _unsubscribeFromEvents() {
@@ -160,9 +239,7 @@ extension FocusGestureDeserializer on FocusGesture {
   static FocusGesture? fromJSON(Map<String, dynamic> json) {
     switch (json['type']) {
       case 'tapToFocus':
-        return TapToFocus(
-          showUIIndicator: json['showUIIndicator'] as bool? ?? true,
-        );
+        return TapToFocus(showUIIndicator: json['showUIIndicator'] as bool? ?? true);
       default:
         return null;
     }
